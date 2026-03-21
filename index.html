@@ -3,19 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CAPTAIN GUIDO - Saving Our Oceans</title>
+  <meta name="description" content="Captain Guido Coin - A blockchain-powered ocean cleanup initiative. Join the voyage to save our seas with transparent, verified donations.">
+  <meta name="keywords" content="Captain Guido, CGC, ocean cleanup, cryptocurrency, blockchain, environmental impact">
+  <meta name="author" content="Captain Guido Coin">
+  <title>CAPTAIN GUIDO - Blockchain Ocean Cleanup Initiative</title>
+  
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Captain Guido Coin - Saving Our Oceans">
+  <meta property="og:description" content="A blockchain-powered ocean cleanup initiative with verified on-chain donations">
+  <meta property="og:image" content="captain-guido.png">
   
   <!-- Security Headers -->
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="DENY">
-  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
-  <meta name="robots" content="index, follow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="robots" content="index, follow, max-image-preview:large">
   
-  <!-- Prevent external script injection -->
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https:; connect-src 'self' https:;">
+  <!-- Performance -->
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="dns-prefetch" href="https://server.arcgisonline.com">
   
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="entry-active">
@@ -24,90 +33,90 @@
   <div id="entry-screen">
     <div class="ocean-particles" id="oceanParticles"></div>
     <div class="entry-content-wrapper">
-      <img src="captain-guido.png" alt="Captain Guido" class="entry-logo">
+      <img src="captain-guido.png" alt="Captain Guido Logo" class="entry-logo" width="250" height="250">
       <h1 class="entry-title" id="shuffleTitle">CAPTAIN GUIDO</h1>
       <p class="entry-subtitle">A VOYAGE TO CLEANER SEAS</p>
-      <button class="enter-btn" id="enterButton" type="button">
+      <button class="enter-btn" id="enterButton" type="button" aria-label="Enter the Captain Guido website">
         <span class="btn-text">ENTER THE VOYAGE</span>
-        <span class="btn-arrow">→</span>
+        <span class="btn-arrow" aria-hidden="true">→</span>
       </button>
     </div>
   </div>
 
   <!-- Navigation -->
-  <nav id="main-nav">
+  <nav id="main-nav" role="navigation" aria-label="Main navigation">
     <div class="nav-container">
       <div class="nav-left">
-        <img src="captain-guido.png" alt="Captain Guido" class="nav-logo">
+        <img src="captain-guido.png" alt="Captain Guido" class="nav-logo" width="45" height="45">
         <span class="nav-brand">CAPTAIN GUIDO</span>
       </div>
       <div class="nav-right">
         <a href="#about" class="nav-link">
-          <span class="nav-number">001</span>
+          <span class="nav-number" aria-hidden="true">001</span>
           <span class="nav-text">MISSION</span>
         </a>
         <a href="#journey" class="nav-link">
-          <span class="nav-number">002</span>
+          <span class="nav-number" aria-hidden="true">002</span>
           <span class="nav-text">VOYAGE</span>
         </a>
         <a href="#impact" class="nav-link">
-          <span class="nav-number">003</span>
+          <span class="nav-number" aria-hidden="true">003</span>
           <span class="nav-text">IMPACT</span>
         </a>
-        <button class="wallet-connect-btn" id="walletConnectBtn">
-          <span class="nav-number">004</span>
+        <button class="wallet-connect-btn" id="walletConnectBtn" aria-label="Connect cryptocurrency wallet">
+          <span class="nav-number" aria-hidden="true">004</span>
           <span class="nav-text">CONNECT WALLET</span>
         </button>
       </div>
     </div>
   </nav>
 
-  <!-- Hero Section - Fixed Map (No Scrolling) -->
-  <section id="hero-map">
-    <div class="map-overlay-top"></div>
-    <div id="map"></div>
+  <!-- Hero Section -->
+  <section id="hero-map" aria-label="Interactive voyage map">
+    <div class="map-overlay-top" aria-hidden="true"></div>
+    <div id="map" role="img" aria-label="World map showing Captain Guido's global voyage route"></div>
     <div class="hero-overlay">
       <div class="hero-content">
-        <div class="hero-number">001</div>
-        <h1 class="hero-title">THE VOYAGE BEGINS</h1>
+        <div class="hero-number" aria-hidden="true">001</div>
+        <h2 class="hero-title">THE VOYAGE BEGINS</h2>
         <p class="hero-subtitle">Tracking Captain Guido's global mission to save our oceans</p>
-        <div class="hero-stats">
+        <div class="hero-stats" role="status" aria-live="polite">
           <div class="stat-item">
-            <div class="stat-value">12</div>
+            <div class="stat-value" data-count="12">12</div>
             <div class="stat-label">CHAPTERS</div>
           </div>
-          <div class="stat-divider"></div>
+          <div class="stat-divider" aria-hidden="true"></div>
           <div class="stat-item">
-            <div class="stat-value">8500</div>
+            <div class="stat-value" data-count="8500">8500</div>
             <div class="stat-label">LBS REMOVED</div>
           </div>
-          <div class="stat-divider"></div>
+          <div class="stat-divider" aria-hidden="true"></div>
           <div class="stat-item">
-            <div class="stat-value">62</div>
+            <div class="stat-value" data-count="62">62</div>
             <div class="stat-label">MILES CLEANED</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="scroll-indicator">
-      <div class="scroll-line"></div>
+    <div class="scroll-indicator" aria-label="Scroll down for more content">
+      <div class="scroll-line" aria-hidden="true"></div>
       <span>SCROLL</span>
     </div>
   </section>
 
   <!-- About Section -->
   <section id="about" class="content-section">
-    <div class="section-lines"></div>
+    <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
-      <div class="section-header">
-        <div class="section-number">001</div>
+      <header class="section-header">
+        <div class="section-number" aria-hidden="true">001</div>
         <h2 class="section-title">THE MISSION</h2>
-      </div>
+      </header>
       <div class="section-content">
         <div class="content-left">
           <div class="image-wrapper">
-            <img src="captain-guido.png" alt="Captain Guido" class="feature-image">
-            <div class="image-glow"></div>
+            <img src="captain-guido.png" alt="Captain Guido mascot" class="feature-image" width="400" height="400">
+            <div class="image-glow" aria-hidden="true"></div>
           </div>
         </div>
         <div class="content-right">
@@ -123,17 +132,17 @@
             is verified on-chain—transparent, unstoppable, and making real impact.
           </p>
           <div class="cta-group">
-            <button class="btn-primary">
+            <button class="btn-primary" aria-label="Buy Captain Guido Coin">
               <span>BUY CGC</span>
-              <span class="btn-arrow">→</span>
+              <span class="btn-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="btn-secondary" id="openTokenomics">
+            <button class="btn-secondary" id="openTokenomics" aria-label="View tokenomics information">
               <span>TOKENOMICS</span>
-              <span class="btn-arrow">→</span>
+              <span class="btn-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="btn-secondary" id="openWhitepaper">
+            <button class="btn-secondary" id="openWhitepaper" aria-label="View whitepaper">
               <span>WHITEPAPER</span>
-              <span class="btn-arrow">→</span>
+              <span class="btn-arrow" aria-hidden="true">→</span>
             </button>
           </div>
         </div>
@@ -143,22 +152,22 @@
 
   <!-- Journey Section -->
   <section id="journey" class="content-section dark">
-    <div class="section-lines"></div>
+    <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
-      <div class="section-header">
-        <div class="section-number">002</div>
+      <header class="section-header">
+        <div class="section-number" aria-hidden="true">002</div>
         <h2 class="section-title">THE CHAPTERS</h2>
-      </div>
+      </header>
       <p class="section-intro">
         Follow Captain Guido's voyage around the globe. Each chapter represents a battle 
         against ocean pollution and a donation to local cleanup efforts.
       </p>
       
       <div class="chapters-grid">
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 01</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 01</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Port of Ostia</h4>
+            <h3 class="chapter-title">Port of Ostia</h3>
             <p class="chapter-location">Mediterranean Sea, Italy</p>
             <p class="chapter-desc">
               Where it all began. The salt air and ghost-grey horizon.
@@ -167,12 +176,12 @@
               <span class="status-badge unlocked">UNLOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 02</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 02</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Signals in Cairo</h4>
+            <h3 class="chapter-title">Signals in Cairo</h3>
             <p class="chapter-location">Red Sea, Egypt</p>
             <p class="chapter-desc">
               Ghost ships and encrypted signals.
@@ -181,12 +190,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 03</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 03</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Arabian Tides</h4>
+            <h3 class="chapter-title">Arabian Tides</h3>
             <p class="chapter-location">Arabian Sea</p>
             <p class="chapter-desc">
               The CGC token becomes a weapon.
@@ -195,12 +204,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 04</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 04</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">The Indian Abyss</h4>
+            <h3 class="chapter-title">The Indian Abyss</h3>
             <p class="chapter-location">Indian Ocean</p>
             <p class="chapter-desc">
               Digital justice meets rogue trawlers.
@@ -209,12 +218,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 05</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 05</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Philippine Sea Shadows</h4>
+            <h3 class="chapter-title">Philippine Sea Shadows</h3>
             <p class="chapter-location">Philippine Sea</p>
             <p class="chapter-desc">
               Crypto sharks join the fight.
@@ -223,12 +232,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 06</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 06</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">South Pacific Reckoning</h4>
+            <h3 class="chapter-title">South Pacific Reckoning</h3>
             <p class="chapter-location">South Pacific Ocean</p>
             <p class="chapter-desc">
               Victory comes at a cost.
@@ -237,12 +246,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 07</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 07</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">North Pacific Requiem</h4>
+            <h3 class="chapter-title">North Pacific Requiem</h3>
             <p class="chapter-location">North Pacific Ocean</p>
             <p class="chapter-desc">
               Returning to the gyre.
@@ -251,12 +260,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 08</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 08</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Bering Sea Crossfire</h4>
+            <h3 class="chapter-title">Bering Sea Crossfire</h3>
             <p class="chapter-location">Bering Sea</p>
             <p class="chapter-desc">
               The Cold Wallet surfaces.
@@ -265,12 +274,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 09</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 09</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Gyres of the Graveyard</h4>
+            <h3 class="chapter-title">Gyres of the Graveyard</h3>
             <p class="chapter-location">North Atlantic Ocean</p>
             <p class="chapter-desc">
               The North Atlantic reveals its scars.
@@ -279,12 +288,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 10</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 10</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Gulf of America</h4>
+            <h3 class="chapter-title">Gulf of America</h3>
             <p class="chapter-location">Gulf of Mexico</p>
             <p class="chapter-desc">
               Dead zones and digital warfare.
@@ -293,12 +302,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 11</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 11</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Southern Cross</h4>
+            <h3 class="chapter-title">Southern Cross</h3>
             <p class="chapter-location">South Atlantic Ocean</p>
             <p class="chapter-desc">
               The Cold Wallet reappears.
@@ -307,12 +316,12 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="chapter-card">
-          <div class="chapter-number">CH. 12</div>
+        <article class="chapter-card">
+          <div class="chapter-number" aria-hidden="true">CH. 12</div>
           <div class="chapter-content">
-            <h4 class="chapter-title">Return to Ostia</h4>
+            <h3 class="chapter-title">Return to Ostia</h3>
             <p class="chapter-location">Mediterranean Sea, Italy</p>
             <p class="chapter-desc">
               Full circle. Book two awaits.
@@ -321,31 +330,31 @@
               <span class="status-badge locked">LOCKED</span>
             </div>
           </div>
-        </div>
+        </article>
       </div>
     </div>
   </section>
 
   <!-- Impact Section -->
   <section id="impact" class="content-section">
-    <div class="section-lines"></div>
+    <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
-      <div class="section-header">
-        <div class="section-number">003</div>
+      <header class="section-header">
+        <div class="section-number" aria-hidden="true">003</div>
         <h2 class="section-title">REAL IMPACT</h2>
-      </div>
+      </header>
       <p class="section-intro">
         Every chapter unlocked triggers a donation to ocean cleanup efforts at that location.
       </p>
 
       <div class="impact-grid">
-        <div class="impact-item">
-          <div class="impact-number">01</div>
+        <article class="impact-item">
+          <div class="impact-number" aria-hidden="true">01</div>
           <div class="impact-header">
             <span class="impact-location">MEDITERRANEAN SEA</span>
             <span class="impact-chapter">Chapter 01</span>
           </div>
-          <h4 class="impact-title">Port of Ostia Cleanup</h4>
+          <h3 class="impact-title">Port of Ostia Cleanup</h3>
           <div class="impact-metrics">
             <div class="metric">
               <span class="metric-value">1200</span>
@@ -358,18 +367,18 @@
           </div>
           <div class="impact-tx">
             <span class="tx-label">TX:</span>
-            <span class="tx-value">0x7f3a...c82d</span>
+            <code class="tx-value">0x7f3a...c82d</code>
           </div>
           <div class="impact-charity">→ Ocean Conservancy</div>
-        </div>
+        </article>
 
-        <div class="impact-item">
-          <div class="impact-number">02</div>
+        <article class="impact-item">
+          <div class="impact-number" aria-hidden="true">02</div>
           <div class="impact-header">
             <span class="impact-location">RED SEA</span>
             <span class="impact-chapter">Chapter 02</span>
           </div>
-          <h4 class="impact-title">Cairo Waterway Restoration</h4>
+          <h3 class="impact-title">Cairo Waterway Restoration</h3>
           <div class="impact-metrics">
             <div class="metric">
               <span class="metric-value">8</span>
@@ -382,18 +391,18 @@
           </div>
           <div class="impact-tx">
             <span class="tx-label">TX:</span>
-            <span class="tx-value">0x2b9c...4f1a</span>
+            <code class="tx-value">0x2b9c...4f1a</code>
           </div>
           <div class="impact-charity">→ Red Sea Foundation</div>
-        </div>
+        </article>
 
-        <div class="impact-item">
-          <div class="impact-number">03</div>
+        <article class="impact-item">
+          <div class="impact-number" aria-hidden="true">03</div>
           <div class="impact-header">
             <span class="impact-location">ARABIAN SEA</span>
             <span class="impact-chapter">Chapter 03</span>
           </div>
-          <h4 class="impact-title">Marine Life Protection</h4>
+          <h3 class="impact-title">Marine Life Protection</h3>
           <div class="impact-metrics">
             <div class="metric">
               <span class="metric-value">500</span>
@@ -406,29 +415,29 @@
           </div>
           <div class="impact-tx">
             <span class="tx-label">TX:</span>
-            <span class="tx-value">0x9e1f...b3c7</span>
+            <code class="tx-value">0x9e1f...b3c7</code>
           </div>
           <div class="impact-charity">→ Arabian Wildlife</div>
-        </div>
+        </article>
       </div>
 
-      <div class="blockchain-verified">
-        <div class="verify-icon">⛓️</div>
+      <div class="blockchain-verified" role="status">
+        <div class="verify-icon" aria-hidden="true">⛓️</div>
         <p>ALL DONATIONS VERIFIED ON-CHAIN</p>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer>
+  <footer role="contentinfo">
     <div class="container">
       <div class="footer-main">
         <div class="footer-left">
-          <img src="captain-guido.png" alt="Captain Guido" class="footer-logo">
+          <img src="captain-guido.png" alt="Captain Guido" class="footer-logo" width="80" height="80">
           <h3 class="footer-brand">CAPTAIN GUIDO</h3>
           <p>Sailing toward cleaner oceans.</p>
         </div>
-        <div class="footer-links">
+        <nav class="footer-links" aria-label="Footer navigation">
           <div class="footer-col">
             <h4>NAVIGATE</h4>
             <a href="#about">Mission</a>
@@ -437,34 +446,34 @@
           </div>
           <div class="footer-col">
             <h4>COMMUNITY</h4>
-            <a href="#">Twitter</a>
-            <a href="#">Discord</a>
-            <a href="#">Telegram</a>
+            <a href="#" rel="noopener noreferrer">Twitter</a>
+            <a href="#" rel="noopener noreferrer">Discord</a>
+            <a href="#" rel="noopener noreferrer">Telegram</a>
           </div>
           <div class="footer-col">
             <h4>RESOURCES</h4>
             <a href="#" id="footerTokenomics">Tokenomics</a>
             <a href="#" id="footerWhitepaper">Whitepaper</a>
           </div>
-        </div>
+        </nav>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2025 Captain Guido Coin</p>
+        <p>&copy; 2025 Captain Guido Coin. All rights reserved.</p>
       </div>
     </div>
   </footer>
 
   <!-- Tokenomics Modal -->
-  <div id="tokenomics-modal" class="info-modal">
+  <div id="tokenomics-modal" class="info-modal" role="dialog" aria-labelledby="tokenomics-title" aria-modal="true">
     <div class="modal-overlay"></div>
     <div class="modal-content-large">
-      <button class="modal-close">×</button>
-      <h2>TOKENOMICS</h2>
+      <button class="modal-close" aria-label="Close modal">&times;</button>
+      <h2 id="tokenomics-title">TOKENOMICS</h2>
       <p class="modal-subtitle">Captain Guido Coin Distribution</p>
       
       <div class="tokenomics-content">
         <div class="token-info">
-          <div class="token-symbol">CGC</div>
+          <div class="token-symbol" aria-hidden="true">CGC</div>
           <h3>Captain Guido Coin</h3>
           <div class="token-stats">
             <div class="token-stat">
@@ -481,35 +490,35 @@
         <div class="distribution">
           <h3>Distribution</h3>
           <div class="dist-item">
-            <div class="dist-bar" style="width: 40%;"></div>
+            <div class="dist-bar" style="width: 40%;" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
             <div class="dist-info">
               <span>Ocean Fund</span>
               <span>40%</span>
             </div>
           </div>
           <div class="dist-item">
-            <div class="dist-bar" style="width: 30%;"></div>
+            <div class="dist-bar" style="width: 30%;" role="progressbar" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>
             <div class="dist-info">
               <span>Liquidity</span>
               <span>30%</span>
             </div>
           </div>
           <div class="dist-item">
-            <div class="dist-bar" style="width: 15%;"></div>
+            <div class="dist-bar" style="width: 15%;" role="progressbar" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
             <div class="dist-info">
               <span>Team</span>
               <span>15%</span>
             </div>
           </div>
           <div class="dist-item">
-            <div class="dist-bar" style="width: 10%;"></div>
+            <div class="dist-bar" style="width: 10%;" role="progressbar" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
             <div class="dist-info">
               <span>Marketing</span>
               <span>10%</span>
             </div>
           </div>
           <div class="dist-item">
-            <div class="dist-bar" style="width: 5%;"></div>
+            <div class="dist-bar" style="width: 5%;" role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
             <div class="dist-info">
               <span>Airdrops</span>
               <span>5%</span>
@@ -539,11 +548,11 @@
   </div>
 
   <!-- Whitepaper Modal -->
-  <div id="whitepaper-modal" class="info-modal">
+  <div id="whitepaper-modal" class="info-modal" role="dialog" aria-labelledby="whitepaper-title" aria-modal="true">
     <div class="modal-overlay"></div>
     <div class="modal-content-large">
-      <button class="modal-close">×</button>
-      <h2>WHITEPAPER</h2>
+      <button class="modal-close" aria-label="Close modal">&times;</button>
+      <h2 id="whitepaper-title">WHITEPAPER</h2>
       <p class="modal-subtitle">The Complete Vision</p>
       
       <div class="wp-content">
@@ -559,20 +568,20 @@
           <h3>The Solution</h3>
           <p>Transparent, community-driven cleanup through CGC.</p>
         </div>
-        <button class="btn-primary">
+        <button class="btn-primary" aria-label="Download whitepaper PDF">
           <span>DOWNLOAD PDF</span>
-          <span class="btn-arrow">↓</span>
+          <span class="btn-arrow" aria-hidden="true">↓</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Wallet Modal (NO EMOJIS) -->
-  <div id="wallet-modal" class="modal">
+  <!-- Wallet Modal -->
+  <div id="wallet-modal" class="modal" role="dialog" aria-labelledby="wallet-title" aria-modal="true">
     <div class="modal-overlay"></div>
     <div class="modal-content">
-      <button class="modal-close">×</button>
-      <h2>CONNECT WALLET</h2>
+      <button class="modal-close" aria-label="Close modal">&times;</button>
+      <h2 id="wallet-title">CONNECT WALLET</h2>
       <p class="modal-subtitle">Choose your preferred wallet</p>
       <div class="wallet-options">
         <button class="wallet-option" data-wallet="metamask">
@@ -580,27 +589,27 @@
             <span class="wallet-name">MetaMask</span>
             <span class="wallet-desc">Browser extension wallet</span>
           </div>
-          <span class="wallet-arrow">→</span>
+          <span class="wallet-arrow" aria-hidden="true">→</span>
         </button>
         <button class="wallet-option" data-wallet="walletconnect">
           <div class="wallet-info">
             <span class="wallet-name">WalletConnect</span>
             <span class="wallet-desc">Mobile wallet connection</span>
           </div>
-          <span class="wallet-arrow">→</span>
+          <span class="wallet-arrow" aria-hidden="true">→</span>
         </button>
         <button class="wallet-option" data-wallet="coinbase">
           <div class="wallet-info">
             <span class="wallet-name">Coinbase Wallet</span>
             <span class="wallet-desc">Coinbase users</span>
           </div>
-          <span class="wallet-arrow">→</span>
+          <span class="wallet-arrow" aria-hidden="true">→</span>
         </button>
       </div>
     </div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
   <script src="script.js"></script>
 </body>
 </html>
