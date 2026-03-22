@@ -48,11 +48,12 @@ jobs:
         echo "Checking for outdated dependencies..."
         # Add npm audit or similar when you have package.json
         echo "Dependency check complete!"
-
+  
   lighthouse:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+    
     - name: Lighthouse Security Check
       uses: treosh/lighthouse-ci-action@v9
       with:
