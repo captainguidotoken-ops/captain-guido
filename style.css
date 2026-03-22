@@ -268,7 +268,7 @@ body.entry-active {
   letter-spacing: 1.5px;
 }
 
-/* Hero Map - WITH TILE FLIP ANIMATION */
+/* Hero Map */
 #hero-map {
   position: relative;
   width: 100vw;
@@ -546,7 +546,7 @@ body.entry-active {
 }
 
 .image-wrapper:hover .feature-image {
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(2deg);
 }
 
 .image-glow {
@@ -638,7 +638,7 @@ body.entry-active {
   transform: translateY(-1px);
 }
 
-/* Chapters Grid */
+/* ENHANCED Chapter Cards with Better Animations */
 .chapters-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -649,14 +649,31 @@ body.entry-active {
   background: rgba(30, 95, 140, 0.1);
   border: 1px solid var(--border-light);
   padding: 2.5rem;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.chapter-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(244, 168, 54, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.chapter-card:hover::before {
+  left: 100%;
 }
 
 .chapter-card:hover {
   border-color: var(--gold-accent);
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(30, 95, 140, 0.3);
+  transform: translateY(-15px) scale(1.02);
+  box-shadow: 0 25px 50px rgba(30, 95, 140, 0.4);
 }
 
 .chapter-number {
@@ -665,6 +682,12 @@ body.entry-active {
   font-weight: 900;
   letter-spacing: 2px;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.chapter-card:hover .chapter-number {
+  transform: translateX(5px);
+  color: var(--gold-accent);
 }
 
 .chapter-title {
@@ -672,6 +695,12 @@ body.entry-active {
   color: var(--sand-cream);
   margin-bottom: 0.5rem;
   font-weight: 800;
+  transition: all 0.3s ease;
+}
+
+.chapter-card:hover .chapter-title {
+  color: var(--gold-accent);
+  transform: translateX(5px);
 }
 
 .chapter-location {
@@ -679,6 +708,11 @@ body.entry-active {
   color: var(--aqua);
   margin-bottom: 1.5rem;
   font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.chapter-card:hover .chapter-location {
+  transform: translateX(5px);
 }
 
 .chapter-desc {
@@ -686,6 +720,11 @@ body.entry-active {
   color: var(--text-secondary);
   line-height: 1.7;
   margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.chapter-card:hover .chapter-desc {
+  color: var(--text-primary);
 }
 
 .status-badge {
@@ -695,6 +734,7 @@ body.entry-active {
   padding: 0.5rem 1rem;
   border-radius: 20px;
   letter-spacing: 1px;
+  transition: all 0.3s ease;
 }
 
 .status-badge.unlocked {
@@ -703,124 +743,54 @@ body.entry-active {
   border: 1px solid var(--aqua);
 }
 
+.status-badge.unlocked:hover {
+  background: rgba(78, 196, 196, 0.4);
+  transform: scale(1.1);
+}
+
 .status-badge.locked {
   background: rgba(100, 100, 100, 0.2);
   color: #999;
   border: 1px solid #666;
 }
 
-/* Impact Grid */
-.impact-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 4rem;
+.chapter-card:hover .status-badge.locked {
+  background: rgba(100, 100, 100, 0.3);
+  transform: scale(1.05);
 }
 
-.impact-item {
-  background: rgba(30, 95, 140, 0.1);
-  border: 1px solid var(--border-light);
-  padding: 2.5rem;
-  transition: all 0.4s ease;
-  position: relative;
-  backdrop-filter: blur(10px);
+/* Coming Soon Banner */
+.coming-soon-banner {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(244, 168, 54, 0.05);
+  border: 2px solid var(--gold-accent);
+  border-radius: 12px;
+  margin-bottom: 3rem;
+  animation: pulse 3s ease-in-out infinite;
 }
 
-.impact-item:hover {
-  border-color: var(--sunset-orange);
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(217, 126, 60, 0.3);
+.coming-soon-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
 }
 
-.impact-number {
-  font-size: 3rem;
-  font-weight: 900;
-  color: rgba(244, 168, 54, 0.1);
-  position: absolute;
-  top: 1rem;
-  right: 1.5rem;
-}
-
-.impact-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.impact-location {
-  font-size: 0.75rem;
-  color: var(--sunset-orange);
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-
-.impact-chapter {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  opacity: 0.6;
-}
-
-.impact-title {
-  font-size: 1.5rem;
-  color: var(--sand-cream);
-  margin-bottom: 2rem;
-  font-weight: 800;
-}
-
-.impact-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.metric {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.metric-value {
-  font-size: 2.2rem;
-  font-weight: 900;
+.coming-soon-banner h3 {
+  font-size: 2rem;
   color: var(--gold-accent);
-  line-height: 1;
+  margin-bottom: 1rem;
+  letter-spacing: 3px;
 }
 
-.metric-label {
-  font-size: 0.8rem;
+.coming-soon-banner p {
+  font-size: 1.1rem;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.impact-tx {
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  margin-bottom: 1.5rem;
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  border-left: 3px solid var(--gold-accent);
-}
-
-.tx-label {
-  color: var(--sunset-orange);
-  font-weight: 700;
-  margin-right: 0.5rem;
-}
-
-.tx-value {
-  color: var(--aqua);
-}
-
-.impact-charity {
-  font-size: 1rem;
-  color: var(--sand-cream);
-  font-weight: 700;
-}
-
-/* FIXED: Blockchain Verified - Centered */
+/* Blockchain Verified - Fixed Centering */
 .blockchain-verified {
   text-align: center;
   padding: 3rem;
@@ -846,6 +816,33 @@ body.entry-active {
   margin: 0;
 }
 
+/* Social Links */
+.social-links {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.social-link {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 168, 54, 0.1);
+  border: 2px solid var(--border-light);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.social-link:hover {
+  background: var(--gold-accent);
+  border-color: var(--gold-accent);
+  color: var(--midnight);
+  transform: translateY(-5px) rotate(360deg);
+}
+
 /* Footer */
 footer {
   background: var(--dark-navy);
@@ -868,6 +865,11 @@ footer {
   margin-bottom: 1rem;
   border-radius: 50%;
   border: 2px solid var(--gold-accent);
+  transition: transform 0.5s ease;
+}
+
+.footer-logo:hover {
+  transform: rotate(360deg);
 }
 
 .footer-brand {
@@ -1106,6 +1108,12 @@ footer {
   padding: 1.5rem;
   border: 1px solid var(--border-light);
   text-align: center;
+  transition: all 0.3s ease;
+}
+
+.fee-item:hover {
+  border-color: var(--gold-accent);
+  transform: translateY(-5px);
 }
 
 .fee-item h4 {
@@ -1219,10 +1227,6 @@ footer {
   }
   
   .chapters-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .impact-grid {
     grid-template-columns: 1fr;
   }
   
