@@ -94,7 +94,7 @@
 
       // Animate each tile with a slight delay
       tilesArray.forEach(function(tile, index) {
-        const delay = index * 5; // 15ms between each tile
+        const delay = index * 15; // 15ms between each tile
         
         tile.style.opacity = '0';
         tile.style.transform = 'rotateY(90deg) scale(0.8)';
