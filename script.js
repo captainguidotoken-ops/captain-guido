@@ -71,6 +71,44 @@
     }, 30);
   }
 
+  // NEW: Animate map tiles with randomized flip effect
+  function animateMapTiles() {
+    // Wait for map tiles to load
+    setTimeout(function() {
+      const tiles = document.querySelectorAll('.leaflet-tile');
+      
+      if (tiles.length === 0) {
+        // If tiles haven't loaded yet, try again
+        animateMapTiles();
+        return;
+      }
+
+      // Create array of tiles and shuffle it for random order
+      const tilesArray = Array.from(tiles);
+      
+      // Fisher-Yates shuffle for true randomization
+      for (let i = tilesArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tilesArray[i], tilesArray[j]] = [tilesArray[j], tilesArray[i]];
+      }
+
+      // Animate each tile with a slight delay
+      tilesArray.forEach(function(tile, index) {
+        const delay = index * 5; // 15ms between each tile
+        
+        tile.style.opacity = '0';
+        tile.style.transform = 'rotateY(90deg) scale(0.8)';
+        tile.style.transformOrigin = 'center';
+        tile.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+        
+        setTimeout(function() {
+          tile.style.opacity = '1';
+          tile.style.transform = 'rotateY(0deg) scale(1)';
+        }, delay);
+      });
+    }, 100);
+  }
+
   // Map Setup
   function initializeMap() {
     if (typeof L === 'undefined') {
@@ -103,6 +141,16 @@
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       { attribution: "", maxZoom: 10, opacity: 0.6 }
     ).addTo(map);
+
+    // NEW: Trigger tile animation when tiles finish loading
+    map.on('load', function() {
+      animateMapTiles();
+    });
+
+    // Also trigger after a short delay in case 'load' event already fired
+    setTimeout(function() {
+      animateMapTiles();
+    }, 500);
 
     const shipIcon = L.divIcon({
       className: "ship",
