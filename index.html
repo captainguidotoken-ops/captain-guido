@@ -15,18 +15,19 @@
   <meta property="og:image" content="captain-guido.png">
   
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com; font-src 'self' data:; connect-src 'self' https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com https://api.coingecko.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com https://api.coingecko.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self';">
   <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="index, follow, max-image-preview:large">
   
   <!-- Performance -->
   <link rel="preconnect" href="https://unpkg.com">
-  <link rel="preconnect" href="https://basemaps.cartocdn.com">
-  <link rel="dns-prefetch" href="https://basemaps.cartocdn.com">
-  <link rel="dns-prefetch" href="https://a.basemaps.cartocdn.com">
-  <link rel="dns-prefetch" href="https://b.basemaps.cartocdn.com">
-  <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+
+  <!-- Premium fonts: Inter (body) + JetBrains Mono (data/numbers) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
