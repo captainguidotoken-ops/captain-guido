@@ -1475,10 +1475,15 @@ footer {
 
 .shark {
   position: absolute;
-  width: 220px;
-  height: 110px;
+  width: 300px;
+  height: 155px;
   animation: sharkSwim 28s linear infinite;
-  filter: drop-shadow(0 0 25px rgba(220, 235, 245, 0.5));
+  filter: drop-shadow(0 0 20px rgba(200, 225, 245, 0.55));
+}
+
+.shark-svg {
+  width: 100%;
+  height: 100%;
 }
 
 @keyframes sharkSwim {
@@ -1511,119 +1516,35 @@ footer {
   }
 }
 
+/* ── old CSS div shark removed — now using inline SVG ── */
+
+/* placeholder so old references don't break */
 .shark-body {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* Main shark body shape — great white silver/white */
+/* hidden — kept only so no layout breakage if referenced */
 .shark-body::before {
   content: '';
   position: absolute;
-  width: 140px;
-  height: 65px;
-  background: linear-gradient(135deg, #c8d8e8 0%, #e8f0f6 50%, #b0c4d4 100%);
-  border-radius: 60px 12px 60px 12px;
-  top: 20px;
-  left: 25px;
-  box-shadow: inset -5px -5px 12px rgba(0, 0, 0, 0.25), inset 2px 2px 8px rgba(255,255,255,0.3);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
-/* Shark head */
 .shark-body::after {
-  content: '';
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, #dce8f0 0%, #b0c4d4 100%);
-  border-radius: 50% 50% 50% 0;
-  top: 30px;
-  left: 0;
-  transform: rotate(-45deg);
-  box-shadow: inset -3px -3px 8px rgba(0, 0, 0, 0.2);
+  display: none;
 }
 
-/* Dorsal fin */
-.shark-fin {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-bottom: 45px solid #b8ccd8;
-  top: -15px;
-  left: 70px;
-  animation: finWave 2s ease-in-out infinite;
-}
+/* Div-based shark parts removed — shark is now inline SVG */
+.shark-fin, .shark-tail, .shark-eye { display: none; }
 
-@keyframes finWave {
-  0%, 100% {
-    transform: rotate(-5deg);
-  }
-  50% {
-    transform: rotate(5deg);
-  }
-}
-
-/* Tail */
-.shark-tail {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-top: 28px solid transparent;
-  border-bottom: 28px solid transparent;
-  border-left: 50px solid #c8d8e8;
-  right: -28px;
-  top: 28px;
-  animation: tailSwim 1.5s ease-in-out infinite;
-}
-
-@keyframes tailSwim {
-  0%, 100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-10deg);
-  }
-  75% {
-    transform: rotate(10deg);
-  }
-}
-
-/* Glowing red eye — crypto great white */
-.shark-eye {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background: radial-gradient(circle, #ff4466 0%, #cc1133 50%, #440011 100%);
-  border-radius: 50%;
-  top: 38px;
-  left: 18px;
-  box-shadow:
-    0 0 10px #ff3355,
-    0 0 20px #ff3355,
-    0 0 35px rgba(255, 50, 80, 0.5),
-    inset -2px -2px 4px rgba(0, 0, 0, 0.5);
-  animation: eyeGlow 2s ease-in-out infinite;
-}
-
-/* Eye glow pulse */
+/* SVG eye glow applied to the red circle inside the SVG */
 @keyframes eyeGlow {
-  0%, 100% {
-    box-shadow:
-      0 0 10px #ff3355,
-      0 0 20px #ff3355,
-      0 0 35px rgba(255, 50, 80, 0.5),
-      inset -2px -2px 4px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    box-shadow:
-      0 0 18px #ff3355,
-      0 0 35px #ff3355,
-      0 0 55px rgba(255, 50, 80, 0.8),
-      inset -2px -2px 4px rgba(0, 0, 0, 0.5);
-  }
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; filter: drop-shadow(0 0 6px #ff3355); }
 }
 
 /* Make sure chapter cards are above the shark */
@@ -1635,8 +1556,8 @@ footer {
 /* Responsive shark size */
 @media (max-width: 768px) {
   .shark {
-    width: 130px;
-    height: 65px;
+    width: 180px;
+    height: 93px;
     animation: sharkSwimMobile 25s linear infinite;
   }
   

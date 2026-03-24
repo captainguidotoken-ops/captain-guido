@@ -162,14 +162,59 @@
   <section id="journey" class="content-section dark">
     <div class="section-lines" aria-hidden="true"></div>
     
-    <!-- Animated Shark -->
+    <!-- Animated Shark — SVG great white, line-art style -->
     <div class="shark-container" aria-hidden="true">
       <div class="shark">
-        <div class="shark-body">
-          <div class="shark-fin"></div>
-          <div class="shark-tail"></div>
-          <div class="shark-eye"></div>
-        </div>
+        <svg class="shark-svg" viewBox="0 0 325 168" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <!-- Body -->
+          <path d="M46 82 C70 52,130 40,205 40 C255 40,288 54,304 70 C294 88,258 106,205 108 C130 110,70 102,46 86 Z"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="3.5" stroke-linejoin="round"/>
+          <!-- Dorsal fin -->
+          <path d="M172 42 L190 5 L215 42"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="3" stroke-linejoin="round"/>
+          <!-- Pectoral fin -->
+          <path d="M160 105 C148 126,130 150,136 155 C156 144,178 118,185 110"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Tail upper lobe -->
+          <path d="M50 82 C40 76,22 65,8 52 C18 62,36 73,46 78"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Tail lower lobe -->
+          <path d="M50 86 C40 92,22 105,8 118 C18 108,36 97,46 90"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Mouth interior -->
+          <path d="M278 62 C295 66,310 70,314 72 C310 76,295 80,278 84 C284 78,286 73,284 68 Z"
+            fill="#0d2744"/>
+          <!-- Upper teeth -->
+          <polygon points="276,64 272,77 281,64" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <polygon points="282,62 279,77 287,62" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <polygon points="288,61 286,76 293,62" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <!-- Lower jaw -->
+          <path d="M276 83 C290 91,307 89,314 84 L314 72 C307 77,292 81,276 83 Z"
+            fill="#d4e6f4" stroke="#0d2744" stroke-width="2"/>
+          <!-- Lower teeth -->
+          <polygon points="279,83 283,72 287,83" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <polygon points="288,84 292,73 296,84" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <polygon points="297,83 301,73 305,83" fill="#f0f5fa" stroke="#0d2744" stroke-width="1.2"/>
+          <!-- Eye -->
+          <circle cx="270" cy="62" r="13" fill="#0d2744"/>
+          <circle cx="273" cy="60" r="6" fill="#c00020"/>
+          <circle cx="275" cy="58" r="2.5" fill="#ff4466" opacity="0.9"/>
+          <!-- Angry brow -->
+          <path d="M260 52 C265 50,272 53,282 54" stroke="#0d2744" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <!-- Circuit board lines -->
+          <g stroke="#5592b8" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.72">
+            <line x1="95" y1="72" x2="215" y2="72"/>
+            <polyline points="125,72 125,57 148,57"/>
+            <rect x="146" y="55" width="6" height="6" fill="#5592b8" stroke="none" rx="1"/>
+            <polyline points="170,72 170,87 194,87"/>
+            <circle cx="194" cy="87" r="4" fill="#5592b8" stroke="none"/>
+            <polyline points="208,72 228,60 242,60"/>
+            <circle cx="242" cy="60" r="3.5" fill="#5592b8" stroke="none"/>
+          </g>
+          <!-- Belly shading -->
+          <path d="M86 102 C158 112,236 108,268 96"
+            fill="none" stroke="#a8c4dc" stroke-width="2" opacity="0.5"/>
+        </svg>
       </div>
     </div>
     
