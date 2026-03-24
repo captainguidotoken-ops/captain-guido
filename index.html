@@ -15,14 +15,18 @@
   <meta property="og:image" content="captain-guido.png">
   
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com; font-src 'self' data:; connect-src 'self' https://unpkg.com https://*.basemaps.cartocdn.com https://*.arcgisonline.com https://api.coingecko.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self';">
   <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="index, follow, max-image-preview:large">
   
   <!-- Performance -->
   <link rel="preconnect" href="https://unpkg.com">
-  <link rel="dns-prefetch" href="https://server.arcgisonline.com">
+  <link rel="preconnect" href="https://basemaps.cartocdn.com">
+  <link rel="dns-prefetch" href="https://basemaps.cartocdn.com">
+  <link rel="dns-prefetch" href="https://a.basemaps.cartocdn.com">
+  <link rel="dns-prefetch" href="https://b.basemaps.cartocdn.com">
+  <link rel="dns-prefetch" href="https://c.basemaps.cartocdn.com">
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
   <link rel="stylesheet" href="style.css">
@@ -32,8 +36,12 @@
   <!-- Entry Screen -->
   <div id="entry-screen">
     <div class="ocean-particles" id="oceanParticles"></div>
+    <div class="tech-grid" aria-hidden="true"></div>
+    <div class="scan-line" aria-hidden="true"></div>
     <div class="entry-content-wrapper">
-      <img src="captain-guido.png" alt="Captain Guido Logo" class="entry-logo" width="250" height="250">
+      <div class="entry-logo-wrapper">
+        <img src="captain-guido.png" alt="Captain Guido Logo" class="entry-logo" width="250" height="250">
+      </div>
       <h1 class="entry-title" id="shuffleTitle">CAPTAIN GUIDO</h1>
       <p class="entry-subtitle">A VOYAGE TO CLEANER SEAS</p>
       <button class="enter-btn" id="enterButton" type="button" aria-label="Enter the Captain Guido website">
@@ -360,15 +368,72 @@
         Join us as we begin our voyage to cleaner seas.
       </p>
 
-      <div class="coming-soon-banner">
-        <div class="coming-soon-icon">🌊</div>
-        <h3>LAUNCHING SOON</h3>
-        <p>Our ocean cleanup mission begins when we reach our community fundraising goal. Be part of the first wave.</p>
+      <!-- PRE-LAUNCH STATE (controlled by IMPACT_DATA.launched in script.js) -->
+      <div id="impactPrelaunch">
+        <div class="impact-prelaunched">
+          <div class="mission-status">
+            <div class="status-pulse" aria-hidden="true"></div>
+            <span>MISSION STATUS: PRE-LAUNCH</span>
+          </div>
+          <h3>THE VOYAGE HASN'T BEGUN — YET.</h3>
+          <p>Our ocean cleanup mission activates when we reach our community fundraising goal. Every token holder becomes part of the first wave of verified blockchain-powered ocean defenders.</p>
+          <div class="impact-targets">
+            <div class="target-item">
+              <div class="target-value">12</div>
+              <div class="target-label">CLEANUP CHAPTERS</div>
+            </div>
+            <div class="target-item">
+              <div class="target-value">100%</div>
+              <div class="target-label">ON-CHAIN VERIFIED</div>
+            </div>
+            <div class="target-item">
+              <div class="target-value">40%</div>
+              <div class="target-label">TO OCEAN FUND</div>
+            </div>
+          </div>
+        </div>
+        <div class="blockchain-verified" role="status">
+          <div class="verify-badge" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <p>ALL DONATIONS WILL BE VERIFIED ON-CHAIN</p>
+        </div>
       </div>
 
-      <div class="blockchain-verified" role="status">
-        <div class="verify-icon" aria-hidden="true">⛓️</div>
-        <p>ALL DONATIONS WILL BE VERIFIED ON-CHAIN</p>
+      <!-- LIVE STATE (shown when IMPACT_DATA.launched = true in script.js) -->
+      <div id="impactLive" style="display:none">
+        <div class="impact-stats-live">
+          <div class="live-stat">
+            <div class="live-stat-value" id="impactChapters">0</div>
+            <div class="live-stat-label">CHAPTERS UNLOCKED</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="impactLbs">0</div>
+            <div class="live-stat-label">LBS REMOVED</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="impactMiles">0</div>
+            <div class="live-stat-label">MILES CLEANED</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="impactDonations">0</div>
+            <div class="live-stat-label">DONATIONS VERIFIED</div>
+          </div>
+          <div class="live-stat">
+            <div class="live-stat-value" id="impactUSD">$0</div>
+            <div class="live-stat-label">USD DONATED</div>
+          </div>
+        </div>
+        <div class="milestones-section">
+          <h3 class="milestones-heading">MISSION LOG</h3>
+          <div id="milestoneList" class="milestone-list"></div>
+        </div>
+        <div class="blockchain-verified" role="status">
+          <div class="verify-badge" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <p>ALL DONATIONS VERIFIED ON-CHAIN</p>
+        </div>
       </div>
     </div>
   </section>
@@ -389,12 +454,12 @@
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
             </a>
-            <a href="https://instagram.com/CaptainGuido" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram" class="social-link">
+            <a href="https://www.instagram.com/captainguidoverse" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram" class="social-link">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
               </svg>
             </a>
-            <a href="https://tiktok.com/@CaptainGuido" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok" class="social-link">
+            <a href="https://www.tiktok.com/@captain.guido" target="_blank" rel="noopener noreferrer" aria-label="Follow us on TikTok" class="social-link">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
               </svg>
@@ -411,8 +476,8 @@
           <div class="footer-col">
             <h4>COMMUNITY</h4>
             <a href="https://twitter.com/CaptainGuido" target="_blank" rel="noopener noreferrer">Twitter</a>
-            <a href="https://instagram.com/CaptainGuido" target="_blank" rel="noopener noreferrer">Instagram</a>
-            <a href="https://tiktok.com/@CaptainGuido" target="_blank" rel="noopener noreferrer">TikTok</a>
+            <a href="https://www.instagram.com/captainguidoverse" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a href="https://www.tiktok.com/@captain.guido" target="_blank" rel="noopener noreferrer">TikTok</a>
           </div>
           <div class="footer-col">
             <h4>RESOURCES</h4>

@@ -4,6 +4,23 @@
   // Security: Prevent console manipulation
   const originalLog = console.log;
   const originalError = console.error;
+
+  // ─── IMPACT DATA CONFIG ────────────────────────────────────────────────────
+  // Set `launched: true` and update the stats below to switch the Impact
+  // section from "pre-launch" to live tracking mode after you go live.
+  const IMPACT_DATA = {
+    launched: false,
+    chaptersUnlocked: 0,
+    lbsRemoved: 0,
+    milesCleaned: 0,
+    donationsVerified: 0,
+    donationUSD: 0,
+    milestones: [
+      // Example — add completed milestones here:
+      // { date: '2025-Q3', title: 'Chapter 1 Unlocked', location: 'Mediterranean Sea, Italy', impact: '500 lbs removed' }
+    ]
+  };
+  // ──────────────────────────────────────────────────────────────────────────
   
   // Entry Screen
   function enterSite() {
@@ -94,70 +111,11 @@
       trackResize: true
     }).setView([20, 0], 2.5);
 
-    // Base ocean layer
-    const oceanLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "", maxZoom: 10 }
+    // Dark ocean base — CartoDB Dark Matter (reliable, no API key needed)
+    L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      { attribution: "", maxZoom: 10, subdomains: 'abcd' }
     ).addTo(map);
-
-    // Imagery overlay
-    const imageryLayer = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "", maxZoom: 10, opacity: 0.6 }
-    ).addTo(map);
-
-    // Track tile loading
-    let tilesLoaded = 0;
-    let totalTiles = 0;
-    let tilesAnimated = false;
-
-    function checkAndAnimateTiles() {
-      if (tilesAnimated) return;
-      
-      const tiles = document.querySelectorAll('.leaflet-tile');
-      
-      if (tiles.length > 0) {
-        tilesAnimated = true;
-        
-        // Create array of tiles and shuffle it for random order
-        const tilesArray = Array.from(tiles);
-        
-        // Fisher-Yates shuffle for true randomization
-        for (let i = tilesArray.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [tilesArray[i], tilesArray[j]] = [tilesArray[j], tilesArray[i]];
-        }
-
-        // Animate each tile with a slight delay
-        tilesArray.forEach(function(tile, index) {
-          const delay = index * 20; // 20ms between each tile
-          
-          // Set initial state
-          tile.style.opacity = '0';
-          tile.style.transform = 'rotateY(90deg) scale(0.8)';
-          tile.style.transformOrigin = 'center';
-          tile.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
-          
-          setTimeout(function() {
-            tile.style.opacity = '1';
-            tile.style.transform = 'rotateY(0deg) scale(1)';
-          }, delay);
-        });
-      }
-    }
-
-    // Listen for tile load events
-    oceanLayer.on('load', function() {
-      setTimeout(checkAndAnimateTiles, 100);
-    });
-
-    imageryLayer.on('load', function() {
-      setTimeout(checkAndAnimateTiles, 100);
-    });
-
-    // Also try after a delay as backup
-    setTimeout(checkAndAnimateTiles, 1000);
-    setTimeout(checkAndAnimateTiles, 2000);
 
     const shipIcon = L.divIcon({
       className: "ship",
@@ -357,12 +315,56 @@
     }
   }
 
+  // Render Impact section based on IMPACT_DATA config
+  function renderImpact() {
+    const prelaunch = document.getElementById('impactPrelaunch');
+    const live = document.getElementById('impactLive');
+    if (!prelaunch || !live) return;
+
+    if (IMPACT_DATA.launched) {
+      prelaunch.style.display = 'none';
+      live.style.display = 'block';
+
+      // Populate live stats
+      var fields = {
+        'impactChapters': IMPACT_DATA.chaptersUnlocked,
+        'impactLbs': IMPACT_DATA.lbsRemoved.toLocaleString(),
+        'impactMiles': IMPACT_DATA.milesCleaned.toLocaleString(),
+        'impactDonations': IMPACT_DATA.donationsVerified,
+        'impactUSD': '$' + IMPACT_DATA.donationUSD.toLocaleString()
+      };
+      Object.keys(fields).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = fields[id];
+      });
+
+      // Populate milestones
+      var list = document.getElementById('milestoneList');
+      if (list && IMPACT_DATA.milestones.length > 0) {
+        list.innerHTML = IMPACT_DATA.milestones.map(function(m) {
+          return '<div class="milestone-item">' +
+            '<span class="milestone-date">' + m.date + '</span>' +
+            '<div class="milestone-info">' +
+              '<strong>' + m.title + '</strong>' +
+              '<span>' + m.location + '</span>' +
+              '<em>' + m.impact + '</em>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+    } else {
+      prelaunch.style.display = 'block';
+      live.style.display = 'none';
+    }
+  }
+
   // Initialize
   document.addEventListener('DOMContentLoaded', function() {
     originalLog('Captain Guido initialized');
-    
+
     document.body.classList.add('entry-active');
     createOceanParticles();
+    renderImpact();
     initializeMap();
     initNavigation();
     initSmoothScroll();
