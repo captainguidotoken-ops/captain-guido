@@ -123,42 +123,26 @@
       { attribution: "", maxZoom: 10, opacity: 0.8 }
     ).addTo(map);
 
-    // Tile card-flip animation — MutationObserver catches every tile the instant
-    // Leaflet adds it to the DOM, flips it in from edge-on at a random delay.
-    // This guarantees the FULL map gets the effect, not just the first batch.
-    var animatedTiles = new WeakSet();
-
-    function flipTileIn(tile) {
-      if (animatedTiles.has(tile)) return;
-      animatedTiles.add(tile);
+    // Tile card-flip animation — uses Leaflet's tileload event so every tile
+    // is fully loaded and positioned before we animate it. Each tile flips in
+    // from edge-on (rotateY 90deg) after a random delay for a scattered reveal.
+    map.on('tileload', function(e) {
+      var tile = e.tile;
+      if (tile.dataset.cgcFlip) return;
+      tile.dataset.cgcFlip = '1';
 
       tile.style.opacity = '0';
-      tile.style.transform = 'rotateY(90deg) scale(0.9)';
+      tile.style.transform = 'rotateY(90deg)';
       tile.style.transformOrigin = 'center center';
       tile.style.transition = 'none';
 
-      var delay = Math.random() * 900 + 80;
       setTimeout(function() {
         tile.style.transition =
-          'opacity 0.45s cubic-bezier(0.2,0.8,0.3,1), transform 0.5s cubic-bezier(0.2,0.8,0.3,1)';
+          'opacity 0.4s cubic-bezier(0.2,0.8,0.3,1),' +
+          'transform 0.45s cubic-bezier(0.2,0.8,0.3,1)';
         tile.style.opacity = '1';
-        tile.style.transform = 'rotateY(0deg) scale(1)';
-      }, delay);
-    }
-
-    var tileObserver = new MutationObserver(function(mutations) {
-      mutations.forEach(function(mutation) {
-        mutation.addedNodes.forEach(function(node) {
-          if (node.nodeType === 1 && node.classList.contains('leaflet-tile')) {
-            flipTileIn(node);
-          }
-        });
-      });
-    });
-
-    tileObserver.observe(document.getElementById('map'), {
-      childList: true,
-      subtree: true
+        tile.style.transform = 'rotateY(0deg)';
+      }, Math.random() * 900 + 80);
     });
 
     const shipIcon = L.divIcon({

@@ -441,6 +441,12 @@ body.entry-active {
   filter: saturate(1.15) brightness(0.88) contrast(1.05);
 }
 
+/* Perspective context for the 3D tile flip animation */
+.leaflet-tile-container {
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+}
+
 .hero-overlay {
   position: absolute;
   top: 50%;
