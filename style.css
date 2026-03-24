@@ -1440,10 +1440,12 @@ footer {
 }
 
 .token-symbol {
-  font-size: 4rem;
+  font-size: 2.6rem;
   font-weight: 900;
   color: var(--gold-accent);
   margin-bottom: 1rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
 }
 
 .token-info h3 {
@@ -1532,6 +1534,79 @@ footer {
 .fee-item p {
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+/* Presale rounds grid */
+.presale-rounds {
+  margin-top: 2rem;
+}
+
+.presale-rounds h3 {
+  color: var(--aqua);
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.modal-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.rounds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.round-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.round-item:hover {
+  border-color: rgba(0, 212, 255, 0.35);
+}
+
+.round-item--last {
+  border-color: rgba(244, 168, 54, 0.25);
+}
+
+.round-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--aqua);
+  font-weight: 700;
+}
+
+.round-price {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.round-target {
+  font-size: 0.78rem;
+  color: var(--gold-accent);
+  font-weight: 600;
+}
+
+.rounds-total {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-top: 1px solid rgba(0, 212, 255, 0.1);
+  padding-top: 0.75rem;
+}
+
+.rounds-total strong {
+  color: var(--aqua);
 }
 
 /* Whitepaper */
