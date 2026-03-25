@@ -479,6 +479,42 @@
     });
 
     // Map stays permanently visible — no wash-away animation.
+
+    // ── PRESALE COUNTDOWN ─────────────────────────────────────────────────
+    // Target: July 1 2026 00:00:00 UTC
+    var presaleTarget = new Date('2026-07-01T00:00:00Z').getTime();
+
+    function updateCountdown() {
+      var now  = Date.now();
+      var diff = presaleTarget - now;
+
+      if (diff <= 0) {
+        // Presale is live — swap timer for launch message
+        var cd = document.getElementById('presaleCountdown');
+        if (cd) {
+          cd.innerHTML = '<p class="countdown-label" style="color:var(--aqua);font-size:1rem;letter-spacing:4px;">🚀 PRESALE IS LIVE</p>';
+        }
+        return;
+      }
+
+      var days  = Math.floor(diff / (1000 * 60 * 60 * 24));
+      var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      var secs  = Math.floor((diff % (1000 * 60)) / 1000);
+
+      var dEl = document.getElementById('cdDays');
+      var hEl = document.getElementById('cdHours');
+      var mEl = document.getElementById('cdMins');
+      var sEl = document.getElementById('cdSecs');
+
+      if (dEl) dEl.textContent = String(days).padStart(3, '0');
+      if (hEl) hEl.textContent = String(hours).padStart(2, '0');
+      if (mEl) mEl.textContent = String(mins).padStart(2, '0');
+      if (sEl) sEl.textContent = String(secs).padStart(2, '0');
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
   });
 
 })();
