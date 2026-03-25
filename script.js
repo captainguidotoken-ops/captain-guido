@@ -153,7 +153,7 @@
 
     const chapters = [
       { name: "Port of Ostia", coords: [41.73, 12.29], unlocked: true },
-      { name: "Signals in Cairo", coords: [30.0444, 31.2357], unlocked: true },
+      { name: "Signals in Cairo", coords: [30.0444, 31.2357], unlocked: false },
       { name: "Arabian Tides", coords: [20, 60], unlocked: false },
       { name: "Indian Abyss", coords: [-10, 80], unlocked: false },
       { name: "Philippine Sea", coords: [15, 130], unlocked: false },
@@ -478,22 +478,7 @@
       }
     });
 
-    // Wave wash-away: fires once when the map section scrolls fully above the viewport.
-    // Adds .map-washed-away which plays the CSS clip-path wave animation and never reverses.
-    var mapWaved = false;
-    var mapSection = document.getElementById('hero-map');
-    if (mapSection) {
-      var waveObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
-          if (!mapWaved && !entry.isIntersecting && entry.boundingClientRect.top < 0) {
-            mapWaved = true;
-            mapSection.classList.add('map-washed-away');
-            waveObserver.disconnect();
-          }
-        });
-      }, { threshold: 0 });
-      waveObserver.observe(mapSection);
-    }
+    // Map stays permanently visible — no wash-away animation.
   });
 
 })();
