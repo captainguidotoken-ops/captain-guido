@@ -574,6 +574,12 @@ body.entry-active {
   margin-bottom: 0.75rem;
 }
 
+.countdown-label--live {
+  color: var(--aqua);
+  font-size: 1rem;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+}
+
 .countdown-grid {
   display: flex;
   align-items: center;

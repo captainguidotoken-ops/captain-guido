@@ -369,16 +369,34 @@
       // Populate milestones
       var list = document.getElementById('milestoneList');
       if (list && IMPACT_DATA.milestones.length > 0) {
-        list.innerHTML = IMPACT_DATA.milestones.map(function(m) {
-          return '<div class="milestone-item">' +
-            '<span class="milestone-date">' + m.date + '</span>' +
-            '<div class="milestone-info">' +
-              '<strong>' + m.title + '</strong>' +
-              '<span>' + m.location + '</span>' +
-              '<em>' + m.impact + '</em>' +
-            '</div>' +
-          '</div>';
-        }).join('');
+        list.textContent = '';
+        IMPACT_DATA.milestones.forEach(function(m) {
+          var item = document.createElement('div');
+          item.className = 'milestone-item';
+
+          var dateSpan = document.createElement('span');
+          dateSpan.className = 'milestone-date';
+          dateSpan.textContent = m.date;
+
+          var info = document.createElement('div');
+          info.className = 'milestone-info';
+
+          var title = document.createElement('strong');
+          title.textContent = m.title;
+
+          var loc = document.createElement('span');
+          loc.textContent = m.location;
+
+          var impact = document.createElement('em');
+          impact.textContent = m.impact;
+
+          info.appendChild(title);
+          info.appendChild(loc);
+          info.appendChild(impact);
+          item.appendChild(dateSpan);
+          item.appendChild(info);
+          list.appendChild(item);
+        });
       }
     } else {
       prelaunch.style.display = 'block';
@@ -492,7 +510,11 @@
         // Presale is live — swap timer for launch message
         var cd = document.getElementById('presaleCountdown');
         if (cd) {
-          cd.innerHTML = '<p class="countdown-label" style="color:var(--aqua);font-size:1rem;letter-spacing:4px;">🚀 PRESALE IS LIVE</p>';
+          cd.textContent = '';
+          var liveMsg = document.createElement('p');
+          liveMsg.className = 'countdown-label countdown-label--live';
+          liveMsg.textContent = '🚀 PRESALE IS LIVE';
+          cd.appendChild(liveMsg);
         }
         return;
       }
