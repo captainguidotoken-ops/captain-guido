@@ -365,13 +365,19 @@
 
     function typeLine() {
       if (lineIndex >= lines.length) {
-        // All lines typed — trigger scan
+        // All lines typed — trigger scan line + HUD
         setTimeout(function() {
           scanLine.classList.add('scanning');
           if (hudCorners) hudCorners.classList.add('hud-visible');
         }, 300);
+        // Dissolve overlay
         setTimeout(function() {
           overlay.classList.add('boot-done');
+          // Reveal hero content after overlay finishes fading (1s transition)
+          setTimeout(function() {
+            var heroContent = document.querySelector('.hero-content');
+            if (heroContent) heroContent.classList.add('hero-revealed');
+          }, 1050);
         }, 2000);
         return;
       }

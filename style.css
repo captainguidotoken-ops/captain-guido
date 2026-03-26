@@ -522,8 +522,10 @@ body.entry-active {
   max-width: 90%;
 }
 
+/* Hero content — hidden until boot sequence completes.
+   JS adds .hero-revealed to trigger staggered animations. */
 .hero-content {
-  animation: fadeInUp 1s ease 0.5s backwards;
+  opacity: 0;
 }
 
 .hero-number {
@@ -532,8 +534,8 @@ body.entry-active {
   font-weight: 400;
   letter-spacing: 4px;
   margin-bottom: 1rem;
-  animation: fadeIn 0.8s ease 0.7s backwards;
   font-family: var(--font-mono);
+  opacity: 0;
 }
 
 .hero-title {
@@ -541,12 +543,12 @@ body.entry-active {
   font-weight: 700;
   letter-spacing: 10px;
   margin-bottom: 1.5rem;
-  animation: slideInLeft 1s ease 0.6s backwards;
   background: linear-gradient(135deg, #ffffff 0%, #c8e8ff 50%, #00aadd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.2));
+  opacity: 0;
 }
 
 .hero-subtitle {
@@ -556,8 +558,32 @@ body.entry-active {
   margin-bottom: 3rem;
   font-weight: 400;
   font-family: var(--font-mono);
-  animation: slideInRight 1s ease 0.8s backwards;
-  opacity: 0.85;
+  opacity: 0;
+}
+
+/* Revealed — each element fades in with stagger after boot sequence */
+.hero-content.hero-revealed {
+  opacity: 1;
+}
+
+.hero-content.hero-revealed .hero-number {
+  animation: fadeIn 0.6s ease 0s both;
+}
+
+.hero-content.hero-revealed .hero-title {
+  animation: slideInLeft 0.9s ease 0.2s both;
+}
+
+.hero-content.hero-revealed .hero-subtitle {
+  animation: slideInRight 0.8s ease 0.45s both;
+}
+
+.hero-content.hero-revealed .presale-countdown {
+  animation: fadeInUp 0.8s ease 0.65s both;
+}
+
+.hero-content.hero-revealed .hero-stats {
+  animation: fadeInUp 0.8s ease 0.85s both;
 }
 
 /* ── MAP BOOT SEQUENCE ────────────────────────────────────────────────────── */
@@ -565,13 +591,13 @@ body.entry-active {
 .map-boot-overlay {
   position: absolute;
   inset: 0;
-  z-index: 8;
-  background: rgba(1, 6, 13, 0.92);
+  z-index: 11;
+  background: rgba(1, 6, 13, 1);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  transition: opacity 0.8s ease;
+  transition: opacity 1s ease;
 }
 
 .map-boot-overlay.boot-done {
@@ -669,7 +695,7 @@ body.entry-active {
 /* Presale countdown */
 .presale-countdown {
   margin-bottom: 2rem;
-  animation: fadeInUp 1s ease 1s backwards;
+  opacity: 0;
 }
 
 .countdown-label {
@@ -739,26 +765,16 @@ body.entry-active {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(0, 212, 255, 0.1);
   padding: 1.5rem 2.5rem;
+  opacity: 0;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  animation: fadeInUp 0.6s ease backwards;
 }
 
-.stat-item:nth-child(1) {
-  animation-delay: 1s;
-}
-
-.stat-item:nth-child(3) {
-  animation-delay: 1.2s;
-}
-
-.stat-item:nth-child(5) {
-  animation-delay: 1.4s;
-}
+/* stat-item delays removed — parent .hero-stats handles entrance */
 
 .stat-value {
   font-size: 2.8rem;
