@@ -465,8 +465,23 @@
     createOceanParticles();
     renderImpact();
     initializeMap();
-    runMapBootSequence();
     initNavigation();
+
+    // Boot sequence fires the first time the map scrolls into view
+    var mapSection = document.getElementById('hero-map');
+    if (mapSection && window.IntersectionObserver) {
+      var bootRan = false;
+      var bootObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !bootRan) {
+            bootRan = true;
+            bootObserver.disconnect();
+            runMapBootSequence();
+          }
+        });
+      }, { threshold: 0.15 });
+      bootObserver.observe(mapSection);
+    }
     initSmoothScroll();
     
     // Shuffle animation

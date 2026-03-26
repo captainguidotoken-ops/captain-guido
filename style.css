@@ -1866,41 +1866,285 @@ footer {
   background: #010810;
 }
 
-/* Responsive */
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — laptop 1024, tablet 768, mobile 480
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Laptop / small desktop ─────────────────────────────────────── */
 @media (max-width: 1024px) {
   .section-content {
     grid-template-columns: 1fr;
   }
-  
+
   .footer-main {
     grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .tokenomics-content {
+    grid-template-columns: 1fr;
+  }
+
+  .token-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rounds-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  #map {
+    height: 420px;
   }
 }
 
+/* ── Tablet ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Nav */
   .nav-right {
     display: none;
   }
-  
+
+  .nav-container {
+    padding: 0 1.2rem;
+  }
+
+  /* Hero */
+  .hero-content {
+    padding: 0 1.2rem;
+  }
+
   .hero-title {
-    font-size: 2.5rem;
-    letter-spacing: 5px;
+    font-size: 2.4rem;
+    letter-spacing: 4px;
   }
-  
+
   .hero-subtitle {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
-  
-  .section-title {
-    font-size: 2rem;
-  }
-  
-  .chapters-grid {
-    grid-template-columns: 1fr;
-  }
-  
+
   .cta-group {
     flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+
+  .hero-stats {
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  /* Countdown */
+  .presale-countdown {
+    margin-bottom: 1.5rem;
+  }
+
+  .countdown-grid {
+    gap: 0.5rem;
+  }
+
+  .countdown-num {
+    font-size: 2rem;
+    min-width: 64px;
+  }
+
+  .countdown-sep {
+    font-size: 1.8rem;
+    padding-bottom: 8px;
+  }
+
+  /* Sections */
+  .section-title {
+    font-size: 1.9rem;
+    letter-spacing: 4px;
+  }
+
+  section {
+    padding: 3.5rem 1.2rem;
+  }
+
+  /* Map */
+  #map {
+    height: 340px;
+  }
+
+  .map-boot-text {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+  }
+
+  /* Chapters */
+  .chapters-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Impact */
+  .impact-targets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .impact-stats-live {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Tokenomics modal */
+  .modal-content-large,
+  .modal-content {
+    width: 95vw;
+    max-height: 88vh;
+    padding: 1.5rem 1.2rem;
+  }
+
+  .token-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rounds-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .token-symbol {
+    font-size: 2rem;
+  }
+
+  /* Footer */
+  .footer-links {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+
+  .footer-left {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Nav */
+  .nav-brand {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+  }
+
+  /* Hero */
+  .hero-title {
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .hero-number {
+    font-size: 0.65rem;
+  }
+
+  /* Countdown */
+  .countdown-label {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+  }
+
+  .countdown-num {
+    font-size: 1.65rem;
+    min-width: 52px;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .countdown-unit-label {
+    font-size: 0.5rem;
+  }
+
+  .countdown-sep {
+    font-size: 1.4rem;
+    padding-bottom: 6px;
+  }
+
+  /* Sections */
+  .section-title {
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+  }
+
+  section {
+    padding: 2.5rem 1rem;
+  }
+
+  /* Map */
+  #map {
+    height: 280px;
+  }
+
+  .hud-corner {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Chapters */
+  .chapter-card {
+    padding: 1.2rem;
+  }
+
+  /* Impact */
+  .impact-targets {
+    grid-template-columns: 1fr;
+  }
+
+  .impact-stats-live {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tokenomics */
+  .token-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .rounds-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal-content-large,
+  .modal-content {
+    width: 98vw;
+    max-height: 92vh;
+    padding: 1.2rem 1rem;
+    border-radius: 8px;
+  }
+
+  /* Footer */
+  .footer-links {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    text-align: center;
+  }
+
+  .footer-bottom p {
+    font-size: 0.75rem;
+  }
+
+  .social-links {
+    gap: 1rem;
+  }
+
+  /* Entry screen */
+  .entry-title {
+    font-size: 2rem;
+    letter-spacing: 4px;
+  }
+
+  .enter-btn {
+    padding: 0.9rem 2rem;
+    font-size: 0.75rem;
   }
 }
 
