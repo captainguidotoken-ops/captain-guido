@@ -130,14 +130,15 @@ body.entry-active {
   100% { top: 105%; }
 }
 
-/* Sonar rings on entry screen */
+/* Sonar rings — positioned relative to .entry-logo-wrapper so they
+   always stay centred on the logo, not the viewport */
 .sonar-rings {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 700px;
-  height: 700px;
+  width: 0;
+  height: 0;
   pointer-events: none;
   z-index: 0;
 }
@@ -183,8 +184,11 @@ body.entry-active {
 .entry-logo-wrapper {
   position: relative;
   margin-bottom: 2rem;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 12px;
+  animation: float 3s ease-in-out infinite;
 }
 
 .entry-logo-wrapper::before,
@@ -211,7 +215,6 @@ body.entry-active {
   width: 250px;
   height: 250px;
   margin-bottom: 0;
-  animation: float 3s ease-in-out infinite;
   border-radius: 50%;
   border: 3px solid var(--aqua);
   box-shadow:
