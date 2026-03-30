@@ -117,11 +117,7 @@
       { attribution: "", maxZoom: 10 }
     ).addTo(map);
 
-    // Ocean reference labels overlay
-    L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "", maxZoom: 10, opacity: 0.8 }
-    ).addTo(map);
+    // Ocean reference layer removed — eliminated grid lines from map
 
     // Tile card-flip animation — uses Leaflet's tileload event so every tile
     // is fully loaded and positioned before we animate it. Each tile flips in
@@ -184,14 +180,26 @@
 
     // Add chapter markers
     chapters.forEach(function(chapter, index) {
-      const marker = L.circleMarker(chapter.coords, {
-        radius: chapter.unlocked ? 12 : 8,
-        fillColor: chapter.unlocked ? "#f4a836" : "#666",
-        color: chapter.unlocked ? "#fff" : "#444",
-        weight: 2,
-        opacity: 1,
-        fillOpacity: chapter.unlocked ? 0.9 : 0.5
-      }).addTo(map);
+      var marker;
+      if (chapter.unlocked) {
+        marker = L.circleMarker(chapter.coords, {
+          radius: 12,
+          fillColor: '#f4a836',
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9
+        }).addTo(map);
+      } else {
+        marker = L.marker(chapter.coords, {
+          icon: L.divIcon({
+            className: '',
+            html: '<div class="locked-marker"><div class="locked-dot"></div><div class="pulse-ring"></div></div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          })
+        }).addTo(map);
+      }
 
       const tempDiv = document.createElement('div');
       tempDiv.textContent = chapter.name;

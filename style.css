@@ -607,6 +607,43 @@ body.entry-active {
   animation: fadeInUp 0.8s ease 0.85s both;
 }
 
+/* ── Locked chapter marker pulse ─────────────────────────────────────────── */
+.locked-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.locked-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #555;
+  border: 1.5px solid #444;
+}
+
+.pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(74, 222, 128, 0.9);
+  animation: markerPulse 2s ease-out infinite;
+}
+
+@keyframes markerPulse {
+  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
+  70%  { transform: translate(-50%, -50%) scale(2.8); opacity: 0.15; }
+  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
+}
+
 /* ── MAP BOOT SEQUENCE ────────────────────────────────────────────────────── */
 
 .map-boot-overlay {
