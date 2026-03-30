@@ -472,6 +472,24 @@ body.entry-active {
   width: 100%;
   height: 100%;
   z-index: 1;
+  overflow: hidden;
+}
+
+/* Pulsing rings on locked chapter markers (positioned by JS) */
+@keyframes cobeRingPulse {
+  0%   { width: 12px; height: 12px; opacity: 0.9; }
+  70%  { width: 36px; height: 36px; opacity: 0.15; }
+  100% { width: 36px; height: 36px; opacity: 0; }
+}
+
+.cobe-ring {
+  position: absolute;
+  border: 2px solid rgba(74, 222, 128, 0.85);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2;
+  animation: cobeRingPulse 2s ease-out infinite;
 }
 
 /* Wave wash-away — triggered once when map scrolls past the top of viewport */
@@ -617,42 +635,6 @@ body.entry-active {
   animation: fadeInUp 0.8s ease 0.85s both;
 }
 
-/* ── Locked chapter marker pulse ─────────────────────────────────────────── */
-.locked-marker {
-  position: relative;
-  width: 24px;
-  height: 24px;
-}
-
-.locked-dot {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #555;
-  border: 1.5px solid #444;
-}
-
-.pulse-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(1);
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid rgba(74, 222, 128, 0.9);
-  animation: markerPulse 2s ease-out infinite;
-}
-
-@keyframes markerPulse {
-  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
-  70%  { transform: translate(-50%, -50%) scale(2.8); opacity: 0.15; }
-  100% { transform: translate(-50%, -50%) scale(2.8); opacity: 0; }
-}
 
 /* ── MAP BOOT SEQUENCE ────────────────────────────────────────────────────── */
 

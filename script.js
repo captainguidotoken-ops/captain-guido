@@ -88,10 +88,10 @@
     }, 30);
   }
 
-  // Map Setup — 3D Globe (globe.gl)
+  // Map Setup — 3D Globe (cobe WebGL)
   function initializeMap() {
-    if (typeof Globe === 'undefined') {
-      originalError('Globe.gl not loaded');
+    if (typeof createGlobe === 'undefined') {
+      originalError('cobe not loaded');
       return;
     }
 
@@ -113,7 +113,24 @@
       { name: 'Return to Ostia',  lat: 41.73,         lng: 12.29,         unlocked: false, num: 12 }
     ];
 
-    // Popup element
+    // ── Rotation state ───────────────────────────────────────────────────────
+    var phi        = 0.3;     // horizontal rotation (auto-increments)
+    var theta      = 0.15;    // vertical tilt
+    var dragging   = false;
+    var autoRotate = true;
+    var lastX = 0, lastY = 0;
+    var activeArcs = [];
+    var arcTimer   = null;
+
+    // ── Canvas ───────────────────────────────────────────────────────────────
+    var canvas = document.createElement('canvas');
+    canvas.style.cssText = 'display:block;width:100%;height:100%;cursor:grab;touch-action:none;opacity:0;transition:opacity 1.2s ease;';
+    mapEl.appendChild(canvas);
+
+    var w = mapEl.offsetWidth;
+    var h = mapEl.offsetHeight;
+
+    // ── Popup ────────────────────────────────────────────────────────────────
     var popup = document.createElement('div');
     popup.id = 'globe-popup';
     popup.style.cssText = [
@@ -129,8 +146,7 @@
       'color:#e8d4b8',
       'min-width:200px',
       'box-shadow:0 0 24px rgba(0,212,255,0.25)',
-      'transform:translate(-50%,-110%)',
-      'transition:opacity 0.2s'
+      'transform:translate(-50%,-110%)'
     ].join(';');
     document.body.appendChild(popup);
 
@@ -143,103 +159,165 @@
         '<strong style="color:#f4a836;font-size:0.8rem;letter-spacing:2px;display:block;margin-bottom:0.4rem;">CHAPTER ' + String(chapter.num).padStart(2,'0') + '</strong>' +
         '<span style="font-size:1.1rem;font-weight:bold;display:block;margin-bottom:0.6rem;">' + chapter.name + '</span>' +
         '<span style="font-size:0.75rem;color:' + statusColor + ';font-weight:700;letter-spacing:1px;padding:0.3rem 0.7rem;border-radius:10px;background:' + statusBg + ';border:1px solid ' + statusBdr + ';display:inline-block;">' + statusText + '</span>';
-      popup.style.left = x + 'px';
-      popup.style.top  = y + 'px';
+      popup.style.left  = x + 'px';
+      popup.style.top   = y + 'px';
       popup.style.display = 'block';
-      popup.style.opacity = '1';
     }
 
-    function hidePopup() {
-      popup.style.display = 'none';
-    }
+    function hidePopup() { popup.style.display = 'none'; }
 
-    // Close popup on click outside globe
     document.addEventListener('click', function(e) {
-      if (e.target.closest('#map') === null) hidePopup();
+      if (!e.target.closest('#map')) hidePopup();
     });
 
-    var globe = Globe()
-      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-      .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-      .backgroundColor('rgba(0,0,0,0)')
-      .showAtmosphere(true)
-      .atmosphereColor('#0088cc')
-      .atmosphereAltitude(0.18)
-      // Chapter dots
-      .pointsData(chapters)
-      .pointLat('lat')
-      .pointLng('lng')
-      .pointColor(function(d) { return d.unlocked ? '#f4a836' : '#4ade80'; })
-      .pointRadius(function(d) { return d.unlocked ? 0.65 : 0.45; })
-      .pointAltitude(0.015)
-      .pointResolution(12)
-      // Pulsing rings on locked chapters
-      .ringsData(chapters.filter(function(c) { return !c.unlocked; }))
-      .ringLat('lat')
-      .ringLng('lng')
-      .ringColor(function() { return function(t) { return 'rgba(74,222,128,' + Math.max(0, 0.9 - t * 0.9) + ')'; }; })
-      .ringMaxRadius(3.5)
-      .ringPropagationSpeed(1.5)
-      .ringRepeatPeriod(2000)
-      // Arcs (empty until a dot is clicked)
-      .arcsData([])
-      .arcStartLat('startLat')
-      .arcStartLng('startLng')
-      .arcEndLat('endLat')
-      .arcEndLng('endLng')
-      .arcColor(function() { return ['rgba(74,222,128,0.9)', 'rgba(74,222,128,0.0)']; })
-      .arcStroke(0.6)
-      .arcDashLength(0.5)
-      .arcDashGap(0.3)
-      .arcDashAnimateTime(800)
-      (mapEl);
+    // ── Project lat/lng → screen coords given current rotation ───────────────
+    function latLngToScreen(lat, lng) {
+      var latR = lat * Math.PI / 180;
+      var lngR = lng * Math.PI / 180;
 
-    // Initial camera position
-    globe.pointOfView({ lat: 20, lng: 10, altitude: 2.2 });
+      var x0 =  Math.cos(latR) * Math.cos(lngR);
+      var y0 =  Math.sin(latR);
+      var z0 =  Math.cos(latR) * Math.sin(lngR);
 
-    // Enable user interaction
-    var controls = globe.controls();
-    controls.autoRotate = false;
-    controls.enableZoom = true;
-    controls.zoomSpeed = 0.8;
-    controls.rotateSpeed = 0.5;
+      // Rotate around Y by phi
+      var cp = Math.cos(phi), sp = Math.sin(phi);
+      var x1 =  x0 * cp + z0 * sp;
+      var z1 = -x0 * sp + z0 * cp;
 
-    // Slow auto-rotate until the user touches the globe
-    var autoRotating = true;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.4;
+      // Rotate around X by theta
+      var ct = Math.cos(theta), st = Math.sin(theta);
+      var y2 =  y0 * ct - z1 * st;
+      var z2 =  y0 * st + z1 * ct;
 
-    mapEl.addEventListener('pointerdown', function() {
-      if (autoRotating) {
-        controls.autoRotate = false;
-        autoRotating = false;
+      if (z2 < 0) return null; // behind the globe
+
+      var cw = canvas.clientWidth  || w;
+      var ch = canvas.clientHeight || h;
+      var r  = Math.min(cw, ch) * 0.5;
+      return { x: cw * 0.5 + x1 * r, y: ch * 0.5 - y2 * r };
+    }
+
+    // ── Pulsing CSS rings on locked chapter markers ──────────────────────────
+    var ringEls = chapters
+      .filter(function(c) { return !c.unlocked; })
+      .map(function(c) {
+        var el = document.createElement('div');
+        el.className = 'cobe-ring';
+        mapEl.appendChild(el);
+        return { el: el, lat: c.lat, lng: c.lng };
+      });
+
+    var rafId;
+    function updateRings() {
+      for (var i = 0; i < ringEls.length; i++) {
+        var r = ringEls[i];
+        var s = latLngToScreen(r.lat, r.lng);
+        if (s) {
+          r.el.style.display = 'block';
+          r.el.style.left = s.x + 'px';
+          r.el.style.top  = s.y + 'px';
+        } else {
+          r.el.style.display = 'none';
+        }
+      }
+      rafId = requestAnimationFrame(updateRings);
+    }
+    updateRings();
+
+    // ── Create cobe globe ────────────────────────────────────────────────────
+    var globe = createGlobe(canvas, {
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      width:  w,
+      height: h,
+      phi:    phi,
+      theta:  theta,
+      dark:   1,
+      diffuse: 1.4,
+      mapSamples:    16000,
+      mapBrightness: 6,
+      baseColor:   [0.05, 0.12, 0.25],  // deep ocean navy
+      markerColor: [0.0,  0.83,  1.0],  // bright aqua #00d4ff
+      glowColor:   [0.0,  0.4,   0.7],  // ocean blue glow
+      markers: chapters.map(function(c) {
+        return { location: [c.lat, c.lng], size: c.unlocked ? 0.1 : 0.045 };
+      }),
+      arcs: [],
+      arcColor: [0.27, 0.87, 0.5],
+      arcWidth: 0.5,
+      arcHeight: 0.3,
+      opacity: 0.85,
+      onRender: function(state) {
+        if (autoRotate && !dragging) phi += 0.003;
+        state.phi   = phi;
+        state.theta = theta;
+        state.arcs  = activeArcs;
       }
     });
 
-    // Click a chapter dot → show arc to adjacent chapters + popup
-    var arcTimer = null;
-    globe.onPointClick(function(point, event) {
-      // Cancel any running arc timer
-      if (arcTimer) clearTimeout(arcTimer);
+    // Fade canvas in once globe is ready
+    setTimeout(function() { canvas.style.opacity = '1'; }, 100);
 
-      var idx = chapters.findIndex(function(c) { return c.num === point.num; });
-      var arcs = [];
-      if (idx > 0) {
-        arcs.push({ startLat: point.lat, startLng: point.lng, endLat: chapters[idx - 1].lat, endLng: chapters[idx - 1].lng });
-      }
-      if (idx < chapters.length - 1) {
-        arcs.push({ startLat: point.lat, startLng: point.lng, endLat: chapters[idx + 1].lat, endLng: chapters[idx + 1].lng });
-      }
-      globe.arcsData(arcs);
-      arcTimer = setTimeout(function() { globe.arcsData([]); }, 1200);
-
-      // Show popup at click position
-      showPopup(point, event.clientX, event.clientY);
+    // ── Drag to rotate ───────────────────────────────────────────────────────
+    canvas.addEventListener('pointerdown', function(e) {
+      dragging   = true;
+      autoRotate = false;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
     });
 
-    // Resize globe with window
+    window.addEventListener('pointermove', function(e) {
+      if (!dragging) return;
+      phi   += (e.clientX - lastX) * 0.005;
+      theta -= (e.clientY - lastY) * 0.005;
+      theta  = Math.max(-1.2, Math.min(1.2, theta));
+      lastX  = e.clientX;
+      lastY  = e.clientY;
+    }, { passive: true });
+
+    window.addEventListener('pointerup', function() {
+      dragging = false;
+      canvas.style.cursor = 'grab';
+    });
+
+    // ── Click → arc + popup ──────────────────────────────────────────────────
+    canvas.addEventListener('click', function(e) {
+      var rect = canvas.getBoundingClientRect();
+      var cx = e.clientX - rect.left;
+      var cy = e.clientY - rect.top;
+
+      var best = -1, bestDist = Infinity;
+      chapters.forEach(function(c, i) {
+        var s = latLngToScreen(c.lat, c.lng);
+        if (!s) return;
+        var d = Math.sqrt((cx - s.x) * (cx - s.x) + (cy - s.y) * (cy - s.y));
+        if (d < bestDist) { bestDist = d; best = i; }
+      });
+
+      if (best >= 0 && bestDist < 44) {
+        var ch = chapters[best];
+        if (arcTimer) clearTimeout(arcTimer);
+
+        var arcs = [];
+        if (best > 0)
+          arcs.push({ startLat: ch.lat, startLng: ch.lng, endLat: chapters[best - 1].lat, endLng: chapters[best - 1].lng });
+        if (best < chapters.length - 1)
+          arcs.push({ startLat: ch.lat, startLng: ch.lng, endLat: chapters[best + 1].lat, endLng: chapters[best + 1].lng });
+        activeArcs = arcs;
+        arcTimer = setTimeout(function() { activeArcs = []; }, 1200);
+
+        showPopup(ch, e.clientX, e.clientY);
+      } else {
+        hidePopup();
+      }
+    });
+
+    // ── Resize ───────────────────────────────────────────────────────────────
     window.addEventListener('resize', function() {
-      globe.width(mapEl.offsetWidth).height(mapEl.offsetHeight);
+      w = mapEl.offsetWidth;
+      h = mapEl.offsetHeight;
+      globe.destroy();
     });
   }
 
