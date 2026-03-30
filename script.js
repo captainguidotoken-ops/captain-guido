@@ -385,6 +385,8 @@
           setTimeout(function() {
             var heroContent = document.querySelector('.hero-content');
             if (heroContent) heroContent.classList.add('hero-revealed');
+            var heroStats = document.querySelector('.hero-stats');
+            if (heroStats) heroStats.classList.add('stats-revealed');
           }, 1050);
         }, 1000);
         return;
