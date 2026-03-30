@@ -99,7 +99,7 @@
     if (!mapEl) return;
 
     var chapters = [
-      { name: 'Port of Ostia',    lat: 41.73,        lng: 12.29,         unlocked: true,  num: 1  },
+      { name: 'Port of Ostia',    lat: 41.73,        lng: 12.29,         unlocked: false, num: 1  },
       { name: 'Signals in Cairo', lat: 30.0444,       lng: 31.2357,       unlocked: false, num: 2  },
       { name: 'Arabian Tides',    lat: 20,            lng: 60,            unlocked: false, num: 3  },
       { name: 'Indian Abyss',     lat: -10,           lng: 80,            unlocked: false, num: 4  },
@@ -199,8 +199,7 @@
     var controls = globe.controls();
     controls.autoRotate      = true;
     controls.autoRotateSpeed = 0.35;
-    controls.enableZoom      = true;
-    controls.zoomSpeed       = 0.6;
+    controls.enableZoom      = false;
     controls.rotateSpeed     = 0.6;
 
     mapEl.addEventListener('pointerdown', function() {
