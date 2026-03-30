@@ -516,13 +516,30 @@ body.entry-active {
 
 .hero-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   pointer-events: none;
-  max-width: 90%;
+}
+
+/* Stats bar pinned to bottom of map */
+.hero-stats {
+  position: absolute !important;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
 }
 
 /* Hero content — hidden until boot sequence completes.
