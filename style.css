@@ -1004,10 +1004,10 @@ body.entry-active {
   border-radius: 20px;
   border: 3px solid var(--gold-accent);
   transition: transform 0.4s ease;
-  /* Crop bottom ~18% to hide the "CAPTAIN GUIDO" text baked into the PNG */
+  /* Crop bottom ~30% to hide the CAPTAIN GUIDO text banner in the PNG */
   object-fit: cover;
   object-position: top center;
-  aspect-ratio: 1 / 0.82;
+  aspect-ratio: 1 / 0.70;
 }
 
 .image-wrapper:hover .feature-image {
