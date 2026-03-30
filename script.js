@@ -96,18 +96,18 @@
     }
 
     const map = L.map("map", {
-      worldCopyJump: false,
-      zoomControl: false,
+      worldCopyJump: true,
+      zoomControl: true,
       attributionControl: false,
-      dragging: false,
+      dragging: true,
       scrollWheelZoom: false,
-      doubleClickZoom: false,
-      touchZoom: false,
+      doubleClickZoom: true,
+      touchZoom: true,
       boxZoom: false,
-      keyboard: false,
-      tap: false,
-      zoomSnap: 0,
-      zoomDelta: 0,
+      keyboard: true,
+      tap: true,
+      zoomSnap: 0.5,
+      zoomDelta: 0.5,
       trackResize: true
     }).setView([20, 0], 2.5);
 
