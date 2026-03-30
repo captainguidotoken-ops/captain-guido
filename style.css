@@ -555,7 +555,7 @@ body.entry-active {
 }
 
 .hero-content.hero-revealed .hero-title {
-  animation: slideInLeft 0.9s ease 0.2s both, heroGlow 3s ease-in-out 1.2s infinite;
+  animation: slideInLeft 0.9s ease 0.2s both, heroGlow 3s ease-in-out 1.2s 1;
 }
 
 @keyframes heroGlow {
