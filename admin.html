@@ -399,25 +399,19 @@
         })
       });
 
-      // ── Maintenance page toggle ─────────────────────────────
-      if (maintenance) {
-        // Fetch maintenance.html and put it as the live page
-        const mRes  = await fetch(base+'maintenance.html', { headers: H });
-        const mData = await mRes.json();
 
-        // Swap: back up index, serve maintenance
-        const liveRes  = await fetch(base+'index.html', { headers: H });
-        const liveData = await liveRes.json();
-
-        await fetch(base+'index.html', {
-          method:'PUT', headers:H,
-          body: JSON.stringify({
-            message:'admin: enable maintenance mode',
-            content: mData.content.replace(/\n/g,''),
-            sha: liveData.sha
-          })
-        });
-      }
+      // ── config.json maintenance flag ──────────────────────
+      const cRes  = await fetch(base+'config.json', { headers: H });
+      const cData = await cRes.json();
+      const cContent = JSON.stringify({ maintenance });
+      await fetch(base+'config.json', {
+        method:'PUT', headers:H,
+        body: JSON.stringify({
+          message:`admin: maintenance mode ${maintenance?'on':'off'}`,
+          content: btoa(cContent),
+          sha: cData.sha
+        })
+      });
 
       toast('Changes published live ✓');
 
