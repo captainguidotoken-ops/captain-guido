@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGC Admin Panel</title>
+
+  <style>
+    :root {
+      --gold: #f4a836;
+      --navy: #01080f;
+      --dark: #060f1a;
+      --card: rgba(255,255,255,0.04);
+      --border: rgba(244,168,54,0.25);
+      --teal: #4ec4c4;
+      --text: #eef6ff;
+      --muted: rgba(238,246,255,0.45);
+      --red: #ff5f5f;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--navy);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+    }
+
+    /* ── Login Screen ─────────────────────────────────────── */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 1.5rem;
+      padding: 2rem;
+      background: radial-gradient(ellipse at center, #0a1f35 0%, var(--navy) 70%);
+    }
+
+    .login-logo {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid var(--gold);
+      box-shadow: 0 0 40px rgba(244,168,54,0.3);
+    }
+
+    .login-title {
+      color: var(--gold);
+      font-size: 1.3rem;
+      letter-spacing: 4px;
+    }
+
+    .login-sub {
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      margin-top: -0.8rem;
+    }
+
+    .login-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .login-box label {
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+    }
+
+    .pw-row {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .pw-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+
+    .pw-row input:focus { outline: none; border-color: var(--gold); }
+
+    .login-btn {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.4rem;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .login-btn:hover { opacity: 0.85; }
+
+    #login-error {
+      display: none;
+      color: var(--red);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      padding: 0.7rem 1rem;
+      border: 1px solid rgba(255,95,95,0.3);
+      border-radius: 8px;
+      background: rgba(255,95,95,0.08);
+      text-align: center;
+    }
+
+    /* ── Admin Panel ──────────────────────────────────────── */
+    #admin-panel { display: none; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.4);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .header-left img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+    }
+
+    .header-title {
+      color: var(--gold);
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid rgba(255,95,95,0.4);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 0.4rem 0.9rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover { background: rgba(255,95,95,0.1); }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .section-label {
+      color: var(--gold);
+      font-size: 0.65rem;
+      letter-spacing: 4px;
+      margin-bottom: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.8rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-field label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-field input {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.6rem 0.9rem;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .stat-field input:focus { outline: none; border-color: var(--gold); }
+
+    .chapters-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .chapter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+      transition: border-color 0.2s;
+    }
+
+    .chapter-row:hover { border-color: var(--border); }
+    .chapter-info { display: flex; flex-direction: column; gap: 2px; }
+    .chapter-name { font-size: 0.85rem; }
+    .chapter-loc { color: var(--muted); font-size: 0.7rem; }
+
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.3s;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+
+    .toggle input:checked + .toggle-slider { background: var(--teal); border-color: var(--teal); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+    .chapter-status {
+      font-size: 0.68rem;
+      letter-spacing: 1px;
+      width: 70px;
+      text-align: right;
+    }
+
+    .status-unlocked { color: var(--teal); }
+    .status-locked { color: var(--muted); }
+
+    .save-btn {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 10px;
+      padding: 0.9rem 2.5rem;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .save-btn:hover { opacity: 0.88; }
+    .save-btn:active { transform: scale(0.98); }
+    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #config-warning {
+      background: rgba(244,168,54,0.06);
+      border: 1px solid rgba(244,168,54,0.4);
+      border-radius: 14px;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    #config-warning strong { color: var(--gold); }
+
+    code {
+      background: rgba(255,255,255,0.07);
+      border-radius: 4px;
+      padding: 1px 6px;
+      color: var(--teal);
+    }
+
+    .token-row {
+      display: flex;
+      gap: 0.8rem;
+      margin-top: 1rem;
+    }
+
+    .token-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.6rem 0.9rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+    }
+
+    .token-row input:focus { outline: none; border-color: var(--gold); }
+
+    .token-save-btn {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.2rem;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--teal);
+      color: var(--navy);
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 2px;
+      padding: 1rem 1.8rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { background: var(--red); color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <img src="captain-character.png" alt="Captain Guido" class="login-logo">
+  <div class="login-title">CGC ADMIN PANEL</div>
+  <div class="login-sub">CAPTAIN GUIDO COIN — SITE MANAGEMENT</div>
+
+  <div class="login-box">
+    <label>PASSWORD</label>
+    <div class="pw-row">
+      <input type="password" id="pw-input" placeholder="Enter password" autofocus>
+      <button class="login-btn" onclick="checkPassword()">ENTER</button>
+    </div>
+    <div id="login-error">Incorrect password.</div>
+  </div>
+</div>
+
+<!-- ── ADMIN PANEL ────────────────────────────────────────────────────────── -->
+<div id="admin-panel">
+
+  <header>
+    <div class="header-left">
+      <img src="captain-character.png" alt="CGC">
+      <span class="header-title">CGC ADMIN</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">SIGN OUT</button>
+  </header>
+
+  <main>
+
+    <!-- GitHub Token (one-time) -->
+    <div id="config-warning">
+      <strong>One-time setup:</strong> Enter your GitHub token to publish changes live.<br>
+      Get one at <strong>github.com → Settings → Developer settings → Personal access tokens → Fine-grained</strong><br>
+      Give it <code>Contents: Read &amp; Write</code> on the <code>captain-guido-map</code> repo.
+      <div class="token-row">
+        <input type="password" id="gh-token-input" placeholder="github_pat_...">
+        <button class="token-save-btn" onclick="saveToken()">SAVE TOKEN</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <div class="section-label">Hero Stats</div>
+      <div class="stats-grid">
+        <div class="stat-field">
+          <label>CHAPTERS</label>
+          <input type="number" id="stat-chapters" value="12">
+        </div>
+        <div class="stat-field">
+          <label>LBS REMOVED</label>
+          <input type="number" id="stat-lbs" value="8500">
+        </div>
+        <div class="stat-field">
+          <label>MILES CLEANED</label>
+          <input type="number" id="stat-miles" value="62">
+        </div>
+      </div>
+    </div>
+
+    <!-- Chapters -->
+    <div class="card">
+      <div class="section-label">Chapters — Toggle to unlock</div>
+      <div class="chapters-list" id="chapters-list"></div>
+    </div>
+
+    <!-- Save -->
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="save-btn" id="save-btn" onclick="saveChanges()">
+        <span id="save-label">PUBLISH CHANGES</span>
+        <span>→</span>
+      </button>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Password (SHA-256 hash — never stored in plain text) ──────────────────
+  const PW_HASH = '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1';
+
+  async function hash(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  async function checkPassword() {
+    const val = document.getElementById('pw-input').value;
+    const h   = await hash(val);
+    if (h === PW_HASH) {
+      sessionStorage.setItem('cgc_auth', '1');
+      showAdmin();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+
+  // Allow Enter key on password field
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkPassword();
+  });
+
+  // ── Chapter data ──────────────────────────────────────────────────────────
+  const CHAPTERS = [
+    { num: '01', name: 'Port of Ostia',          loc: 'Mediterranean Sea, Italy', unlocked: true  },
+    { num: '02', name: 'Signals in Cairo',        loc: 'Red Sea, Egypt',           unlocked: false },
+    { num: '03', name: 'Arabian Tides',           loc: 'Arabian Sea',              unlocked: false },
+    { num: '04', name: 'The Indian Abyss',        loc: 'Indian Ocean',             unlocked: false },
+    { num: '05', name: 'Philippine Sea Shadows',  loc: 'Philippine Sea',           unlocked: false },
+    { num: '06', name: 'South Pacific Reckoning', loc: 'South Pacific Ocean',      unlocked: false },
+    { num: '07', name: 'North Pacific Requiem',   loc: 'North Pacific Ocean',      unlocked: false },
+    { num: '08', name: 'Bering Sea Crossfire',    loc: 'Bering Sea',               unlocked: false },
+    { num: '09', name: 'Gyres of the Graveyard',  loc: 'North Atlantic Ocean',     unlocked: false },
+    { num: '10', name: 'Gulf of America',         loc: 'Gulf of Mexico',           unlocked: false },
+    { num: '11', name: 'Southern Cross',          loc: 'South Atlantic Ocean',     unlocked: false },
+    { num: '12', name: 'Return to Ostia',         loc: 'Mediterranean Sea, Italy', unlocked: false }
+  ];
+
+  const REPO_OWNER = 'captainguidotoken-ops';
+  const REPO_NAME  = 'captain-guido';
+
+  // ── Show admin ────────────────────────────────────────────────────────────
+  function showAdmin() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display  = 'block';
+    renderChapters();
+    if (localStorage.getItem('cgc_gh_token')) {
+      document.getElementById('config-warning').style.display = 'none';
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('cgc_auth');
+    location.reload();
+  }
+
+  // ── GitHub token ──────────────────────────────────────────────────────────
+  function saveToken() {
+    const val = document.getElementById('gh-token-input').value.trim();
+    if (!val) return;
+    localStorage.setItem('cgc_gh_token', val);
+    document.getElementById('config-warning').style.display = 'none';
+    toast('Token saved');
+  }
+
+  // ── Chapters ──────────────────────────────────────────────────────────────
+  function renderChapters() {
+    const list = document.getElementById('chapters-list');
+    list.innerHTML = '';
+    CHAPTERS.forEach((ch, i) => {
+      const row = document.createElement('div');
+      row.className = 'chapter-row';
+      row.innerHTML = `
+        <div class="chapter-info">
+          <span class="chapter-name">CH.${ch.num} — ${ch.name}</span>
+          <span class="chapter-loc">${ch.loc}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <span class="chapter-status ${ch.unlocked ? 'status-unlocked' : 'status-locked'}" id="lbl-${i}">
+            ${ch.unlocked ? 'UNLOCKED' : 'LOCKED'}
+          </span>
+          <label class="toggle">
+            <input type="checkbox" ${ch.unlocked ? 'checked' : ''} onchange="updateChapter(${i}, this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>`;
+      list.appendChild(row);
+    });
+  }
+
+  function updateChapter(i, unlocked) {
+    CHAPTERS[i].unlocked = unlocked;
+    const lbl = document.getElementById(`lbl-${i}`);
+    lbl.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
+    lbl.className = `chapter-status ${unlocked ? 'status-unlocked' : 'status-locked'}`;
+  }
+
+  // ── Publish ───────────────────────────────────────────────────────────────
+  async function saveChanges() {
+    const token = localStorage.getItem('cgc_gh_token');
+    if (!token) {
+      document.getElementById('config-warning').style.display = 'block';
+      toast('Enter your GitHub token first', true);
+      return;
+    }
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    document.getElementById('save-label').textContent = 'PUBLISHING...';
+
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    };
+
+    try {
+      // Fetch + patch script.js
+      const sRes  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/script.js`, { headers });
+      const sData = await sRes.json();
+      let script  = atob(sData.content.replace(/\n/g,''));
+
+      CHAPTERS.forEach(ch => {
+        const re = new RegExp(
+          `(\\{[^}]*name:\\s*"${ch.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}"[^}]*unlocked:\\s*)(true|false)`, 'g'
+        );
+        script = script.replace(re, `$1${ch.unlocked}`);
+      });
+
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/script.js`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({
+          message: 'admin: update chapter statuses',
+          content: btoa(unescape(encodeURIComponent(script))),
+          sha: sData.sha
+        })
+      });
+
+      // Fetch + patch index.html stats
+      const iRes  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/index.html`, { headers });
+      const iData = await iRes.json();
+      let html    = atob(iData.content.replace(/\n/g,''));
+      const ch    = document.getElementById('stat-chapters').value;
+      const lbs   = document.getElementById('stat-lbs').value;
+      const miles = document.getElementById('stat-miles').value;
+
+      html = html
+        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">CHAPTERS)/, `$1${ch}$2${ch}$3`)
+        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">LBS REMOVED)/, `$1${lbs}$2${lbs}$3`)
+        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">MILES CLEANED)/, `$1${miles}$2${miles}$3`);
+
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/index.html`, {
+        method: 'PUT', headers,
+        body: JSON.stringify({
+          message: 'admin: update hero stats',
+          content: btoa(unescape(encodeURIComponent(html))),
+          sha: iData.sha
+        })
+      });
+
+      toast('Changes published live');
+
+    } catch (err) {
+      console.error(err);
+      toast('Something went wrong — check token', true);
+    }
+
+    btn.disabled = false;
+    document.getElementById('save-label').textContent = 'PUBLISH CHANGES';
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function toast(msg, error = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show' + (error ? ' error' : '');
+    setTimeout(() => el.className = '', 3000);
+  }
+
+  // ── Auto-login if session active ──────────────────────────────────────────
+  if (sessionStorage.getItem('cgc_auth') === '1') showAdmin();
+</script>
+
+</body>
+</html>
