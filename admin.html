@@ -366,8 +366,14 @@
       const tg = document.getElementById('link-telegram').value.trim();
       html = html.replace(/href="https?:\/\/twitter\.com\/[^"]*"/g, `href="${tw}"`);
 
-      // Maintenance: swap index.html with maintenance.html or restore
+      // Maintenance: write/remove redirect directly in index.html
       const maintenance = document.getElementById('maintenance-toggle').checked;
+      const MAINT_TAG = '<!-- MAINTENANCE:ON -->';
+      if (maintenance && !html.includes(MAINT_TAG)) {
+        html = html.replace('<!DOCTYPE html>', `<!DOCTYPE html>\n${MAINT_TAG}\n<script>location.replace('maintenance.html')<\/script>`);
+      } else if (!maintenance) {
+        html = html.replace(/<!DOCTYPE html>\n<!-- MAINTENANCE:ON -->\n<script>location\.replace\('maintenance\.html'\)<\/script>\n/, '<!DOCTYPE html>\n');
+      }
 
       await fetch(base+'index.html', {
         method:'PUT', headers:H,
@@ -400,18 +406,7 @@
       });
 
 
-      // ── config.json maintenance flag ──────────────────────
-      const cRes  = await fetch(base+'config.json', { headers: H });
-      const cData = await cRes.json();
-      const cContent = JSON.stringify({ maintenance });
-      await fetch(base+'config.json', {
-        method:'PUT', headers:H,
-        body: JSON.stringify({
-          message:`admin: maintenance mode ${maintenance?'on':'off'}`,
-          content: btoa(cContent),
-          sha: cData.sha
-        })
-      });
+
 
       toast('Changes published live ✓');
 
