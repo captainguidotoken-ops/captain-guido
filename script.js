@@ -604,6 +604,209 @@
     setInterval(updateCountdown, 1000);
   });
 
+  // ─── SCROLL REVEAL ────────────────────────────────────────────────────────
+  function initScrollReveal() {
+    if (!window.IntersectionObserver) return;
+
+    // Generic reveal elements
+    var revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-stagger');
+    var revealObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    revealEls.forEach(function(el) { revealObserver.observe(el); });
+
+    // Section-level in-view class (for section-lines, etc.)
+    var sections = document.querySelectorAll('.content-section');
+    var sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          sectionObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+
+    sections.forEach(function(s) { sectionObserver.observe(s); });
+
+    // Tokenomics dist bars — animate when modal opens
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('#openTokenomics') || e.target.closest('#footerTokenomics')) {
+        setTimeout(function() {
+          document.querySelectorAll('.dist-bar').forEach(function(bar) {
+            bar.classList.add('visible');
+          });
+        }, 300);
+      }
+    });
+
+    // Milestone items stagger
+    var milestoneObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          var items = entry.target.querySelectorAll('.milestone-item');
+          items.forEach(function(item, i) {
+            setTimeout(function() { item.classList.add('visible'); }, i * 120);
+          });
+          milestoneObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    var milestoneList = document.querySelector('.milestone-list');
+    if (milestoneList) milestoneObserver.observe(milestoneList);
+
+    // Section headers
+    document.querySelectorAll('.section-header').forEach(function(el) {
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.2 });
+      obs.observe(el);
+    });
+  }
+
+  // ─── COUNTDOWN FLIP ANIMATION ─────────────────────────────────────────────
+  var prevCountdownVals = {};
+
+  function triggerFlip(elId, newVal) {
+    var el = document.getElementById(elId);
+    if (!el) return;
+    if (prevCountdownVals[elId] !== newVal) {
+      prevCountdownVals[elId] = newVal;
+      el.classList.remove('flip');
+      // Force reflow so the animation restarts
+      void el.offsetWidth;
+      el.classList.add('flip');
+    }
+  }
+
+  // ─── BIOLUMINESCENT PARTICLES ─────────────────────────────────────────────
+  function createOceanParticles() {
+    var container = document.getElementById('oceanParticles');
+    if (!container) return;
+
+    var colors = [
+      'rgba(0, 212, 255, VAL)',
+      'rgba(0, 255, 224, VAL)',
+      'rgba(78, 196, 196, VAL)',
+      'rgba(0, 180, 255, VAL)'
+    ];
+
+    for (var i = 0; i < 60; i++) {
+      var particle = document.createElement('div');
+      var size = Math.random() * 5 + 2;
+      var colorTemplate = colors[Math.floor(Math.random() * colors.length)];
+      var opacity = (Math.random() * 0.5 + 0.3).toFixed(2);
+      var color = colorTemplate.replace('VAL', opacity);
+      var driftX = (Math.random() * 60 - 30).toFixed(0) + 'px';
+      var dur = (Math.random() * 10 + 6).toFixed(1) + 's';
+      var delay = (Math.random() * 8).toFixed(1) + 's';
+
+      particle.className = 'biolum-particle';
+      particle.style.cssText = [
+        'width:' + size + 'px',
+        'height:' + size + 'px',
+        'background:' + color,
+        'color:' + color,
+        'left:' + (Math.random() * 100).toFixed(1) + '%',
+        'top:' + (Math.random() * 100).toFixed(1) + '%',
+        '--drift-x:' + driftX,
+        '--dur:' + dur,
+        '--delay:' + delay
+      ].join(';');
+
+      container.appendChild(particle);
+    }
+  }
+
+  // ─── ANIMATED COUNTER ─────────────────────────────────────────────────────
+  function animateCounter(el, target, duration) {
+    var start = 0;
+    var startTime = null;
+    var isFloat = String(target).includes('.');
+    var decimals = isFloat ? String(target).split('.')[1].length : 0;
+
+    function step(timestamp) {
+      if (!startTime) startTime = timestamp;
+      var progress = Math.min((timestamp - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = start + (target - start) * eased;
+
+      el.textContent = isFloat ? current.toFixed(decimals) : Math.floor(current).toLocaleString();
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = isFloat ? target.toFixed(decimals) : target.toLocaleString();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function initCounterAnimations() {
+    var targets = document.querySelectorAll('.target-value, .stat-value, .live-stat-value');
+    if (!window.IntersectionObserver) return;
+
+    targets.forEach(function(el) {
+      var raw = el.textContent.replace(/[^0-9.]/g, '');
+      var num = parseFloat(raw);
+      if (!raw || isNaN(num)) return;
+
+      var observed = false;
+      var obs = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting && !observed) {
+            observed = true;
+            el.classList.add('counting');
+            animateCounter(el, num, 1600);
+            obs.unobserve(el);
+          }
+        });
+      }, { threshold: 0.5 });
+
+      obs.observe(el);
+    });
+  }
+
+  // ─── PATCH: wrap existing updateCountdown to add flip ─────────────────────
+  // Store originals so the patch applies after DOMContentLoaded
+  var _patchCountdownFlip = function() {
+    var dEl = document.getElementById('cdDays');
+    var hEl = document.getElementById('cdHours');
+    var mEl = document.getElementById('cdMins');
+    var sEl = document.getElementById('cdSecs');
+    if (!dEl) return;
+
+    // Override setInterval tick by watching MutationObserver on each digit
+    [['cdDays', dEl], ['cdHours', hEl], ['cdMins', mEl], ['cdSecs', sEl]].forEach(function(pair) {
+      var id = pair[0], node = pair[1];
+      if (!node) return;
+      var mo = new MutationObserver(function() {
+        node.classList.remove('flip');
+        void node.offsetWidth;
+        node.classList.add('flip');
+      });
+      mo.observe(node, { childList: true, characterData: true, subtree: true });
+    });
+  };
+
+  // Initialize everything
+  document.addEventListener('DOMContentLoaded', function() {
+    initScrollReveal();
+    initCounterAnimations();
+    _patchCountdownFlip();
+  });
+
 })();
 
 console.log('Captain Guido Coin - Website Loaded');
