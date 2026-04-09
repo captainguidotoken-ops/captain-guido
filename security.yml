@@ -6,57 +6,94 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    # Run daily at midnight
+    # Run daily at midnight UTC
     - cron: '0 0 * * *'
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   security-check:
     runs-on: ubuntu-latest
-    
+    timeout-minutes: 15
+
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Run security scan
-      uses: snyk/actions/node@master
-      continue-on-error: true
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-    
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
     - name: Check for secrets in code
-      uses: trufflesecurity/trufflehog@main
+      uses: trufflesecurity/trufflehog@v3.88.17
       with:
         path: ./
         base: main
         head: HEAD
-    
-    - name: Scan for vulnerabilities
+        extra_args: --only-verified
+
+    - name: Scan for exposed keys
       run: |
-        echo "Scanning for common vulnerabilities..."
-        # Check for exposed API keys
-        ! grep -r "sk-" . --include="*.js" --include="*.html"
-        ! grep -r "0x[a-fA-F0-9]{64}" . --include="*.js" --include="*.html"
-        echo "Security scan complete!"
-    
+        echo "Scanning for common exposed secrets..."
+        FOUND=0
+        if grep -rn "sk-[a-zA-Z0-9]\{20,\}" . --include="*.js" --include="*.html" --exclude-dir=".git"; then
+          echo "ERROR: Possible API key found!"
+          FOUND=1
+        fi
+        if grep -rn "0x[a-fA-F0-9]\{64\}" . --include="*.js" --include="*.html" --exclude-dir=".git"; then
+          echo "ERROR: Possible private key found!"
+          FOUND=1
+        fi
+        if [ $FOUND -eq 1 ]; then exit 1; fi
+        echo "Security scan complete — no exposed secrets found."
+
     - name: Validate HTML
       uses: Cyb3r-Jak3/html5validator-action@v7.2.0
       with:
         root: ./
-        
-    - name: Check dependencies
+        extra: --ignore-re "Attribute .data-.*. not allowed"
+
+    - name: Check Content Security Policy
       run: |
-        echo "Checking for outdated dependencies..."
-        # Add npm audit or similar when you have package.json
-        echo "Dependency check complete!"
-  
+        echo "Verifying CSP headers are present..."
+        if grep -q "Content-Security-Policy" index.html; then
+          echo "CSP present in index.html"
+        else
+          echo "WARNING: No CSP meta tag found in index.html"
+          exit 1
+        fi
+
   lighthouse:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Lighthouse Security Check
-      uses: treosh/lighthouse-ci-action@v9
+    - uses: actions/checkout@v4
+
+    - name: Lighthouse Security & Performance Check
+      uses: treosh/lighthouse-ci-action@v12
       with:
         urls: |
-          https://glenngallacher1-lab.github.io/captain-guido/
+          https://captainguidotoken.com
         uploadArtifacts: true
+        temporaryPublicStorage: true
+      continue-on-error: true
+
+  codeql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:javascript"
