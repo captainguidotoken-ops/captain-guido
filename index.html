@@ -26,13 +26,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
 
-  <!-- Premium fonts: Inter (body) + JetBrains Mono (data/numbers) -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Premium fonts: Inter (body) + JetBrains Mono (data) + Orbitron (display headings) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@600;700;900&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="entry-active">
-  
+
+  <!-- Custom cursor (hidden on touch devices via JS) -->
+  <div id="cursor-dot" aria-hidden="true"></div>
+  <div id="cursor-ring" aria-hidden="true"></div>
+
   <!-- Entry Screen -->
   <div id="entry-screen">
     <div class="ocean-particles" id="oceanParticles"></div>
@@ -92,10 +96,12 @@
       <div class="hud-corner hud-corner--bl"></div>
       <div class="hud-corner hud-corner--br"></div>
     </div>
+    <!-- Floating coin layer (Totem-style) -->
+    <div id="floatingCoins" aria-hidden="true"></div>
     <div id="map" role="img" aria-label="World map showing Captain Guido's global voyage route"></div>
     <div class="hero-overlay">
       <div class="hero-content">
-        <h2 class="hero-title">THE VOYAGE BEGINS</h2>
+        <h2 class="hero-title" id="glitchTitle" data-text-glitch data-text="THE VOYAGE BEGINS">THE VOYAGE BEGINS</h2>
         <p class="hero-subtitle">Tracking Captain Guido's global mission to save our oceans</p>
         <div class="presale-countdown" id="presaleCountdown">
           <p class="countdown-label">PRESALE LAUNCHES IN</p>
@@ -129,18 +135,36 @@
     </div>
   </section>
 
+  <!-- Marquee band 1 -->
+  <div class="marquee-band" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">$GUIDO</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> BLOCKCHAIN OCEAN CLEANUP </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">12 CHAPTERS</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> ON-CHAIN VERIFIED </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">THE HASHWIND</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> REAL IMPACT </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">CAPTAIN GUIDO COIN</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> SAVING OUR SEAS </div>
+    </div>
+  </div>
+
   <!-- About Section -->
   <section id="about" class="content-section">
     <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
       <header class="section-header reveal">
-        <h2 class="section-title">THE MISSION</h2>
+        <div class="section-tag"><span class="section-tag-dot"></span>MISSION BRIEFING</div>
+        <h2 class="section-title" data-text-reveal>THE MISSION</h2>
       </header>
       <div class="section-content">
         <div class="content-left">
           <div class="image-wrapper reveal-left">
-            <img src="captain-character.png" alt="Captain Guido mascot" class="feature-image" width="400" height="400">
+            <img src="captain-character.png" alt="Captain Guido mascot" class="feature-image" data-parallax="0.8" width="400" height="400">
             <div class="image-glow" aria-hidden="true"></div>
+            <div class="image-depth-ring" aria-hidden="true"></div>
+            <div class="image-depth-ring" aria-hidden="true"></div>
+            <div class="image-depth-ring" aria-hidden="true"></div>
           </div>
         </div>
         <div class="content-right reveal-right">
@@ -178,12 +202,27 @@
     </svg>
   </div>
 
+  <!-- Marquee band 2 (reverse) -->
+  <div class="marquee-band marquee-band--reverse" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">PORT OF OSTIA</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> MEDITERRANEAN SEA </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">ARABIAN TIDES</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> INDIAN ABYSS </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">SOUTH PACIFIC</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> NORTH ATLANTIC </div>
+      <div class="marquee-item"><span class="m-dot"></span><span class="m-accent">RETURN TO OSTIA</span></div>
+      <div class="marquee-item"><span class="m-dot"></span> 12 CHAPTERS </div>
+    </div>
+  </div>
+
   <!-- Journey Section -->
   <section id="journey" class="content-section dark">
     <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
       <header class="section-header reveal">
-        <h2 class="section-title">THE CHAPTERS</h2>
+        <div class="section-tag"><span class="section-tag-dot"></span>VOYAGE LOG</div>
+        <h2 class="section-title" data-text-reveal>THE CHAPTERS</h2>
       </header>
       <p class="section-intro reveal">
         Follow Captain Guido's voyage around the globe. Each chapter represents a battle
@@ -373,7 +412,8 @@
     <div class="section-lines" aria-hidden="true"></div>
     <div class="container">
       <header class="section-header reveal">
-        <h2 class="section-title">REAL IMPACT</h2>
+        <div class="section-tag"><span class="section-tag-dot"></span>ON-CHAIN DATA</div>
+        <h2 class="section-title" data-text-reveal>REAL IMPACT</h2>
       </header>
       <p class="section-intro reveal">
         Every chapter unlocked triggers a donation to ocean cleanup efforts at that location.
@@ -682,5 +722,6 @@
 
   <script src="https://unpkg.com/globe.gl@2.30.0/dist/globe.gl.min.js"></script>
   <script src="script.js"></script>
+  <script src="animations.js"></script>
 </body>
 </html>
