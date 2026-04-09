@@ -787,17 +787,14 @@
     var sEl = document.getElementById('cdSecs');
     if (!dEl) return;
 
-    // Override setInterval tick by watching MutationObserver on each digit
-    [['cdDays', dEl], ['cdHours', hEl], ['cdMins', mEl], ['cdSecs', sEl]].forEach(function(pair) {
-      var id = pair[0], node = pair[1];
-      if (!node) return;
-      var mo = new MutationObserver(function() {
-        node.classList.remove('flip');
-        void node.offsetWidth;
-        node.classList.add('flip');
-      });
-      mo.observe(node, { childList: true, characterData: true, subtree: true });
+    // Only animate seconds — the rest update too infrequently to need it
+    if (!sEl) return;
+    var mo = new MutationObserver(function() {
+      sEl.classList.remove('flip');
+      void sEl.offsetWidth;
+      sEl.classList.add('flip');
     });
+    mo.observe(sEl, { childList: true, characterData: true, subtree: true });
   };
 
   // Initialize everything
