@@ -511,9 +511,71 @@
     }
   }
 
+  // ─── APPLY CONFIG ────────────────────────────────────────────────────────
+  function applyConfig(cfg) {
+    if (!cfg) return;
+
+    // Maintenance redirect
+    if (cfg.maintenance) {
+      window.location.replace('maintenance.html');
+      return;
+    }
+
+    // Stats
+    if (cfg.stats) {
+      var statEls = {
+        'CHAPTERS':     cfg.stats.chapters,
+        'LBS REMOVED':  cfg.stats.lbs,
+        'MILES CLEANED': cfg.stats.miles
+      };
+      document.querySelectorAll('.stat-value').forEach(function(el) {
+        var label = el.nextElementSibling && el.nextElementSibling.textContent.trim();
+        if (label && statEls[label] !== undefined) {
+          el.textContent = statEls[label];
+        }
+      });
+    }
+
+    // Chapter unlock badges
+    if (cfg.chapters) {
+      cfg.chapters.forEach(function(ch) {
+        var cards = document.querySelectorAll('.chapter-card');
+        cards.forEach(function(card) {
+          var numEl = card.querySelector('.chapter-number');
+          if (numEl && numEl.textContent.trim() === 'CH. ' + ch.num) {
+            var badge = card.querySelector('.status-badge');
+            if (badge) {
+              badge.textContent  = ch.unlocked ? 'UNLOCKED' : 'LOCKED';
+              badge.className    = 'status-badge ' + (ch.unlocked ? 'unlocked' : 'locked');
+            }
+          }
+        });
+      });
+    }
+
+    // Social links
+    if (cfg.social) {
+      var map = {
+        'twitter':  cfg.social.twitter,
+        'discord':  cfg.social.discord,
+        'telegram': cfg.social.telegram
+      };
+      document.querySelectorAll('a[data-social]').forEach(function(a) {
+        var key = a.getAttribute('data-social');
+        if (map[key]) a.href = map[key];
+      });
+    }
+  }
+
   // Initialize
   document.addEventListener('DOMContentLoaded', function() {
     originalLog('Captain Guido initialized');
+
+    // Load config.json and apply
+    fetch('config.json?v=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(applyConfig)
+      .catch(function() {});
 
     document.body.classList.add('entry-active');
     createOceanParticles();

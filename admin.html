@@ -258,7 +258,10 @@
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display  = 'block';
     renderChapters();
-    if (localStorage.getItem('cgc_gh_token')) document.getElementById('config-warning').style.display = 'none';
+    if (localStorage.getItem('cgc_gh_token')) {
+      document.getElementById('config-warning').style.display = 'none';
+      loadConfig(); // pre-populate form from live config.json
+    }
   }
 
   function logout() { sessionStorage.removeItem('cgc_auth'); location.reload(); }
@@ -314,6 +317,50 @@
     lbl.className = `ch-status ${unlocked ? 's-unlocked' : 's-locked'}`;
   }
 
+  // ── Load current config from GitHub ───────────────────────────────────────
+  async function loadConfig() {
+    const token = localStorage.getItem('cgc_gh_token');
+    if (!token) return;
+    const H = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
+    const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
+    try {
+      const res  = await fetch(base+'config.json', { headers: H });
+      const data = await res.json();
+      const cfg  = JSON.parse(atob(data.content.replace(/\n/g,'')));
+
+      // Maintenance
+      document.getElementById('maintenance-toggle').checked = !!cfg.maintenance;
+      updateMaintenanceLabel();
+
+      // Stats
+      if (cfg.stats) {
+        document.getElementById('stat-chapters').value = cfg.stats.chapters ?? 12;
+        document.getElementById('stat-lbs').value      = cfg.stats.lbs     ?? 0;
+        document.getElementById('stat-miles').value    = cfg.stats.miles   ?? 0;
+      }
+
+      // Chapter unlock state
+      if (cfg.chapters) {
+        cfg.chapters.forEach((ch, i) => {
+          const idx = CHAPTERS.findIndex(c => c.num === ch.num);
+          if (idx === -1) return;
+          CHAPTERS[idx].unlocked = !!ch.unlocked;
+          const cb  = document.querySelector(`#chapters-list .chapter-row:nth-child(${idx+1}) input[type=checkbox]`);
+          const lbl = document.getElementById(`lbl-${idx}`);
+          if (cb)  cb.checked       = CHAPTERS[idx].unlocked;
+          if (lbl) { lbl.textContent = CHAPTERS[idx].unlocked ? 'UNLOCKED' : 'LOCKED'; lbl.className = `ch-status ${CHAPTERS[idx].unlocked ? 's-unlocked' : 's-locked'}`; }
+        });
+      }
+
+      // Social
+      if (cfg.social) {
+        document.getElementById('link-twitter').value  = cfg.social.twitter  || '';
+        document.getElementById('link-discord').value  = cfg.social.discord  || '';
+        document.getElementById('link-telegram').value = cfg.social.telegram || '';
+      }
+    } catch(e) { /* silent — config might not exist yet */ }
+  }
+
   // ── Publish ────────────────────────────────────────────────────────────────
   async function saveChanges() {
     const token = localStorage.getItem('cgc_gh_token');
@@ -327,86 +374,35 @@
     const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
 
     try {
-      // ── index.html ──────────────────────────────────────────
-      const iRes  = await fetch(base+'index.html', { headers: H });
-      const iData = await iRes.json();
-      let html    = atob(iData.content.replace(/\n/g,''));
+      // Build config object from form
+      const cfg = {
+        maintenance: document.getElementById('maintenance-toggle').checked,
+        stats: {
+          chapters: parseInt(document.getElementById('stat-chapters').value, 10) || 12,
+          lbs:      parseInt(document.getElementById('stat-lbs').value,      10) || 0,
+          miles:    parseInt(document.getElementById('stat-miles').value,    10) || 0
+        },
+        chapters: CHAPTERS.map(c => ({ num: c.num, unlocked: c.unlocked })),
+        social: {
+          twitter:  document.getElementById('link-twitter').value.trim(),
+          discord:  document.getElementById('link-discord').value.trim(),
+          telegram: document.getElementById('link-telegram').value.trim()
+        }
+      };
 
-      // Stats
-      const ch    = document.getElementById('stat-chapters').value;
-      const lbs   = document.getElementById('stat-lbs').value;
-      const miles = document.getElementById('stat-miles').value;
-      html = html
-        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">CHAPTERS)/,   `$1${ch}$2${ch}$3`)
-        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">LBS REMOVED)/, `$1${lbs}$2${lbs}$3`)
-        .replace(/(data-count=")\d+("\s*>\s*)\d+(<\/div>\s*<div class="stat-label">MILES CLEANED)/,`$1${miles}$2${miles}$3`);
+      // Fetch current SHA of config.json (required for GitHub PUT)
+      const getRes  = await fetch(base+'config.json', { headers: H });
+      const getData = await getRes.json();
+      const sha     = getData.sha; // undefined = new file (first publish)
 
-      // Chapter descriptions
-      CHAPTERS.forEach((c, i) => {
-        const newDesc = document.getElementById(`desc-${i}`).value.trim();
-        const re = new RegExp(
-          `(<h3 class="chapter-title">${c.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}<\\/h3>[\\s\\S]*?<p class="chapter-desc">)[\\s\\S]*?(<\\/p>)`,'m'
-        );
-        html = html.replace(re, `$1\n              ${newDesc}\n            $2`);
-      });
+      const body = {
+        message: `admin: update config${cfg.maintenance ? ' [maintenance on]' : ''}`,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2))))
+      };
+      if (sha) body.sha = sha;
 
-      // Chapter unlock status
-      CHAPTERS.forEach(c => {
-        const badge = c.unlocked ? 'unlocked' : 'locked';
-        const label = c.unlocked ? 'UNLOCKED' : 'LOCKED';
-        const re = new RegExp(
-          `(<h3 class="chapter-title">${c.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}<\\/h3>[\\s\\S]*?<span class="status-badge )(unlocked|locked)(">)(UNLOCKED|LOCKED)(<\\/span>)`,'m'
-        );
-        html = html.replace(re, `$1${badge}$3${label}$5`);
-      });
-
-      // Social links
-      const tw = document.getElementById('link-twitter').value.trim();
-      const dc = document.getElementById('link-discord').value.trim();
-      const tg = document.getElementById('link-telegram').value.trim();
-      html = html.replace(/href="https?:\/\/twitter\.com\/[^"]*"/g, `href="${tw}"`);
-
-      // Maintenance: write/remove redirect directly in index.html
-      const maintenance = document.getElementById('maintenance-toggle').checked;
-      const MAINT_TAG = '<!-- MAINTENANCE:ON -->';
-      if (maintenance && !html.includes(MAINT_TAG)) {
-        html = html.replace('<!DOCTYPE html>', `<!DOCTYPE html>\n${MAINT_TAG}\n<script>location.replace('maintenance.html')<\/script>`);
-      } else if (!maintenance) {
-        html = html.replace(/<!DOCTYPE html>\n<!-- MAINTENANCE:ON -->\n<script>location\.replace\('maintenance\.html'\)<\/script>\n/, '<!DOCTYPE html>\n');
-      }
-
-      await fetch(base+'index.html', {
-        method:'PUT', headers:H,
-        body: JSON.stringify({
-          message: `admin: update site content${maintenance?' [maintenance mode]':''}`,
-          content: btoa(unescape(encodeURIComponent(html))),
-          sha: iData.sha
-        })
-      });
-
-      // ── script.js chapter unlocks ───────────────────────────
-      const sRes  = await fetch(base+'script.js', { headers: H });
-      const sData = await sRes.json();
-      let script  = atob(sData.content.replace(/\n/g,''));
-
-      CHAPTERS.forEach(c => {
-        const re = new RegExp(
-          `(\\{[^}]*name:\\s*"${c.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}"[^}]*unlocked:\\s*)(true|false)`,'g'
-        );
-        script = script.replace(re, `$1${c.unlocked}`);
-      });
-
-      await fetch(base+'script.js', {
-        method:'PUT', headers:H,
-        body: JSON.stringify({
-          message:'admin: update chapter statuses',
-          content: btoa(unescape(encodeURIComponent(script))),
-          sha: sData.sha
-        })
-      });
-
-
-
+      const putRes = await fetch(base+'config.json', { method:'PUT', headers:H, body: JSON.stringify(body) });
+      if (!putRes.ok) throw new Error(`GitHub API ${putRes.status}`);
 
       toast('Changes published live ✓');
 

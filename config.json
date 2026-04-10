@@ -1,1 +1,27 @@
-{"maintenance": false}
+{
+  "maintenance": false,
+  "stats": {
+    "chapters": 12,
+    "lbs": 0,
+    "miles": 0
+  },
+  "chapters": [
+    { "num": "01", "unlocked": false },
+    { "num": "02", "unlocked": false },
+    { "num": "03", "unlocked": false },
+    { "num": "04", "unlocked": false },
+    { "num": "05", "unlocked": false },
+    { "num": "06", "unlocked": false },
+    { "num": "07", "unlocked": false },
+    { "num": "08", "unlocked": false },
+    { "num": "09", "unlocked": false },
+    { "num": "10", "unlocked": false },
+    { "num": "11", "unlocked": false },
+    { "num": "12", "unlocked": false }
+  ],
+  "social": {
+    "twitter": "https://twitter.com/CaptainGuido",
+    "discord": "#",
+    "telegram": "#"
+  }
+}
