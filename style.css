@@ -2862,7 +2862,7 @@ body.custom-cursor-active * {
   font-weight: 700;
   letter-spacing: 3px;
   color: var(--aqua);
-  margin-bottom: 1.4rem;
+  margin-bottom: 0.6rem;
 }
 
 .section-tag-dot {

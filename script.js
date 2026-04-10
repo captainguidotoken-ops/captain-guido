@@ -48,7 +48,7 @@
 
     var pct      = 0;
     var target   = 0;
-    var duration = 2800; // total ms to reach 100%
+    var duration = 2600; // total ms to reach 100%
     var start    = null;
 
     // Eased progress curve — fast start, slight pause mid, burst to 100
