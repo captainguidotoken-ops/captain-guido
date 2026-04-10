@@ -1127,6 +1127,32 @@
           Repository: <strong>captain-guido</strong> &nbsp;·&nbsp; Permission: <strong>Contents — Read &amp; Write</strong>
         </p>
       </div>
+
+      <div class="card">
+        <div class="card-title">AI Assistant (Claude)</div>
+        <div id="ai-status" class="token-status" style="margin-bottom:1rem;">
+          <span class="token-dot" id="ai-dot"></span>
+          <span id="ai-status-text">Not configured</span>
+        </div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Worker URL</label>
+            <input type="text" id="ai-worker-url" placeholder="https://your-worker.workers.dev">
+          </div>
+          <div class="field-row">
+            <label>Secret</label>
+            <input type="password" id="ai-worker-secret" placeholder="your-worker-secret">
+          </div>
+          <div class="btn-row" style="padding-left:calc(90px + 0.9rem)">
+            <button class="btn-sm accent" onclick="saveAI()">Save</button>
+            <button class="btn-sm" onclick="verifyAI()">Test connection</button>
+            <button class="btn-sm" onclick="clearAI()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Clear</button>
+          </div>
+        </div>
+        <p style="margin-top:1.1rem;font-size:0.77rem;color:var(--muted);line-height:1.7;">
+          Deploy <strong>bot/worker.js</strong> to Cloudflare Workers (free). Set <code>ANTHROPIC_API_KEY</code> and <code>WORKER_SECRET</code> as environment variables, then paste the Worker URL and secret above.
+        </p>
+      </div>
     </section>
 
     <!-- Command Chat -->
@@ -1377,6 +1403,11 @@
     if (saved) {
       document.getElementById('gh-token-input').value = '•'.repeat(20);
       loadConfig();
+    }
+    if (localStorage.getItem('cgc_ai_url')) {
+      document.getElementById('ai-worker-url').value    = localStorage.getItem('cgc_ai_url');
+      document.getElementById('ai-worker-secret').value = '•'.repeat(16);
+      setAIStatus(true, 'AI configured');
     }
   }
 
@@ -1744,8 +1775,9 @@
         hideTyping(); addMsg('<span class="ok">✓</span> '+platform.charAt(0).toUpperCase()+platform.slice(1)+' link updated — live in ~30s','bot');
         return;
       }
+      // Not a command — send to AI
       hideTyping();
-      addMsg('Unknown command <code>'+escHtml(raw)+'</code>. Type <code>help</code> to see all commands.','bot');
+      await callAI(raw);
     } catch(err) {
       hideTyping();
       addMsg('<span class="err">'+escHtml(err.message||String(err))+'</span>','bot');
@@ -1753,7 +1785,125 @@
   }
 
   function initChat() {
-    addMsg('Hey! Type a command to manage the site — changes go live in ~30s without needing to hit Publish.<br><br>Try <code>status</code> or <code>help</code> to get started.<br><span class="muted">You can also use the suggestion chips below.</span>','bot');
+    var hasAI = !!localStorage.getItem('cgc_ai_url');
+    addMsg(
+      'Hey! I can manage the site via commands and answer questions about the project.' +
+      (hasAI ? '' : ' <span class="muted">(Add your AI worker in <b>GitHub Token → AI Assistant</b> to unlock question-answering.)</span>') +
+      '<br><br>Try <code>status</code>, <code>unlock 3</code>, or just ask me a question.<br><span class="muted">Commands publish instantly.</span>',
+      'bot'
+    );
+  }
+
+  // ── AI settings ───────────────────────────────────────────────────────────
+  function saveAI() {
+    var url    = document.getElementById('ai-worker-url').value.trim();
+    var secret = document.getElementById('ai-worker-secret').value.trim();
+    if (!url || !secret) return;
+    localStorage.setItem('cgc_ai_url',    url);
+    localStorage.setItem('cgc_ai_secret', secret);
+    document.getElementById('ai-worker-url').value    = url;
+    document.getElementById('ai-worker-secret').value = '•'.repeat(16);
+    verifyAI();
+  }
+
+  function clearAI() {
+    localStorage.removeItem('cgc_ai_url');
+    localStorage.removeItem('cgc_ai_secret');
+    document.getElementById('ai-worker-url').value    = '';
+    document.getElementById('ai-worker-secret').value = '';
+    setAIStatus(null, 'Cleared');
+  }
+
+  function setAIStatus(ok, msg) {
+    document.getElementById('ai-dot').className  = 'token-dot' + (ok===true?' ok':ok===false?' err':'');
+    document.getElementById('ai-status-text').textContent = msg;
+  }
+
+  async function verifyAI() {
+    var url    = localStorage.getItem('cgc_ai_url');
+    var secret = localStorage.getItem('cgc_ai_secret');
+    if (!url || !secret) { setAIStatus(false, 'Worker URL and secret required'); return; }
+    setAIStatus(null, 'Testing…');
+    try {
+      var res  = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-Secret': secret },
+        body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens:10, messages:[{ role:'user', content:'ping' }] })
+      });
+      var data = await res.json();
+      if (!res.ok) { setAIStatus(false, data.error || 'Worker error ' + res.status); return; }
+      setAIStatus(true, 'AI connected — Claude is ready');
+    } catch(e) {
+      setAIStatus(false, 'Could not reach worker — check the URL');
+    }
+  }
+
+  // ── AI question handler ───────────────────────────────────────────────────
+  var CGC_SYSTEM = [
+    'You are the CGC assistant — an AI built into the Captain Guido Coin ($GUIDO) admin panel.',
+    'You help Glenn (co-founder, tech) and Jude (co-founder, marketing) manage and launch their project.',
+    '',
+    'PROJECT OVERVIEW:',
+    '- $GUIDO is an ERC-20 token on Ethereum, 1.2 trillion supply',
+    '- 0.1% treasury fee on every transaction funds verified ocean cleanup',
+    '- 12 story chapters unlock progressively as milestones are hit',
+    '- Target launch: Q3 2026',
+    '- Website: captainguidotoken-ops.github.io/captain-guido',
+    '',
+    'LAUNCH PHASES:',
+    'Phase 1 — Foundation (Q2 2026): smart contract, audit, treasury wallet, legal, entity setup',
+    'Phase 2 — Presale (Q3 2026): presale page, payment gateway, whitelist/KYC, Discord, social push',
+    'Phase 3 — Social & Content (Q3 2026): Instagram 10k, TikTok 50k, content calendar, influencers',
+    'Phase 4 — Launch (Q3 2026): DEX liquidity (Uniswap), CEX submission, cleanup partnership, AMA',
+    '',
+    'RULES:',
+    '- Keep answers concise and practical — this is an admin panel, not a chat app',
+    '- Use plain text, avoid markdown headers. Short paragraphs.',
+    '- If asked about site commands, refer them to type "help" in the chat',
+    '- Be direct and confident — these founders need actionable advice, not hedging',
+  ].join('\n');
+
+  var _chatHistory = [];
+
+  async function callAI(question) {
+    var url    = localStorage.getItem('cgc_ai_url');
+    var secret = localStorage.getItem('cgc_ai_secret');
+    if (!url || !secret) {
+      addMsg('AI not configured yet. Go to <b>GitHub Token → AI Assistant</b> in the sidebar to set it up.', 'bot');
+      return;
+    }
+
+    _chatHistory.push({ role:'user', content: question });
+
+    // Keep last 10 messages to stay within token limits
+    var messages = _chatHistory.slice(-10);
+
+    showTyping();
+    try {
+      var res  = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'X-Secret': secret },
+        body: JSON.stringify({
+          model:      'claude-sonnet-4-6',
+          max_tokens: 600,
+          system:     CGC_SYSTEM,
+          messages:   messages
+        })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Worker error ' + res.status);
+
+      var reply = data.content && data.content[0] && data.content[0].text;
+      if (!reply) throw new Error('Empty response');
+
+      _chatHistory.push({ role:'assistant', content: reply });
+      hideTyping();
+      // Convert newlines to <br> and escape HTML
+      addMsg(escHtml(reply).replace(/\n/g, '<br>'), 'bot');
+    } catch(e) {
+      hideTyping();
+      addMsg('<span class="err">' + escHtml(e.message) + '</span>', 'bot');
+    }
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
