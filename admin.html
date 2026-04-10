@@ -597,6 +597,144 @@
 
     /* ─── SCROLLPAD ───────────────────────────────────────────── */
     .scroll-pad { height: 5rem; }
+
+    /* ─── CHECKLIST ───────────────────────────────────────────── */
+    .checklist-progress {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .progress-bar-outer {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      background: var(--success);
+      border-radius: 20px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .task-list { display: flex; flex-direction: column; gap: 0; }
+
+    .task-item {
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .task-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .task-item:first-child { padding-top: 0; }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    /* Custom checkbox */
+    .task-check {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      cursor: pointer;
+    }
+    .task-check input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .task-checkmark {
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      background: var(--bg);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .task-checkmark::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border: 2px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg) scale(0);
+      transition: transform 0.15s;
+      margin-top: -2px;
+    }
+    .task-check input:checked + .task-checkmark {
+      background: var(--success);
+      border-color: var(--success);
+    }
+    .task-check input:checked + .task-checkmark::after { transform: rotate(45deg) scale(1); }
+
+    .task-body { flex: 1; min-width: 0; }
+
+    .task-title {
+      font-size: 0.87rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+      transition: color 0.15s;
+    }
+    .task-item.done .task-title {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+    .tag-owner   { background: rgba(99,102,241,0.1); color: #6366f1; }
+    .tag-due     { background: rgba(107,114,128,0.1); color: var(--muted); }
+    .tag-critical { background: rgba(239,68,68,0.1);  color: var(--danger); }
+    .tag-high     { background: rgba(245,158,11,0.1); color: #d97706; }
+    .tag-medium   { background: rgba(59,130,246,0.1); color: #3b82f6; }
+
+    .task-note {
+      width: 100%;
+      margin-top: 0.6rem;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      font-family: inherit;
+      font-size: 0.78rem;
+      color: var(--text);
+      resize: none;
+      min-height: 34px;
+      height: 34px;
+      overflow: hidden;
+      transition: border-color 0.15s, height 0.15s;
+      line-height: 1.5;
+    }
+    .task-note:focus {
+      outline: none;
+      border-color: var(--gold);
+      height: 70px;
+    }
+    .task-note::placeholder { color: #9ca3af; }
   </style>
 </head>
 <body>
@@ -648,6 +786,11 @@
       <button class="nav-item" onclick="showPanel('social')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
         Social Links
+      </button>
+
+      <button class="nav-item" onclick="showPanel('checklist')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Launch Checklist
       </button>
 
       <hr class="divider">
@@ -801,6 +944,44 @@
       </div>
     </section>
 
+    <!-- Checklist -->
+    <section class="panel" id="panel-checklist">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Launch Checklist</div>
+          <div class="panel-sub">40 tasks across 4 phases — check off as you go.</div>
+        </div>
+        <div class="progress-label" id="cl-progress-text">0 / 40 done</div>
+      </div>
+
+      <div class="card" style="padding:1rem 1.5rem;">
+        <div class="checklist-progress">
+          <div class="progress-bar-outer"><div class="progress-bar-inner" id="cl-bar" style="width:0%"></div></div>
+          <span class="progress-label" id="cl-pct">0%</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Phase 1 — Foundation</div>
+        <div class="task-list" id="tl-1"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Phase 2 — Presale</div>
+        <div class="task-list" id="tl-2"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Phase 3 — Social &amp; Content</div>
+        <div class="task-list" id="tl-3"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Phase 4 — Launch</div>
+        <div class="task-list" id="tl-4"></div>
+      </div>
+    </section>
+
     <div class="scroll-pad"></div>
   </main>
 
@@ -821,6 +1002,118 @@
   const PW_HASH    = '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1';
   const REPO_OWNER = 'captainguidotoken-ops';
   const REPO_NAME  = 'captain-guido';
+
+  // ── Launch Checklist ────────────────────────────────────────────────────────
+  const TASKS = {
+    1: [
+      { id:'p1-1',  title:'Write and finalise smart contract (ERC-20, burn, treasury fee)',  owner:'G', priority:'Critical', due:'Q2 2026', defaultDone: false },
+      { id:'p1-2',  title:'Third-party smart contract security audit',                        owner:'G', priority:'Critical', due:'Q2 2026', defaultDone: false },
+      { id:'p1-3',  title:'Set up $GUIDO treasury wallet (publicly viewable address)',         owner:'G', priority:'Critical', due:'Q2 2026', defaultDone: false },
+      { id:'p1-4',  title:'Configure ETH/USDC dynamic pricing for presale contract',          owner:'G', priority:'Critical', due:'Q2 2026', defaultDone: true  },
+      { id:'p1-5',  title:'Deploy smart contract to Ethereum mainnet',                        owner:'G', priority:'Critical', due:'Q2 2026', defaultDone: false },
+      { id:'p1-6',  title:'Publish whitepaper to website',                                    owner:'G', priority:'High',     due:'Q2 2026', defaultDone: true  },
+      { id:'p1-7',  title:'Legal opinion on token classification (security vs utility)',       owner:'B', priority:'Critical', due:'Q2 2026', defaultDone: false },
+      { id:'p1-8',  title:'Register business entity / foundation structure',                   owner:'B', priority:'High',     due:'Q2 2026', defaultDone: false },
+      { id:'p1-9',  title:'Set up captainguidotoken@gmail.com as official ops email',         owner:'G', priority:'Medium',   due:'Q2 2026', defaultDone: true  },
+      { id:'p1-10', title:'Update website tokenomics to match whitepaper ($GUIDO, 1.2T)',     owner:'G', priority:'High',     due:'Q2 2026', defaultDone: true  },
+    ],
+    2: [
+      { id:'p2-1',  title:'Build presale landing page / integrate with smart contract',       owner:'G', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p2-2',  title:'Set up USDC + ETH payment gateway on presale page',                owner:'G', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p2-3',  title:'Create whitelist / KYC process for Round 1 participants',          owner:'B', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p2-4',  title:'Build presale round tracker (shows current round, price, left)',   owner:'G', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p2-5',  title:'Activate treasury — confirm 0.1% auto-route on-chain',            owner:'G', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p2-6',  title:'Draft presale announcement email / social copy',                   owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p2-7',  title:'Launch Discord server + set up holder verification bot',           owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p2-8',  title:'Publish Round 1 presale on Twitter/X, Instagram, TikTok',         owner:'J', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p2-9',  title:'Create referral / affiliate system for early holders',             owner:'B', priority:'Medium',   due:'Q3 2026', defaultDone: false },
+      { id:'p2-10', title:'Set up monthly treasury transparency report template',             owner:'G', priority:'High',     due:'Q3 2026', defaultDone: false },
+    ],
+    3: [
+      { id:'p3-1',  title:'Reach 10,000 Instagram followers (@captainguidoverse)',            owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p3-2',  title:'Reach 50,000 TikTok followers (@captain.guido)',                   owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p3-3',  title:'Create 20 TikTok AI cartoon teaser clips (Chapters 1–3)',          owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p3-4',  title:'Design Instagram brand kit (templates, colour palette, fonts)',    owner:'J', priority:'High',     due:'Q2 2026', defaultDone: false },
+      { id:'p3-5',  title:'Film / produce Chapter 1 story reveal video',                     owner:'J', priority:'Medium',   due:'Q3 2026', defaultDone: false },
+      { id:'p3-6',  title:'Set up Twitter/X account + post 3× per week from launch',         owner:'J', priority:'Medium',   due:'Q3 2026', defaultDone: false },
+      { id:'p3-7',  title:'Create YouTube channel + upload first long-form Guido video',     owner:'J', priority:'Medium',   due:'Q3 2026', defaultDone: false },
+      { id:'p3-8',  title:'Build content calendar for launch month (30 posts)',               owner:'J', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p3-9',  title:'Reach out to 5 eco-crypto micro-influencers for collab',          owner:'B', priority:'Medium',   due:'Q3 2026', defaultDone: false },
+      { id:'p3-10', title:'Produce first monthly impact/transparency report post',            owner:'B', priority:'High',     due:'Q3 2026', defaultDone: false },
+    ],
+    4: [
+      { id:'p4-1',  title:'Provision and lock DEX liquidity (Uniswap)',                      owner:'G', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p4-2',  title:'Public token launch announcement across all platforms',            owner:'B', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p4-3',  title:'Submit for Tier-2 CEX listing (research top candidates)',          owner:'G', priority:'High',     due:'Q4 2026', defaultDone: false },
+      { id:'p4-4',  title:'First verified ocean cleanup partnership confirmed',               owner:'B', priority:'Critical', due:'Q3 2026', defaultDone: false },
+      { id:'p4-5',  title:'First 501(c)(3) donation executed + published on-chain',          owner:'G', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p4-6',  title:'Activate IMPACT_DATA on website (set launched: true)',            owner:'G', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p4-7',  title:'Publish Chapter 1 story unlock publicly',                         owner:'B', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p4-8',  title:'Post-launch AMA on Discord / Twitter Spaces',                     owner:'B', priority:'High',     due:'Q3 2026', defaultDone: false },
+      { id:'p4-9',  title:'Approach MBRC The Ocean for partnership',                         owner:'B', priority:'Medium',   due:'Q4 2026', defaultDone: false },
+      { id:'p4-10', title:'Begin development: Chapter 2 NFT unlock mechanic',                owner:'G', priority:'Medium',   due:'Q4 2026', defaultDone: false },
+    ],
+  };
+
+  // Flat map for quick lookups
+  const TASKS_FLAT = Object.values(TASKS).flat();
+
+  // Runtime state (done + note per task id)
+  const taskState = {};
+  TASKS_FLAT.forEach(t => {
+    taskState[t.id] = { done: t.defaultDone, note: '' };
+  });
+
+  function renderChecklist() {
+    [1, 2, 3, 4].forEach(phase => {
+      const list = document.getElementById(`tl-${phase}`);
+      if (!list) return;
+      list.innerHTML = '';
+      TASKS[phase].forEach(t => {
+        const state = taskState[t.id];
+        const item  = document.createElement('div');
+        item.className = 'task-item' + (state.done ? ' done' : '');
+        item.id = 'ti-' + t.id;
+        item.innerHTML = `
+          <div class="task-top">
+            <label class="task-check">
+              <input type="checkbox" ${state.done ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked)">
+              <span class="task-checkmark"></span>
+            </label>
+            <div class="task-body">
+              <div class="task-title">${t.title}</div>
+              <div class="task-meta">
+                <span class="tag tag-owner">${t.owner === 'B' ? 'Both' : t.owner === 'G' ? 'Glenn' : 'Jude'}</span>
+                <span class="tag tag-${t.priority.toLowerCase()}">${t.priority}</span>
+                <span class="tag tag-due">${t.due}</span>
+              </div>
+              <textarea class="task-note" id="note-${t.id}" placeholder="Add a note…" oninput="taskState['${t.id}'].note = this.value">${state.note}</textarea>
+            </div>
+          </div>`;
+        list.appendChild(item);
+      });
+    });
+    updateChecklistProgress();
+  }
+
+  function toggleTask(id, done) {
+    taskState[id].done = done;
+    const item = document.getElementById('ti-' + id);
+    if (item) item.className = 'task-item' + (done ? ' done' : '');
+    updateChecklistProgress();
+  }
+
+  function updateChecklistProgress() {
+    const total = TASKS_FLAT.length;
+    const done  = TASKS_FLAT.filter(t => taskState[t.id].done).length;
+    const pct   = Math.round((done / total) * 100);
+    const bar   = document.getElementById('cl-bar');
+    const text  = document.getElementById('cl-progress-text');
+    const pctEl = document.getElementById('cl-pct');
+    if (bar)  bar.style.width = pct + '%';
+    if (text) text.textContent = `${done} / ${total} done`;
+    if (pctEl) pctEl.textContent = pct + '%';
+  }
 
   const CHAPTERS = [
     { num:'01', name:'Port of Ostia',          loc:'Mediterranean Sea, Italy',  unlocked:false },
@@ -861,6 +1154,7 @@
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display  = 'block';
     renderChapters();
+    renderChecklist();
     const saved = localStorage.getItem('cgc_gh_token');
     if (saved) {
       document.getElementById('gh-token-input').value = '•'.repeat(20);
@@ -1012,6 +1306,16 @@
         document.getElementById('link-discord').value  = cfg.social.discord  || '';
         document.getElementById('link-telegram').value = cfg.social.telegram || '';
       }
+
+      if (cfg.tasks) {
+        Object.entries(cfg.tasks).forEach(([id, state]) => {
+          if (taskState[id] === undefined) return;
+          taskState[id].done = !!state.done;
+          taskState[id].note = state.note || '';
+        });
+        // Re-render checklist with loaded state
+        renderChecklist();
+      }
     } catch(e) { /* silent */ }
   }
 
@@ -1037,6 +1341,9 @@
           miles:    parseInt(document.getElementById('stat-miles').value,    10) || 0
         },
         chapters: CHAPTERS.map(c => ({ num: c.num, unlocked: c.unlocked })),
+        tasks: Object.fromEntries(
+          TASKS_FLAT.map(t => [t.id, { done: taskState[t.id].done, note: taskState[t.id].note }])
+        ),
         social: {
           twitter:  document.getElementById('link-twitter').value.trim(),
           discord:  document.getElementById('link-discord').value.trim(),
