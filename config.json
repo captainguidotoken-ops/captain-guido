@@ -1,5 +1,5 @@
 {
-  "maintenance": true,
+  "maintenance": false,
   "stats": {
     "chapters": 12,
     "lbs": 0,
@@ -8,51 +8,51 @@
   "chapters": [
     {
       "num": "01",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "02",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "03",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "04",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "05",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "06",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "07",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "08",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "09",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "10",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "11",
-      "unlocked": false
+      "unlocked": true
     },
     {
       "num": "12",
-      "unlocked": false
+      "unlocked": true
     }
   ],
   "social": {
