@@ -313,8 +313,8 @@
 
   // ─── INIT ──────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
-    initCursor();
-    initMagnetic();
+    // initCursor() — removed per user request
+    // initMagnetic() — depends on cursor, also removed
     initTextReveal();
     initFloatingCoins();
     initMarquee();
