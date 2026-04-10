@@ -4,214 +4,816 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CGC Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --gold: #f4a836;
-      --navy: #01080f;
-      --card: rgba(255,255,255,0.04);
-      --border: rgba(244,168,54,0.22);
-      --teal: #4ec4c4;
-      --text: #eef6ff;
-      --muted: rgba(238,246,255,0.45);
-      --red: #ff5f5f;
+      --gold:    #f4a836;
+      --gold-dk: #d48a1a;
+      --bg:      #f4f4f6;
+      --surface: #ffffff;
+      --border:  #e5e7eb;
+      --text:    #111827;
+      --muted:   #6b7280;
+      --danger:  #ef4444;
+      --success: #10b981;
+      --radius:  14px;
+      --shadow:  0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+      --sidebar: 240px;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--navy); color: var(--text); font-family: 'Courier New', monospace; min-height: 100vh; }
 
-    /* ── Login ──────────────────────────────────────────────── */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ─── LOGIN ───────────────────────────────────────────────── */
     #login-screen {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; min-height: 100vh; gap: 1.5rem; padding: 2rem;
-      background: radial-gradient(ellipse at center, #0a1f35 0%, var(--navy) 70%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
     }
-    .login-logo { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gold); box-shadow: 0 0 40px rgba(244,168,54,0.3); }
-    .login-title { color: var(--gold); font-size: 1.2rem; letter-spacing: 4px; }
-    .login-sub { color: var(--muted); font-size: 0.72rem; letter-spacing: 2px; margin-top: -0.8rem; }
-    .login-box { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 0.9rem; }
-    .login-box label { color: var(--muted); font-size: 0.68rem; letter-spacing: 2px; }
-    .pw-row { display: flex; gap: 0.6rem; }
-    .pw-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 0.7rem 0.9rem; font-family: 'Courier New', monospace; font-size: 0.9rem; }
-    .pw-row input:focus { outline: none; border-color: var(--gold); }
-    .login-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 8px; padding: 0.7rem 1.2rem; font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.8rem; letter-spacing: 2px; cursor: pointer; white-space: nowrap; }
-    .login-btn:hover { opacity: 0.85; }
-    #login-error { display: none; color: var(--red); font-size: 0.75rem; padding: 0.6rem 0.9rem; border: 1px solid rgba(255,95,95,0.3); border-radius: 8px; background: rgba(255,95,95,0.08); text-align: center; }
 
-    /* ── Admin shell ────────────────────────────────────────── */
-    #admin-panel { display: none; }
-    header { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.8rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px); }
-    .header-left { display: flex; align-items: center; gap: 0.8rem; }
-    .header-left img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); }
-    .header-title { color: var(--gold); font-size: 0.8rem; letter-spacing: 3px; }
-    .logout-btn { background: transparent; border: 1px solid rgba(255,95,95,0.35); color: var(--red); border-radius: 7px; padding: 0.35rem 0.8rem; font-family: 'Courier New', monospace; font-size: 0.7rem; letter-spacing: 1px; cursor: pointer; }
-    .logout-btn:hover { background: rgba(255,95,95,0.08); }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
 
-    main { max-width: 860px; margin: 0 auto; padding: 1.8rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .login-avatar {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--gold);
+    }
 
-    /* ── Cards ──────────────────────────────────────────────── */
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
-    .card-label { color: var(--gold); font-size: 0.62rem; letter-spacing: 4px; margin-bottom: 1.1rem; text-transform: uppercase; }
+    .login-heading {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
 
-    /* ── Maintenance toggle ─────────────────────────────────── */
-    .maintenance-row { display: flex; align-items: center; justify-content: space-between; }
-    .maintenance-row p { color: var(--muted); font-size: 0.78rem; line-height: 1.6; max-width: 500px; }
-    .big-toggle { position: relative; width: 64px; height: 34px; flex-shrink: 0; }
-    .big-toggle input { opacity: 0; width: 0; height: 0; }
-    .big-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.08); border-radius: 20px; cursor: pointer; transition: background 0.3s; border: 1px solid rgba(255,255,255,0.1); }
-    .big-slider::before { content: ''; position: absolute; width: 24px; height: 24px; left: 4px; top: 4px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
-    .big-toggle input:checked + .big-slider { background: var(--red); border-color: var(--red); }
-    .big-toggle input:checked + .big-slider::before { transform: translateX(30px); }
-    .maintenance-label { font-size: 0.72rem; letter-spacing: 1px; margin-top: 0.3rem; }
-    .m-off { color: var(--teal); } .m-on { color: var(--red); }
+    .login-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -1rem;
+    }
 
-    /* ── Stats ──────────────────────────────────────────────── */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.9rem; }
-    .stat-field label { display: block; color: var(--muted); font-size: 0.65rem; letter-spacing: 2px; margin-bottom: 0.35rem; }
-    .stat-field input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 0.55rem 0.8rem; font-family: 'Courier New', monospace; font-size: 0.95rem; }
+    .login-form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .login-form label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color 0.15s;
+    }
+
+    .login-form input:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .btn-primary:hover  { background: var(--gold-dk); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .login-error {
+      display: none;
+      font-size: 0.78rem;
+      color: var(--danger);
+      text-align: center;
+      padding: 0.55rem 0.9rem;
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    /* ─── SHELL ───────────────────────────────────────────────── */
+    #admin-panel { display: none; min-height: 100vh; }
+
+    /* ─── SIDEBAR ─────────────────────────────────────────────── */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: var(--sidebar);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1.4rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+    }
+
+    .sidebar-logo-text {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.03em;
+    }
+
+    .sidebar-logo-sub {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 1rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .nav-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 9px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      text-decoration: none;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+
+    .nav-item.active {
+      background: rgba(244,168,54,0.1);
+      color: var(--gold-dk);
+    }
+
+    .nav-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .nav-item.active .nav-icon { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 1rem 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: 9px;
+      border: none;
+      background: none;
+      font-family: inherit;
+      font-size: 0.83rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-logout:hover { background: rgba(239,68,68,0.07); color: var(--danger); }
+
+    /* ─── MAIN ────────────────────────────────────────────────── */
+    .main-content {
+      margin-left: var(--sidebar);
+      padding: 2rem;
+      max-width: calc(760px + var(--sidebar));
+    }
+
+    /* ─── SECTION PANELS ──────────────────────────────────────── */
+    .panel { display: none; flex-direction: column; gap: 1.25rem; }
+    .panel.active { display: flex; }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .panel-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ─── CARDS ───────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
+    }
+
+    /* ─── TOGGLE ──────────────────────────────────────────────── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .toggle-info h3 { font-size: 0.95rem; font-weight: 600; }
+    .toggle-info p  { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+    .switch { position: relative; width: 52px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .switch-track {
+      position: absolute;
+      inset: 0;
+      background: #e5e7eb;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+
+    .switch-track::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 4px; top: 4px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      transition: transform 0.25s;
+    }
+
+    .switch input:checked + .switch-track { background: var(--danger); }
+    .switch input:checked + .switch-track::before { transform: translateX(24px); }
+
+    .switch.green input:checked + .switch-track { background: var(--success); }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 20px;
+      margin-top: 0.6rem;
+    }
+
+    .status-pill.live     { background: rgba(16,185,129,0.1); color: #059669; }
+    .status-pill.maint    { background: rgba(239,68,68,0.1);  color: var(--danger); }
+    .status-pill::before  { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ─── STATS GRID ──────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-field label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .stat-field input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.15s;
+    }
+
     .stat-field input:focus { outline: none; border-color: var(--gold); }
 
-    /* ── Chapters ───────────────────────────────────────────── */
-    .chapter-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; padding: 0.9rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); background: rgba(255,255,255,0.02); margin-bottom: 0.5rem; }
-    .chapter-row:last-child { margin-bottom: 0; }
-    .ch-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
-    .ch-name { font-size: 0.82rem; }
-    .ch-loc { color: var(--muted); font-size: 0.68rem; margin-left: 0.5rem; }
-    .ch-desc { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0.5rem 0.7rem; font-family: 'Courier New', monospace; font-size: 0.75rem; resize: vertical; min-height: 60px; line-height: 1.6; }
-    .ch-desc:focus { outline: none; border-color: var(--gold); }
-    .ch-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; }
-    .ch-status { font-size: 0.65rem; letter-spacing: 1px; }
-    .s-unlocked { color: var(--teal); } .s-locked { color: var(--muted); }
-    .toggle { position: relative; width: 46px; height: 25px; flex-shrink: 0; }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.08); border-radius: 20px; cursor: pointer; transition: background 0.3s; border: 1px solid rgba(255,255,255,0.08); }
-    .toggle-slider::before { content: ''; position: absolute; width: 17px; height: 17px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform 0.3s; }
-    .toggle input:checked + .toggle-slider { background: var(--teal); border-color: var(--teal); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(21px); }
+    /* ─── CHAPTER LIST ────────────────────────────────────────── */
+    .chapter-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
-    /* ── Socials ────────────────────────────────────────────── */
-    .social-grid { display: flex; flex-direction: column; gap: 0.7rem; }
-    .social-row { display: flex; align-items: center; gap: 0.8rem; }
-    .social-row label { color: var(--muted); font-size: 0.68rem; letter-spacing: 1px; width: 80px; flex-shrink: 0; }
-    .social-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 0.5rem 0.8rem; font-family: 'Courier New', monospace; font-size: 0.8rem; }
-    .social-row input:focus { outline: none; border-color: var(--gold); }
+    .chapter-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      transition: border-color 0.15s;
+      gap: 1rem;
+    }
 
-    /* ── GitHub token ───────────────────────────────────────── */
-    #config-warning { background: rgba(244,168,54,0.05); border: 1px solid rgba(244,168,54,0.35); border-radius: 12px; padding: 1.2rem 1.5rem; font-size: 0.78rem; line-height: 1.8; color: var(--muted); }
-    #config-warning strong { color: var(--gold); }
-    code { background: rgba(255,255,255,0.07); border-radius: 4px; padding: 1px 5px; color: var(--teal); }
-    .token-row { display: flex; gap: 0.7rem; margin-top: 0.8rem; }
-    .token-row input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 7px; color: var(--text); padding: 0.55rem 0.8rem; font-family: 'Courier New', monospace; font-size: 0.8rem; }
-    .token-row input:focus { outline: none; border-color: var(--gold); }
-    .token-save-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 7px; padding: 0.55rem 1.1rem; font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.72rem; letter-spacing: 1px; cursor: pointer; white-space: nowrap; }
+    .chapter-item.ch-unlocked {
+      border-color: rgba(16,185,129,0.3);
+      background: rgba(16,185,129,0.04);
+    }
 
-    /* ── Publish ────────────────────────────────────────────── */
-    .publish-row { display: flex; justify-content: flex-end; }
-    .save-btn { background: var(--gold); color: var(--navy); border: none; border-radius: 10px; padding: 0.85rem 2.2rem; font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.82rem; letter-spacing: 3px; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; transition: opacity 0.2s; }
-    .save-btn:hover { opacity: 0.87; }
-    .save-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .ch-left { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
 
-    /* ── Toast ──────────────────────────────────────────────── */
-    #toast { position: fixed; bottom: 1.8rem; right: 1.8rem; background: var(--teal); color: var(--navy); font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.8rem; letter-spacing: 2px; padding: 0.9rem 1.6rem; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); transform: translateY(70px); opacity: 0; transition: all 0.35s ease; z-index: 9999; pointer-events: none; }
+    .ch-num {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      background: var(--border);
+      border-radius: 6px;
+      padding: 0.2rem 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .chapter-item.ch-unlocked .ch-num {
+      background: rgba(16,185,129,0.15);
+      color: #059669;
+    }
+
+    .ch-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ch-loc {
+      font-size: 0.72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ch-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .chapter-item.ch-unlocked .ch-badge { color: #059669; }
+
+    /* ─── SOCIAL / INPUT ROWS ─────────────────────────────────── */
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+
+    .field-row label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      width: 90px;
+      flex-shrink: 0;
+    }
+
+    .field-row input {
+      flex: 1;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.15s;
+    }
+
+    .field-row input:focus { outline: none; border-color: var(--gold); }
+
+    .field-col { display: flex; flex-direction: column; gap: 0.75rem; }
+
+    /* ─── TOKEN SECTION ───────────────────────────────────────── */
+    .token-status {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .token-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .token-dot.ok   { background: var(--success); }
+    .token-dot.err  { background: var(--danger); }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .btn-sm:hover { border-color: var(--gold); color: var(--gold-dk); }
+    .btn-sm.accent { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .btn-sm.accent:hover { background: var(--gold-dk); border-color: var(--gold-dk); }
+
+    .btn-row { display: flex; gap: 0.6rem; }
+
+    /* ─── PUBLISH BAR ─────────────────────────────────────────── */
+    .publish-bar {
+      position: fixed;
+      bottom: 0;
+      left: var(--sidebar);
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      z-index: 40;
+    }
+
+    .publish-bar.visible { display: flex; }
+
+    .publish-hint { font-size: 0.8rem; color: var(--muted); }
+
+    .btn-publish {
+      padding: 0.7rem 2rem;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-publish:hover { background: #374151; }
+    .btn-publish:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── TOAST ───────────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 5rem;
+      right: 1.5rem;
+      background: var(--text);
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 0.75rem 1.2rem;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      transform: translateY(16px);
+      opacity: 0;
+      transition: all 0.28s ease;
+      z-index: 9999;
+      pointer-events: none;
+      max-width: 300px;
+    }
+
     #toast.show { transform: translateY(0); opacity: 1; }
-    #toast.error { background: var(--red); color: #fff; }
+    #toast.ok   { background: var(--success); }
+    #toast.err  { background: var(--danger); }
+
+    /* ─── DIVIDER ─────────────────────────────────────────────── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0.25rem 0; }
+
+    /* ─── SCROLLPAD ───────────────────────────────────────────── */
+    .scroll-pad { height: 5rem; }
   </style>
 </head>
 <body>
 
-<!-- ── LOGIN ─────────────────────────────────────────────────────────────── -->
+<!-- LOGIN ──────────────────────────────────────────────────────────────────── -->
 <div id="login-screen">
-  <img src="captain-character.png" alt="Captain Guido" class="login-logo">
-  <div class="login-title">CGC ADMIN</div>
-  <div class="login-sub">CAPTAIN GUIDO COIN</div>
-  <div class="login-box">
-    <label>PASSWORD</label>
-    <div class="pw-row">
-      <input type="password" id="pw-input" placeholder="Enter password" autofocus>
-      <button class="login-btn" onclick="checkPassword()">ENTER</button>
+  <div class="login-card">
+    <img src="captain-guido.png" alt="Captain Guido" class="login-avatar">
+    <div>
+      <div class="login-heading">CGC Command</div>
+      <div class="login-sub">Captain Guido Admin Panel</div>
     </div>
-    <div id="login-error">Incorrect password.</div>
+    <div class="login-form">
+      <label for="pw-input">Password</label>
+      <input type="password" id="pw-input" placeholder="Enter password" autofocus>
+      <div id="login-error" class="login-error">Incorrect password. Try again.</div>
+      <button class="btn-primary" onclick="checkPassword()">Sign in</button>
+    </div>
   </div>
 </div>
 
-<!-- ── ADMIN ──────────────────────────────────────────────────────────────── -->
+<!-- ADMIN ──────────────────────────────────────────────────────────────────── -->
 <div id="admin-panel">
 
-  <header>
-    <div class="header-left">
-      <img src="captain-character.png" alt="CGC">
-      <span class="header-title">CGC ADMIN</span>
-    </div>
-    <button class="logout-btn" onclick="logout()">SIGN OUT</button>
-  </header>
-
-  <main>
-
-    <!-- GitHub token -->
-    <div id="config-warning">
-      <strong>One-time setup:</strong> Paste your GitHub token to enable publishing.<br>
-      <strong>github.com → Settings → Developer settings → Fine-grained tokens</strong> → give <code>Contents: Read &amp; Write</code> on <code>captain-guido</code>.
-      <div class="token-row">
-        <input type="password" id="gh-token-input" placeholder="github_pat_...">
-        <button class="token-save-btn" onclick="saveToken()">SAVE</button>
-        <button class="token-save-btn" style="background:transparent;color:var(--teal);border:1px solid var(--teal);" onclick="verifyToken()">VERIFY</button>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <img src="captain-guido.png" alt="CGC">
+      <div>
+        <div class="sidebar-logo-text">CGC Admin</div>
+        <div class="sidebar-logo-sub">Captain Guido Coin</div>
       </div>
     </div>
 
-    <!-- Maintenance mode -->
-    <div class="card">
-      <div class="card-label">Site Status</div>
-      <div class="maintenance-row">
-        <div>
-          <p>Turn on maintenance mode to show visitors a holding page while you make updates. Turn it off when you're done.</p>
-          <div class="maintenance-label" id="maintenance-label">
-            <span class="m-off">● SITE IS LIVE</span>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4rem;">
-          <label class="big-toggle">
-            <input type="checkbox" id="maintenance-toggle" onchange="updateMaintenanceLabel()">
-            <span class="big-slider"></span>
-          </label>
-          <span style="color:var(--muted);font-size:0.62rem;letter-spacing:1px;">MAINTENANCE</span>
-        </div>
-      </div>
-    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Manage</div>
+      <button class="nav-item active" onclick="showPanel('status')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Site Status
+      </button>
+      <button class="nav-item" onclick="showPanel('stats')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+        Stats
+      </button>
+      <button class="nav-item" onclick="showPanel('chapters')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Chapters
+      </button>
+      <button class="nav-item" onclick="showPanel('social')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Social Links
+      </button>
 
-    <!-- Hero stats -->
-    <div class="card">
-      <div class="card-label">Hero Stats</div>
-      <div class="stats-grid">
-        <div class="stat-field"><label>CHAPTERS</label><input type="number" id="stat-chapters" value="12"></div>
-        <div class="stat-field"><label>LBS REMOVED</label><input type="number" id="stat-lbs" value="8500"></div>
-        <div class="stat-field"><label>MILES CLEANED</label><input type="number" id="stat-miles" value="62"></div>
-      </div>
-    </div>
+      <hr class="divider">
+      <div class="nav-label">Settings</div>
+      <button class="nav-item" onclick="showPanel('token')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        GitHub Token
+      </button>
+    </nav>
 
-    <!-- Chapters -->
-    <div class="card">
-      <div class="card-label">Chapters</div>
-      <div id="chapters-list"></div>
-    </div>
-
-    <!-- Social links -->
-    <div class="card">
-      <div class="card-label">Social Links</div>
-      <div class="social-grid">
-        <div class="social-row"><label>TWITTER</label><input type="text" id="link-twitter" value="https://twitter.com/CaptainGuido"></div>
-        <div class="social-row"><label>DISCORD</label><input type="text" id="link-discord" value="#"></div>
-        <div class="social-row"><label>TELEGRAM</label><input type="text" id="link-telegram" value="#"></div>
-      </div>
-    </div>
-
-    <!-- Publish -->
-    <div class="publish-row">
-      <button class="save-btn" id="save-btn" onclick="saveChanges()">
-        <span id="save-label">PUBLISH CHANGES</span>
-        <span>→</span>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign out
       </button>
     </div>
+  </aside>
 
+  <!-- Main -->
+  <main class="main-content">
+
+    <!-- Site Status -->
+    <section class="panel active" id="panel-status">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Site Status</div>
+          <div class="panel-sub">Control whether the site is live or in maintenance mode.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Maintenance Mode</div>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <h3>Take the site offline</h3>
+            <p>Visitors will be redirected to a holding page while you make updates.</p>
+            <div class="status-pill live" id="maintenance-pill">Site is live</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="maintenance-toggle" onchange="updateMaintenancePill()">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="panel" id="panel-stats">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Stats</div>
+          <div class="panel-sub">Numbers shown in the hero section of the site.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Hero counters</div>
+        <div class="stats-grid">
+          <div class="stat-field">
+            <label>Chapters</label>
+            <input type="number" id="stat-chapters" value="12" min="0">
+          </div>
+          <div class="stat-field">
+            <label>Lbs Removed</label>
+            <input type="number" id="stat-lbs" value="0" min="0">
+          </div>
+          <div class="stat-field">
+            <label>Miles Cleaned</label>
+            <input type="number" id="stat-miles" value="0" min="0">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chapters -->
+    <section class="panel" id="panel-chapters">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Chapters</div>
+          <div class="panel-sub">Toggle which chapters are unlocked on the voyage map.</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-sm" onclick="setAllChapters(false)">Lock all</button>
+          <button class="btn-sm" onclick="setAllChapters(true)">Unlock all</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="chapter-list" id="chapters-list"></div>
+      </div>
+    </section>
+
+    <!-- Social -->
+    <section class="panel" id="panel-social">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Social Links</div>
+          <div class="panel-sub">Update community link URLs — changes go live on publish.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Community</div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Twitter</label>
+            <input type="url" id="link-twitter" placeholder="https://twitter.com/...">
+          </div>
+          <div class="field-row">
+            <label>Discord</label>
+            <input type="url" id="link-discord" placeholder="https://discord.gg/...">
+          </div>
+          <div class="field-row">
+            <label>Telegram</label>
+            <input type="url" id="link-telegram" placeholder="https://t.me/...">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Token -->
+    <section class="panel" id="panel-token">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">GitHub Token</div>
+          <div class="panel-sub">Required to publish changes. Stored locally in your browser only.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Access Token</div>
+        <div id="token-status" class="token-status" style="margin-bottom:1rem;">
+          <span class="token-dot" id="token-dot"></span>
+          <span id="token-status-text">Not verified</span>
+        </div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Token</label>
+            <input type="password" id="gh-token-input" placeholder="github_pat_...">
+          </div>
+          <div class="btn-row" style="padding-left:calc(90px + 0.9rem)">
+            <button class="btn-sm accent" onclick="saveToken()">Save</button>
+            <button class="btn-sm" onclick="verifyToken()">Verify connection</button>
+            <button class="btn-sm" onclick="clearToken()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Clear</button>
+          </div>
+        </div>
+        <p style="margin-top:1.1rem;font-size:0.77rem;color:var(--muted);line-height:1.7;">
+          Create a fine-grained token at <strong>github.com → Settings → Developer settings → Fine-grained tokens</strong>.<br>
+          Repository: <strong>captain-guido</strong> &nbsp;·&nbsp; Permission: <strong>Contents — Read &amp; Write</strong>
+        </p>
+      </div>
+    </section>
+
+    <div class="scroll-pad"></div>
   </main>
-</div>
+
+  <!-- Publish bar -->
+  <div class="publish-bar visible" id="publish-bar">
+    <div class="publish-hint">Changes are saved locally until you publish.</div>
+    <button class="btn-publish" id="pub-btn" onclick="saveChanges()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span id="pub-label">Publish changes</span>
+    </button>
+  </div>
+
+</div><!-- /admin-panel -->
 
 <div id="toast"></div>
 
@@ -221,28 +823,28 @@
   const REPO_NAME  = 'captain-guido';
 
   const CHAPTERS = [
-    { num:'01', name:'Port of Ostia',          loc:'Mediterranean Sea, Italy', unlocked:false, desc:'The salt air hit like memory. The Hashwind leaves port as the Nautilus Ledger pulses with a burn notice — encrypted coordinates pinging from just north of Cairo. Someone is poisoning the trade lanes, and they wanted to see if Guido would respond.' },
-    { num:'02', name:'Signals in Cairo',        loc:'Red Sea, Egypt',           unlocked:false, desc:'The Red Sea has become a nexus — ghost manifests bouncing between vessels and unregistered satellites. The same shadow fleet from the Atlantic, the same scrubber hacks. Kins says: cut ahead. Next time, we don\'t follow. We tag.' },
-    { num:'03', name:'Arabian Tides',           loc:'Arabian Sea',              unlocked:false, desc:'The CGC token becomes a weapon. Embedded with cutting-edge smart contracts, it can disrupt corrupt fleets — making vessels vanish from every port, every ledger, every network. The sea needs them more than ever.' },
-    { num:'04', name:'The Indian Abyss',        loc:'Indian Ocean',             unlocked:false, desc:'Digital justice meets rogue trawlers. A salvo of CGCs strikes the first illegal vessel — smart contracts cascade through its systems, navigation crippled. The blockchain remembers what the sea tries to forget.' },
-    { num:'05', name:'Philippine Sea Shadows',  loc:'Philippine Sea',           unlocked:false, desc:'Bio-tagged crypto sharks armed with subdermal CGCs enter the fight. They dart beneath the ghost fleet, triggering contracts that lock coordinates and force vessels into digital obsolescence. One by one, the dark pings fade.' },
-    { num:'06', name:'South Pacific Reckoning', loc:'South Pacific Ocean',      unlocked:false, desc:'Victory comes at a cost. The enemy fights back harder. A crypto shark is lost to the depths — its bio-tag sending a final distress pulse. The Hashwind takes damage. But the mission doesn\'t stop.' },
-    { num:'07', name:'North Pacific Requiem',   loc:'North Pacific Ocean',      unlocked:false, desc:'They return to the gyre — bigger than before. Dolphin drones scoop microplastics. Humpbacks surface alongside. But CGC reserves are draining fast. "We lit the spark," Guido says. "Others will carry it." They turn north.' },
-    { num:'08', name:'Bering Sea Crossfire',    loc:'Bering Sea',               unlocked:false, desc:'From the fog, a black submarine surfaces — the snowflake emblem glowing cold. Victor Malinov. The ghost behind the mission that nearly ended them. A siphon tether rips his stolen mint-core from his systems. Malinov dives. But not before Guido takes what he came for.' },
-    { num:'09', name:'Gyres of the Graveyard',  loc:'North Atlantic Ocean',     unlocked:false, desc:'Malinov didn\'t fight here — he shed weight. A decoy sub, deliberately abandoned. Inside, a corrupted data core burned too fast. Coordinates spill across the interface. Not ports. Not cities. Vaults.' },
-    { num:'10', name:'Gulf of America',         loc:'Gulf of Mexico',           unlocked:false, desc:'Warm water. Quiet violence. Dead zones stretch for miles beneath the calm surface. Malinov\'s offshore rig is exposed without a shot fired — CGCs deployed to reveal, not attack. Within hours, the ledger lights up.' },
-    { num:'11', name:'Southern Cross',          loc:'South Atlantic Ocean',     unlocked:false, desc:'At twilight, Malinov\'s true ship surfaces — the Cold Wallet. Sleek, shielded, glowing faint green beneath the waterline. They don\'t engage. They follow. "We don\'t chase ghosts anymore," Guido says. "We finish stories."' },
-    { num:'12', name:'Return to Ostia',         loc:'Mediterranean Sea, Italy', unlocked:false, desc:'The water smells the same. Salt. Stone. Memory. CGC adoption has spread — cleanup nodes active across every ocean they touched. But Malinov is still out there. Still burning. "This was never the end." Kins smiles. "Book one, then." Guido turns to sea. "Book two is colder."' }
+    { num:'01', name:'Port of Ostia',          loc:'Mediterranean Sea, Italy',  unlocked:false },
+    { num:'02', name:'Signals in Cairo',        loc:'Red Sea, Egypt',            unlocked:false },
+    { num:'03', name:'Arabian Tides',           loc:'Arabian Sea',               unlocked:false },
+    { num:'04', name:'The Indian Abyss',        loc:'Indian Ocean',              unlocked:false },
+    { num:'05', name:'Philippine Sea Shadows',  loc:'Philippine Sea',            unlocked:false },
+    { num:'06', name:'South Pacific Reckoning', loc:'South Pacific Ocean',       unlocked:false },
+    { num:'07', name:'North Pacific Requiem',   loc:'North Pacific Ocean',       unlocked:false },
+    { num:'08', name:'Bering Sea Crossfire',    loc:'Bering Sea',                unlocked:false },
+    { num:'09', name:'Gyres of the Graveyard',  loc:'North Atlantic Ocean',      unlocked:false },
+    { num:'10', name:'Gulf of America',         loc:'Gulf of Mexico',            unlocked:false },
+    { num:'11', name:'Southern Cross',          loc:'South Atlantic Ocean',      unlocked:false },
+    { num:'12', name:'Return to Ostia',         loc:'Mediterranean Sea, Italy',  unlocked:false },
   ];
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  async function hash(s) {
+  async function sha256(s) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
   }
 
   async function checkPassword() {
-    const h = await hash(document.getElementById('pw-input').value);
+    const h = await sha256(document.getElementById('pw-input').value);
     if (h === PW_HASH) {
       sessionStorage.setItem('cgc_auth','1');
       showAdmin();
@@ -259,50 +861,29 @@
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-panel').style.display  = 'block';
     renderChapters();
-    if (localStorage.getItem('cgc_gh_token')) {
-      document.getElementById('config-warning').style.display = 'none';
-      loadConfig(); // pre-populate form from live config.json
+    const saved = localStorage.getItem('cgc_gh_token');
+    if (saved) {
+      document.getElementById('gh-token-input').value = '•'.repeat(20);
+      loadConfig();
     }
   }
 
   function logout() { sessionStorage.removeItem('cgc_auth'); location.reload(); }
 
-  // ── Token ──────────────────────────────────────────────────────────────────
-  function saveToken() {
-    const v = document.getElementById('gh-token-input').value.trim();
-    if (!v) return;
-    localStorage.setItem('cgc_gh_token', v);
-    document.getElementById('config-warning').style.display = 'none';
-    verifyToken(v);
-  }
-
-  async function verifyToken(tokenOverride) {
-    const token = tokenOverride || localStorage.getItem('cgc_gh_token');
-    if (!token) { toast('No token saved', true); return; }
-    const H = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
-    try {
-      // Check read access
-      const rRes  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, { headers: H });
-      const rData = await rRes.json();
-      if (!rRes.ok) { toast(`Token error: ${rData.message || rRes.status}`, true); return; }
-
-      const canWrite = rData.permissions && rData.permissions.push;
-      if (!canWrite) { toast('Token lacks write access — re-create with Contents: Read & Write', true); return; }
-
-      toast('Token OK — read & write confirmed ✓');
-      if (!tokenOverride) document.getElementById('config-warning').style.display = 'none';
-    } catch(e) {
-      toast('Network error verifying token', true);
-    }
+  // ── Nav ────────────────────────────────────────────────────────────────────
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    event.currentTarget.classList.add('active');
   }
 
   // ── Maintenance ────────────────────────────────────────────────────────────
-  function updateMaintenanceLabel() {
+  function updateMaintenancePill() {
     const on  = document.getElementById('maintenance-toggle').checked;
-    const lbl = document.getElementById('maintenance-label');
-    lbl.innerHTML = on
-      ? '<span class="m-on">● MAINTENANCE MODE ON</span>'
-      : '<span class="m-off">● SITE IS LIVE</span>';
+    const el  = document.getElementById('maintenance-pill');
+    el.textContent = on ? 'Maintenance on' : 'Site is live';
+    el.className   = 'status-pill ' + (on ? 'maint' : 'live');
   }
 
   // ── Chapters ───────────────────────────────────────────────────────────────
@@ -310,93 +891,144 @@
     const list = document.getElementById('chapters-list');
     list.innerHTML = '';
     CHAPTERS.forEach((ch, i) => {
-      const row = document.createElement('div');
-      row.className = 'chapter-row';
-      row.innerHTML = `
-        <div>
-          <div class="ch-header">
-            <span class="ch-name">CH.${ch.num} — ${ch.name}</span>
-            <span class="ch-loc">${ch.loc}</span>
+      const item = document.createElement('div');
+      item.className = 'chapter-item' + (ch.unlocked ? ' ch-unlocked' : '');
+      item.id = 'ch-item-' + i;
+      item.innerHTML = `
+        <div class="ch-left">
+          <span class="ch-num" id="ch-num-${i}">CH.${ch.num}</span>
+          <div>
+            <div class="ch-name">${ch.name}</div>
+            <div class="ch-loc">${ch.loc}</div>
           </div>
-          <textarea class="ch-desc" id="desc-${i}">${ch.desc}</textarea>
         </div>
-        <div class="ch-right">
-          <span class="ch-status ${ch.unlocked?'s-unlocked':'s-locked'}" id="lbl-${i}">${ch.unlocked?'UNLOCKED':'LOCKED'}</span>
-          <label class="toggle">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
+          <span class="ch-badge" id="ch-badge-${i}">${ch.unlocked ? 'UNLOCKED' : 'LOCKED'}</span>
+          <label class="switch green">
             <input type="checkbox" ${ch.unlocked?'checked':''} onchange="toggleChapter(${i}, this.checked)">
-            <span class="toggle-slider"></span>
+            <span class="switch-track"></span>
           </label>
         </div>`;
-      list.appendChild(row);
+      list.appendChild(item);
     });
   }
 
   function toggleChapter(i, unlocked) {
     CHAPTERS[i].unlocked = unlocked;
-    const lbl = document.getElementById(`lbl-${i}`);
-    lbl.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
-    lbl.className = `ch-status ${unlocked ? 's-unlocked' : 's-locked'}`;
+    const item  = document.getElementById('ch-item-' + i);
+    const badge = document.getElementById('ch-badge-' + i);
+    item.className  = 'chapter-item' + (unlocked ? ' ch-unlocked' : '');
+    badge.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
   }
 
-  // ── Load current config from GitHub ───────────────────────────────────────
+  function setAllChapters(unlocked) {
+    CHAPTERS.forEach((_, i) => {
+      CHAPTERS[i].unlocked = unlocked;
+      const item  = document.getElementById('ch-item-' + i);
+      const badge = document.getElementById('ch-badge-' + i);
+      const cb    = item.querySelector('input[type=checkbox]');
+      item.className    = 'chapter-item' + (unlocked ? ' ch-unlocked' : '');
+      badge.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
+      cb.checked        = unlocked;
+    });
+  }
+
+  // ── Token ──────────────────────────────────────────────────────────────────
+  function saveToken() {
+    const v = document.getElementById('gh-token-input').value.trim();
+    if (!v || v.startsWith('•')) return;
+    localStorage.setItem('cgc_gh_token', v);
+    document.getElementById('gh-token-input').value = '•'.repeat(20);
+    verifyToken();
+  }
+
+  function clearToken() {
+    localStorage.removeItem('cgc_gh_token');
+    document.getElementById('gh-token-input').value = '';
+    setTokenStatus(null, 'Token cleared');
+  }
+
+  function setTokenStatus(ok, msg) {
+    const dot  = document.getElementById('token-dot');
+    const text = document.getElementById('token-status-text');
+    dot.className  = 'token-dot' + (ok === true ? ' ok' : ok === false ? ' err' : '');
+    text.textContent = msg;
+  }
+
+  async function verifyToken() {
+    const token = localStorage.getItem('cgc_gh_token');
+    if (!token) { setTokenStatus(false, 'No token saved — enter one above'); return; }
+    setTokenStatus(null, 'Checking…');
+    try {
+      const H    = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
+      const res  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, { headers: H });
+      const data = await res.json();
+      if (!res.ok) { setTokenStatus(false, data.message || `Error ${res.status}`); return; }
+      const canWrite = data.permissions && data.permissions.push;
+      if (!canWrite) { setTokenStatus(false, 'Read-only — needs Contents: Read & Write'); return; }
+      setTokenStatus(true, 'Connected — read & write access confirmed');
+    } catch(e) {
+      setTokenStatus(false, 'Network error');
+    }
+  }
+
+  // ── Load live config from GitHub ───────────────────────────────────────────
   async function loadConfig() {
     const token = localStorage.getItem('cgc_gh_token');
     if (!token) return;
     const H = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
-    const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
     try {
-      const res  = await fetch(base+'config.json', { headers: H });
+      const res  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/config.json`, { headers: H });
+      if (!res.ok) return;
       const data = await res.json();
       const cfg  = JSON.parse(atob(data.content.replace(/\n/g,'')));
 
-      // Maintenance
       document.getElementById('maintenance-toggle').checked = !!cfg.maintenance;
-      updateMaintenanceLabel();
+      updateMaintenancePill();
 
-      // Stats
       if (cfg.stats) {
         document.getElementById('stat-chapters').value = cfg.stats.chapters ?? 12;
         document.getElementById('stat-lbs').value      = cfg.stats.lbs     ?? 0;
         document.getElementById('stat-miles').value    = cfg.stats.miles   ?? 0;
       }
 
-      // Chapter unlock state
       if (cfg.chapters) {
-        cfg.chapters.forEach((ch, i) => {
+        cfg.chapters.forEach(ch => {
           const idx = CHAPTERS.findIndex(c => c.num === ch.num);
           if (idx === -1) return;
           CHAPTERS[idx].unlocked = !!ch.unlocked;
-          const cb  = document.querySelector(`#chapters-list .chapter-row:nth-child(${idx+1}) input[type=checkbox]`);
-          const lbl = document.getElementById(`lbl-${idx}`);
-          if (cb)  cb.checked       = CHAPTERS[idx].unlocked;
-          if (lbl) { lbl.textContent = CHAPTERS[idx].unlocked ? 'UNLOCKED' : 'LOCKED'; lbl.className = `ch-status ${CHAPTERS[idx].unlocked ? 's-unlocked' : 's-locked'}`; }
+          const item  = document.getElementById('ch-item-' + idx);
+          const badge = document.getElementById('ch-badge-' + idx);
+          const cb    = item && item.querySelector('input[type=checkbox]');
+          if (!item) return;
+          item.className    = 'chapter-item' + (CHAPTERS[idx].unlocked ? ' ch-unlocked' : '');
+          badge.textContent = CHAPTERS[idx].unlocked ? 'UNLOCKED' : 'LOCKED';
+          if (cb) cb.checked = CHAPTERS[idx].unlocked;
         });
       }
 
-      // Social
       if (cfg.social) {
         document.getElementById('link-twitter').value  = cfg.social.twitter  || '';
         document.getElementById('link-discord').value  = cfg.social.discord  || '';
         document.getElementById('link-telegram').value = cfg.social.telegram || '';
       }
-    } catch(e) { /* silent — config might not exist yet */ }
+    } catch(e) { /* silent */ }
   }
 
   // ── Publish ────────────────────────────────────────────────────────────────
   async function saveChanges() {
     const token = localStorage.getItem('cgc_gh_token');
-    if (!token) { document.getElementById('config-warning').style.display='block'; toast('Enter GitHub token first',true); return; }
+    if (!token) { showPanel('token'); toast('Enter your GitHub token first', 'err'); return; }
 
-    const btn = document.getElementById('save-btn');
+    const btn = document.getElementById('pub-btn');
     btn.disabled = true;
-    document.getElementById('save-label').textContent = 'PUBLISHING...';
+    document.getElementById('pub-label').textContent = 'Publishing…';
 
-    const base   = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
-    const getH   = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
-    const putH   = { ...getH, 'Content-Type':'application/json' };
+    const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
+    const getH = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
+    const putH = { ...getH, 'Content-Type':'application/json' };
 
     try {
-      // Build config object from form
       const cfg = {
         maintenance: document.getElementById('maintenance-toggle').checked,
         stats: {
@@ -412,56 +1044,42 @@
         }
       };
 
-      // Fetch current SHA of config.json (required for GitHub PUT)
-      const getRes  = await fetch(base+'config.json', { headers: getH });
+      const getRes  = await fetch(base + 'config.json', { headers: getH });
       const getData = await getRes.json();
-
-      if (!getRes.ok) {
-        const msg = getData.message || `HTTP ${getRes.status}`;
-        throw new Error(`Read failed: ${msg}`);
-      }
-
-      const sha = getData.sha;
-
-      // Base64-encode the JSON (pure ASCII — btoa is safe)
-      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2))));
+      if (!getRes.ok) throw new Error(getData.message || `Read error ${getRes.status}`);
 
       const body = {
         message: `admin: update config${cfg.maintenance ? ' [maintenance on]' : ''}`,
-        content: encoded,
-        sha
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2)))),
+        sha: getData.sha
       };
 
-      const putRes  = await fetch(base+'config.json', { method:'PUT', headers:putH, body: JSON.stringify(body) });
+      const putRes  = await fetch(base + 'config.json', { method:'PUT', headers:putH, body: JSON.stringify(body) });
       const putData = await putRes.json();
+      if (!putRes.ok) throw new Error(putData.message || `Write error ${putRes.status}`);
 
-      if (!putRes.ok) {
-        const msg = putData.message || `HTTP ${putRes.status}`;
-        throw new Error(`Write failed: ${msg}`);
-      }
-
-      toast('Changes published live ✓');
+      toast('Published — changes live in ~30s', 'ok');
 
     } catch(err) {
       console.error('[CGC admin]', err);
-      toast(err.message || 'Something went wrong', true);
+      toast(err.message || 'Something went wrong', 'err');
     }
 
     btn.disabled = false;
-    document.getElementById('save-label').textContent = 'PUBLISH CHANGES';
+    document.getElementById('pub-label').textContent = 'Publish changes';
   }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
-  function toast(msg, error=false) {
+  function toast(msg, type='') {
     const el = document.getElementById('toast');
     el.textContent = msg;
-    el.className = 'show' + (error?' error':'');
-    setTimeout(()=>el.className='', 3000);
+    el.className   = 'show' + (type ? ' ' + type : '');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.className = '', 3500);
   }
 
-  // ── Auto-login ─────────────────────────────────────────────────────────────
-  if (sessionStorage.getItem('cgc_auth')==='1') showAdmin();
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  if (sessionStorage.getItem('cgc_auth') === '1') showAdmin();
 </script>
-
 </body>
 </html>
