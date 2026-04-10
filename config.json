@@ -8,51 +8,51 @@
   "chapters": [
     {
       "num": "01",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "02",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "03",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "04",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "05",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "06",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "07",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "08",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "09",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "10",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "11",
-      "unlocked": true
+      "unlocked": false
     },
     {
       "num": "12",
-      "unlocked": true
+      "unlocked": false
     }
   ],
   "social": {
