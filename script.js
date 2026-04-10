@@ -148,7 +148,7 @@
     var mapEl = document.getElementById('map');
     if (!mapEl) return;
 
-    var chapters = [
+    var chapters = window._globeChapters = [
       { name: 'Port of Ostia',    lat: 41.73,        lng: 12.29,         unlocked: false, num: 1  },
       { name: 'Signals in Cairo', lat: 30.0444,       lng: 31.2357,       unlocked: false, num: 2  },
       { name: 'Arabian Tides',    lat: 20,            lng: 60,            unlocked: false, num: 3  },
@@ -211,7 +211,7 @@
     });
 
     // ── Globe ────────────────────────────────────────────────────────────────
-    var globe = Globe()
+    var globe = window._globe = Globe()
       // Dark dramatic night texture — deep ocean navy look
       .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
@@ -536,21 +536,37 @@
       });
     }
 
-    // Chapter unlock badges
+    // Chapter unlock badges + globe sync
     if (cfg.chapters) {
       cfg.chapters.forEach(function(ch) {
+        var num = parseInt(ch.num, 10);
+
+        // Update DOM chapter cards
         var cards = document.querySelectorAll('.chapter-card');
         cards.forEach(function(card) {
           var numEl = card.querySelector('.chapter-number');
           if (numEl && numEl.textContent.trim() === 'CH. ' + ch.num) {
             var badge = card.querySelector('.status-badge');
             if (badge) {
-              badge.textContent  = ch.unlocked ? 'UNLOCKED' : 'LOCKED';
-              badge.className    = 'status-badge ' + (ch.unlocked ? 'unlocked' : 'locked');
+              badge.textContent = ch.unlocked ? 'UNLOCKED' : 'LOCKED';
+              badge.className   = 'status-badge ' + (ch.unlocked ? 'unlocked' : 'locked');
             }
           }
         });
+
+        // Update globe in-memory chapter data
+        if (window._globeChapters) {
+          var gc = window._globeChapters.find(function(c) { return c.num === num; });
+          if (gc) gc.unlocked = !!ch.unlocked;
+        }
       });
+
+      // Refresh globe point colours, sizes, and rings
+      if (window._globe && window._globeChapters) {
+        window._globe
+          .pointsData(window._globeChapters)
+          .ringsData(window._globeChapters.filter(function(c) { return !c.unlocked; }));
+      }
     }
 
     // Social links
