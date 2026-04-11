@@ -523,6 +523,10 @@
   // ─── CHAPTER BACKGROUND PATHS ────────────────────────────────────────────
   function injectChapterPaths() {
     var NS = 'http://www.w3.org/2000/svg';
+    var W = 696, H = 316, CX = 348, CY = 158;
+
+    // One unique flow angle per card — spread across all 360° so each tile looks distinct
+    var flowAngles = [0, 135, 270, 45, 180, 315, 90, 225, 60, 150, 300, 30];
 
     document.querySelectorAll('.chapter-card').forEach(function(card, cardIndex) {
       var existing = card.querySelector('.chapter-paths-svg');
@@ -532,13 +536,7 @@
       var locked = !badge || badge.classList.contains('locked');
       if (!locked) return;
 
-      var svg = document.createElementNS(NS, 'svg');
-      svg.setAttribute('viewBox', '0 0 696 316');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.classList.add('chapter-paths-svg');
-
-      // Deterministic LCG seeded by card index — gives each card unique geometry
+      // Seeded LCG — deterministic variety per card
       var seed = cardIndex * 1664525 + 1013904223;
       function rng() {
         seed = ((seed * 1664525) + 1013904223) >>> 0;
@@ -546,58 +544,67 @@
       }
       function rand(min, max) { return min + rng() * (max - min); }
 
-      var pathCount = Math.round(rand(14, 20));
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.classList.add('chapter-paths-svg');
+
+      // Rotate the whole path bundle so each card flows in a different direction
+      var angle = flowAngles[cardIndex % flowAngles.length];
+      var g = document.createElementNS(NS, 'g');
+      g.setAttribute('transform', 'rotate(' + angle + ' ' + CX + ' ' + CY + ')');
+      svg.appendChild(g);
+
+      // Paths always flow left→right inside the group; rotation handles direction.
+      // They start far outside the left edge and end far past the right edge so
+      // after any rotation the paths always sweep fully across the card.
+      var pathCount = Math.round(rand(16, 24));
 
       for (var i = 0; i < pathCount; i++) {
-        // Vary curve shape per card with a per-card random offset
-        var dx = rand(-90, 90);
-        var dy = rand(-50, 50);
-        var spread = rand(4, 8);
+        // Space paths evenly across the card height with a little jitter
+        var yBase = (H / (pathCount + 1)) * (i + 1);
+        var yOff  = rand(-18, 18);
 
-        var x0 = -380 + i * spread + dx;
-        var y0 = -189 - i * 6 + dy;
-        var x1 = -312 + i * spread + dx * 0.7;
-        var y1 =  216 - i * 6 + dy * 0.5;
-        var x2 =  152 + i * spread + dx * 0.4;
-        var y2 =  343 - i * 6;
-        var x3 =  616 + i * spread + dx * 0.2;
-        var y3 =  470 - i * 6;
-        var x4 =  684 + i * spread + dx * 0.1;
-        var y4 =  875 - i * 6;
+        var x0  = -W * 0.6;
+        var y0  = yBase + yOff + rand(-25, 25);
+        var cx1 = W * rand(0.1, 0.35);
+        var cy1 = yBase + rand(-70, 70);
+        var cx2 = W * rand(0.65, 0.9);
+        var cy2 = yBase + rand(-70, 70);
+        var x3  = W * 1.6;
+        var y3  = yBase + yOff + rand(-25, 25);
 
-        var d = 'M' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
-                ' C' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
-                ' '  + x1.toFixed(1) + ' ' + y1.toFixed(1) +
-                ' '  + x2.toFixed(1) + ' ' + y2.toFixed(1) +
-                ' C' + x3.toFixed(1) + ' ' + y3.toFixed(1) +
-                ' '  + x4.toFixed(1) + ' ' + y4.toFixed(1) +
-                ' '  + x4.toFixed(1) + ' ' + y4.toFixed(1);
+        var d = 'M'  + x0.toFixed(1)  + ' ' + y0.toFixed(1) +
+                ' C' + cx1.toFixed(1) + ' ' + cy1.toFixed(1) +
+                ' '  + cx2.toFixed(1) + ' ' + cy2.toFixed(1) +
+                ' '  + x3.toFixed(1)  + ' ' + y3.toFixed(1);
 
         var path = document.createElementNS(NS, 'path');
         path.setAttribute('d', d);
         path.setAttribute('stroke', '#00d4ff');
-        path.setAttribute('stroke-width', (0.3 + i * 0.05).toFixed(2));
-        svg.appendChild(path);
+        path.setAttribute('stroke-width', (0.5 + rand(0, 0.8)).toFixed(2));
+        g.appendChild(path);
       }
 
-      // Insert into DOM first so getTotalLength() works
+      // Insert before measuring so getTotalLength() works
       card.insertBefore(svg, card.firstChild);
 
-      // Animate each path using Web Animations API with its actual length
-      svg.querySelectorAll('path').forEach(function(path) {
+      // Per-path Web Animation — uses actual path length for correct dasharray
+      g.querySelectorAll('path').forEach(function(path) {
         var len = path.getTotalLength();
         path.setAttribute('stroke-dasharray', len);
         path.setAttribute('stroke-dashoffset', len);
 
-        var dur   = rand(18000, 42000);
-        var delay = -rand(0, dur);          // negative = start mid-cycle
-        var fwd   = rng() > 0.5;           // random direction per path
+        var dur   = rand(10000, 26000);
+        var delay = -rand(0, dur);   // start mid-cycle so it's never blank on first hover
+        var fwd   = rng() > 0.5;    // half flow left, half flow right within the bundle
 
         path.animate(
           [
-            { strokeDashoffset: fwd ?  len : -len, opacity: 0.05 },
-            { strokeDashoffset: 0,                  opacity: 0.40 },
-            { strokeDashoffset: fwd ? -len :  len, opacity: 0.05 }
+            { strokeDashoffset: fwd ?  len : -len, opacity: 0.08 },
+            { strokeDashoffset: len * 0.2,          opacity: 0.65 },
+            { strokeDashoffset: fwd ? -len :  len, opacity: 0.08 }
           ],
           {
             duration:   dur,
