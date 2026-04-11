@@ -520,6 +520,61 @@
     }
   }
 
+  // ─── CHAPTER BACKGROUND PATHS ────────────────────────────────────────────
+  function injectChapterPaths() {
+    var NS = 'http://www.w3.org/2000/svg';
+
+    document.querySelectorAll('.chapter-card').forEach(function(card) {
+      // Remove any existing paths svg
+      var existing = card.querySelector('.chapter-paths-svg');
+      if (existing) existing.remove();
+
+      var badge = card.querySelector('.status-badge');
+      var locked = !badge || badge.classList.contains('locked');
+      if (!locked) return; // Only inject on locked cards
+
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 696 316');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.classList.add('chapter-paths-svg');
+
+      // Two mirrored sets of 18 paths each
+      [-1, 1].forEach(function(pos) {
+        for (var i = 0; i < 18; i++) {
+          var x0 = -(380 - i * 5 * pos);
+          var y0 = -(189 + i * 6);
+          var x1 = -(312 - i * 5 * pos);
+          var y1 =  216 - i * 6;
+          var x2 =  152 - i * 5 * pos;
+          var y2 =  343 - i * 6;
+          var x3 =  616 - i * 5 * pos;
+          var y3 =  470 - i * 6;
+          var x4 =  684 - i * 5 * pos;
+          var y4 =  875 - i * 6;
+
+          var d = 'M' + x0 + ' ' + y0 +
+                  'C' + x0 + ' ' + y0 + ' ' + x1 + ' ' + y1 + ' ' + x2 + ' ' + y2 +
+                  'C' + x3 + ' ' + y3 + ' ' + x4 + ' ' + y4 + ' ' + x4 + ' ' + y4;
+
+          var path = document.createElementNS(NS, 'path');
+          path.setAttribute('d', d);
+          path.setAttribute('stroke', '#00d4ff');
+          path.setAttribute('stroke-width', String(0.4 + i * 0.04));
+
+          var dur    = (22 + i * 1.1 + (pos === -1 ? 5 : 0)).toFixed(1) + 's';
+          var delay  = '-' + (i * 1.3 + (pos === -1 ? 8 : 0)).toFixed(1) + 's';
+          path.style.animationDuration = dur;
+          path.style.animationDelay    = delay;
+
+          svg.appendChild(path);
+        }
+      });
+
+      card.insertBefore(svg, card.firstChild);
+    });
+  }
+
   // ─── APPLY CONFIG ────────────────────────────────────────────────────────
   function applyConfig(cfg) {
     if (!cfg) return;
@@ -580,6 +635,9 @@
           .pointsData(window._globeChapters)
           .ringsData(window._globeChapters.filter(function(c) { return !c.unlocked; }));
       }
+
+      // Re-inject background paths now that badges are updated
+      injectChapterPaths();
     }
 
     // Social links
@@ -611,6 +669,7 @@
     renderImpact();
     initializeMap();
     initNavigation();
+    injectChapterPaths();
 
     // Boot sequence fires the first time the map scrolls into view
     var mapSection = document.getElementById('hero-map');
