@@ -2455,6 +2455,11 @@ footer {
   height: 100%;
   pointer-events: none;
   z-index: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.chapter-card:hover .chapter-paths-svg {
   opacity: 1;
 }
 
