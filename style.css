@@ -2442,12 +2442,7 @@ footer {
 }
 
 /* ── Locked chapter background paths ────────────────────────────── */
-@keyframes cgcPathFlow {
-  0%   { stroke-dashoffset:  3000; opacity: 0.08; }
-  50%  { opacity: 0.35; }
-  100% { stroke-dashoffset: -3000; opacity: 0.08; }
-}
-
+/* dasharray/dashoffset/animation all set per-path by JS (Web Animations API) */
 .chapter-paths-svg {
   position: absolute;
   inset: 0;
@@ -2463,21 +2458,43 @@ footer {
   opacity: 1;
 }
 
-/* Use individual props so JS duration/delay overrides work correctly */
-.chapter-paths-svg path {
-  stroke-dasharray: 3000;
-  stroke-dashoffset: 3000;
-  animation-name: cgcPathFlow;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-duration: 25s; /* JS overrides per-path */
-  animation-fill-mode: none;
-}
-
 /* Ensure card content stays above paths */
 .chapter-card > *:not(.chapter-paths-svg) {
   position: relative;
   z-index: 1;
+}
+
+/* ── Section-tag animated underline ─────────────────────────────── */
+@keyframes tagUnderlineSweep {
+  0%   { transform: scaleX(0) translateX(0); opacity: 0; }
+  15%  { opacity: 1; }
+  50%  { transform: scaleX(1) translateX(0); opacity: 1; }
+  85%  { opacity: 0.6; }
+  100% { transform: scaleX(1) translateX(0); opacity: 0; }
+}
+
+@keyframes tagUnderlineGlow {
+  0%, 100% { box-shadow: 0 0 4px 1px rgba(0,212,255,0.3); }
+  50%       { box-shadow: 0 0 10px 2px rgba(0,212,255,0.7); }
+}
+
+.section-tag {
+  position: relative;
+}
+
+.section-tag::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, var(--aqua) 40%, #fff 55%, var(--aqua) 70%, transparent 100%);
+  transform-origin: left center;
+  transform: scaleX(0);
+  animation:
+    tagUnderlineSweep 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite,
+    tagUnderlineGlow   3.5s ease-in-out infinite;
 }
 
 /* ── Enhanced bioluminescent ocean particles ─────────────────────── */

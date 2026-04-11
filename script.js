@@ -524,14 +524,13 @@
   function injectChapterPaths() {
     var NS = 'http://www.w3.org/2000/svg';
 
-    document.querySelectorAll('.chapter-card').forEach(function(card) {
-      // Remove any existing paths svg
+    document.querySelectorAll('.chapter-card').forEach(function(card, cardIndex) {
       var existing = card.querySelector('.chapter-paths-svg');
       if (existing) existing.remove();
 
       var badge = card.querySelector('.status-badge');
       var locked = !badge || badge.classList.contains('locked');
-      if (!locked) return; // Only inject on locked cards
+      if (!locked) return;
 
       var svg = document.createElementNS(NS, 'svg');
       svg.setAttribute('viewBox', '0 0 696 316');
@@ -539,39 +538,76 @@
       svg.setAttribute('aria-hidden', 'true');
       svg.classList.add('chapter-paths-svg');
 
-      // Two mirrored sets of 18 paths each
-      [-1, 1].forEach(function(pos) {
-        for (var i = 0; i < 18; i++) {
-          var x0 = -(380 - i * 5 * pos);
-          var y0 = -(189 + i * 6);
-          var x1 = -(312 - i * 5 * pos);
-          var y1 =  216 - i * 6;
-          var x2 =  152 - i * 5 * pos;
-          var y2 =  343 - i * 6;
-          var x3 =  616 - i * 5 * pos;
-          var y3 =  470 - i * 6;
-          var x4 =  684 - i * 5 * pos;
-          var y4 =  875 - i * 6;
+      // Deterministic LCG seeded by card index — gives each card unique geometry
+      var seed = cardIndex * 1664525 + 1013904223;
+      function rng() {
+        seed = ((seed * 1664525) + 1013904223) >>> 0;
+        return seed / 0xffffffff;
+      }
+      function rand(min, max) { return min + rng() * (max - min); }
 
-          var d = 'M' + x0 + ' ' + y0 +
-                  'C' + x0 + ' ' + y0 + ' ' + x1 + ' ' + y1 + ' ' + x2 + ' ' + y2 +
-                  'C' + x3 + ' ' + y3 + ' ' + x4 + ' ' + y4 + ' ' + x4 + ' ' + y4;
+      var pathCount = Math.round(rand(14, 20));
 
-          var path = document.createElementNS(NS, 'path');
-          path.setAttribute('d', d);
-          path.setAttribute('stroke', '#00d4ff');
-          path.setAttribute('stroke-width', String(0.4 + i * 0.04));
+      for (var i = 0; i < pathCount; i++) {
+        // Vary curve shape per card with a per-card random offset
+        var dx = rand(-90, 90);
+        var dy = rand(-50, 50);
+        var spread = rand(4, 8);
 
-          var dur    = (22 + i * 1.1 + (pos === -1 ? 5 : 0)).toFixed(1) + 's';
-          var delay  = '-' + (i * 1.3 + (pos === -1 ? 8 : 0)).toFixed(1) + 's';
-          path.style.animationDuration = dur;
-          path.style.animationDelay    = delay;
+        var x0 = -380 + i * spread + dx;
+        var y0 = -189 - i * 6 + dy;
+        var x1 = -312 + i * spread + dx * 0.7;
+        var y1 =  216 - i * 6 + dy * 0.5;
+        var x2 =  152 + i * spread + dx * 0.4;
+        var y2 =  343 - i * 6;
+        var x3 =  616 + i * spread + dx * 0.2;
+        var y3 =  470 - i * 6;
+        var x4 =  684 + i * spread + dx * 0.1;
+        var y4 =  875 - i * 6;
 
-          svg.appendChild(path);
-        }
-      });
+        var d = 'M' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
+                ' C' + x0.toFixed(1) + ' ' + y0.toFixed(1) +
+                ' '  + x1.toFixed(1) + ' ' + y1.toFixed(1) +
+                ' '  + x2.toFixed(1) + ' ' + y2.toFixed(1) +
+                ' C' + x3.toFixed(1) + ' ' + y3.toFixed(1) +
+                ' '  + x4.toFixed(1) + ' ' + y4.toFixed(1) +
+                ' '  + x4.toFixed(1) + ' ' + y4.toFixed(1);
 
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', '#00d4ff');
+        path.setAttribute('stroke-width', (0.3 + i * 0.05).toFixed(2));
+        svg.appendChild(path);
+      }
+
+      // Insert into DOM first so getTotalLength() works
       card.insertBefore(svg, card.firstChild);
+
+      // Animate each path using Web Animations API with its actual length
+      svg.querySelectorAll('path').forEach(function(path) {
+        var len = path.getTotalLength();
+        path.setAttribute('stroke-dasharray', len);
+        path.setAttribute('stroke-dashoffset', len);
+
+        var dur   = rand(18000, 42000);
+        var delay = -rand(0, dur);          // negative = start mid-cycle
+        var fwd   = rng() > 0.5;           // random direction per path
+
+        path.animate(
+          [
+            { strokeDashoffset: fwd ?  len : -len, opacity: 0.05 },
+            { strokeDashoffset: 0,                  opacity: 0.40 },
+            { strokeDashoffset: fwd ? -len :  len, opacity: 0.05 }
+          ],
+          {
+            duration:   dur,
+            delay:      delay,
+            iterations: Infinity,
+            easing:     'linear',
+            fill:       'both'
+          }
+        );
+      });
     });
   }
 
