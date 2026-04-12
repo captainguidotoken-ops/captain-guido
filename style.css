@@ -1007,16 +1007,7 @@ body.entry-active { overflow: hidden; }
   background-clip: text;
 }
 
-.section-title::after {
-  content: '';
-  position: absolute;
-  bottom: -14px;
-  left: 0;
-  width: 100px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--aqua) 0%, var(--gold-accent) 100%);
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
-}
+/* section-title underline removed */
 
 .section-intro {
   font-size: 1.2rem;
@@ -1036,19 +1027,39 @@ body.entry-active { overflow: hidden; }
 
 .image-wrapper {
   position: relative;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto;
+  flex-shrink: 0;
+  /* orange ring + subtle ambient glow */
+  box-shadow: 0 0 0 4px #f4a836, 0 0 24px rgba(244, 168, 54, 0.35);
+  transition: box-shadow 0.5s ease;
+}
+
+.image-wrapper:hover {
+  box-shadow: 0 0 0 4px #f4a836, 0 0 60px rgba(244, 168, 54, 0.65);
 }
 
 .feature-image {
-  width: 100%;
-  max-width: 420px;
-  border-radius: 50%;
-  border: 3px solid var(--gold-accent);
-  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  /* 132% zooms into the character circle and clips the peach background */
+  width: 132%;
+  height: 132%;
+  max-width: none;
+  border-radius: 0;
+  border: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
   display: block;
+  transition: transform 0.5s ease;
 }
 
 .image-wrapper:hover .feature-image {
-  box-shadow: 0 0 60px rgba(244, 168, 54, 0.5);
+  transform: translate(-50%, -50%) scale(1.04);
 }
 
 .image-glow {
@@ -2464,38 +2475,6 @@ footer {
   z-index: 1;
 }
 
-/* ── Section-tag animated underline ─────────────────────────────── */
-@keyframes tagUnderlineSweep {
-  0%   { transform: scaleX(0) translateX(0); opacity: 0; }
-  15%  { opacity: 1; }
-  50%  { transform: scaleX(1) translateX(0); opacity: 1; }
-  85%  { opacity: 0.6; }
-  100% { transform: scaleX(1) translateX(0); opacity: 0; }
-}
-
-@keyframes tagUnderlineGlow {
-  0%, 100% { box-shadow: 0 0 4px 1px rgba(0,212,255,0.3); }
-  50%       { box-shadow: 0 0 10px 2px rgba(0,212,255,0.7); }
-}
-
-.section-tag {
-  position: relative;
-}
-
-.section-tag::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 100%;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent 0%, var(--aqua) 40%, #fff 55%, var(--aqua) 70%, transparent 100%);
-  transform-origin: left center;
-  transform: scaleX(0);
-  animation:
-    tagUnderlineSweep 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite,
-    tagUnderlineGlow   3.5s ease-in-out infinite;
-}
 
 /* ── Enhanced bioluminescent ocean particles ─────────────────────── */
 @keyframes biolumFloat {
@@ -2514,16 +2493,7 @@ footer {
   box-shadow: 0 0 6px 2px currentColor;
 }
 
-/* ── Section title underline animate-in ─────────────────────────── */
-.section-title::after {
-  width: 0;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
-}
-
-.reveal.visible .section-title::after,
-.section-header.visible .section-title::after {
-  width: 100px;
-}
+/* section-title underline removed */
 
 /* ── Shimmer on tokenomics distribution bars ─────────────────────── */
 .dist-bar {
