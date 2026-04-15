@@ -1190,6 +1190,33 @@ body.entry-active { overflow: hidden; }
   overflow: hidden;
 }
 
+/* Unlocked cards are clickable */
+.chapter-card:has(.status-badge.unlocked) {
+  cursor: pointer;
+}
+
+/* "READ CHAPTER →" hint that fades in on hover for unlocked cards */
+.chapter-card:has(.status-badge.unlocked)::after {
+  content: 'READ CHAPTER →';
+  position: absolute;
+  bottom: 1.4rem;
+  right: 1.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: var(--aqua);
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.chapter-card:has(.status-badge.unlocked):hover::after {
+  opacity: 0.85;
+  transform: translateX(0);
+}
+
 .chapter-card::before {
   content: '';
   position: absolute;

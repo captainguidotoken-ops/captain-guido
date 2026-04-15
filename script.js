@@ -521,6 +521,18 @@
   }
 
   // ─── CHAPTER BACKGROUND PATHS ────────────────────────────────────────────
+  // ─── CHAPTER CARD LINKS ──────────────────────────────────────────────────
+  function initChapterLinks() {
+    document.querySelectorAll('.chapter-card[data-chapter]').forEach(function(card) {
+      card.addEventListener('click', function(e) {
+        var badge = card.querySelector('.status-badge');
+        if (!badge || badge.classList.contains('locked')) return;
+        var ch = card.getAttribute('data-chapter');
+        window.location.href = 'chapter.html?ch=' + ch;
+      });
+    });
+  }
+
   function injectChapterPaths() {
     var NS = 'http://www.w3.org/2000/svg';
     var W = 696, H = 316, CX = 348, CY = 158;
@@ -681,6 +693,7 @@
 
       // Re-inject background paths now that badges are updated
       injectChapterPaths();
+      initChapterLinks();
     }
 
     // Social links
@@ -713,6 +726,7 @@
     initializeMap();
     initNavigation();
     injectChapterPaths();
+    initChapterLinks();
 
     // Boot sequence fires the first time the map scrolls into view
     var mapSection = document.getElementById('hero-map');
