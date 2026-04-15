@@ -221,5 +221,11 @@
     "twitter": "https://twitter.com/CaptainGuido",
     "discord": "#",
     "telegram": "#"
+  },
+  "presale": {
+    "active": false,
+    "currentRound": 1,
+    "roundRaised": 0,
+    "totalRaised": 0
   }
 }

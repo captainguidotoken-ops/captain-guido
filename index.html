@@ -119,6 +119,30 @@
             <div class="countdown-unit"><span class="countdown-num" id="cdSecs">00</span><span class="countdown-unit-label">SEC</span></div>
           </div>
         </div>
+
+        <!-- Presale round tracker — shown when presale.active = true -->
+        <div class="presale-tracker" id="presaleTracker" style="display:none;" aria-live="polite">
+          <div class="tracker-header">
+            <div class="tracker-live-dot" aria-hidden="true"></div>
+            <span class="tracker-live-label">PRESALE LIVE</span>
+            <span class="tracker-round-badge" id="trackerRoundBadge">ROUND 1 OF 10</span>
+          </div>
+          <div class="tracker-price-row">
+            <span class="tracker-price" id="trackerPrice">20,000</span>
+            <span class="tracker-price-unit">$GUIDO / USDC</span>
+          </div>
+          <div class="tracker-progress-wrap">
+            <div class="tracker-progress-bar">
+              <div class="tracker-progress-fill" id="trackerFill" style="width:0%"></div>
+            </div>
+            <div class="tracker-progress-labels">
+              <span id="trackerRaised">$0 raised</span>
+              <span id="trackerPct">0%</span>
+              <span id="trackerTarget">of $250,000</span>
+            </div>
+          </div>
+          <div class="tracker-remaining" id="trackerRemaining">5,000,000,000 $GUIDO remaining</div>
+        </div>
       </div>
       <div class="hero-stats" role="status" aria-live="polite">
         <div class="stat-item">

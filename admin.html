@@ -978,6 +978,10 @@
         Launch Checklist
       </button>
 
+      <button class="nav-item" onclick="showPanel('presale')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Presale
+      </button>
       <button class="nav-item" onclick="showPanel('log')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
         Session Log
@@ -1231,6 +1235,66 @@
       </div>
     </section>
 
+    <!-- Presale Panel -->
+    <section class="panel" id="panel-presale">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Presale</div>
+          <div class="panel-sub">Control the live presale round tracker shown on the site.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tracker Visibility</div>
+        <label class="toggle-row" style="display:flex;align-items:center;gap:1rem;cursor:pointer;">
+          <div class="toggle-wrap">
+            <input type="checkbox" id="presaleActive" style="display:none;">
+            <div class="toggle-slider" id="presaleSlider" onclick="togglePresale()" style="width:44px;height:24px;background:var(--border);border-radius:12px;position:relative;cursor:pointer;transition:background 0.2s;">
+              <div style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform 0.2s;" id="presaleThumb"></div>
+            </div>
+          </div>
+          <span id="presaleActiveLabel" style="font-size:0.85rem;color:var(--text-secondary);">Tracker hidden — presale not active</span>
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Current Round</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <label class="form-label">Round (1 – 10)</label>
+            <select id="presaleRound" style="width:100%;padding:0.6rem 0.75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;">
+              <option value="1">Round 1 — 20,000 $GUIDO/USDC — $250K target</option>
+              <option value="2">Round 2 — 18,000 $GUIDO/USDC — $300K target</option>
+              <option value="3">Round 3 — 16,000 $GUIDO/USDC — $400K target</option>
+              <option value="4">Round 4 — 14,000 $GUIDO/USDC — $500K target</option>
+              <option value="5">Round 5 — 12,000 $GUIDO/USDC — $750K target</option>
+              <option value="6">Round 6 — 10,000 $GUIDO/USDC — $1M target</option>
+              <option value="7">Round 7 — 8,000 $GUIDO/USDC — $1.5M target</option>
+              <option value="8">Round 8 — 6,000 $GUIDO/USDC — $2M target</option>
+              <option value="9">Round 9 — 4,000 $GUIDO/USDC — $2.5M target</option>
+              <option value="10">Round 10 — 2,000 $GUIDO/USDC — $3M target</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Raised This Round (USDC)</label>
+            <input type="number" id="presaleRaised" min="0" step="100" value="0"
+              style="width:100%;padding:0.6rem 0.75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Total Raised All Rounds (USDC)</label>
+          <input type="number" id="presaleTotalRaised" min="0" step="100" value="0"
+            style="width:100%;padding:0.6rem 0.75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;">
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="card" id="presalePreviewCard">
+        <div class="card-title">Live Preview</div>
+        <div id="presalePreview" style="font-family:var(--mono,monospace);font-size:0.8rem;color:var(--text-secondary);padding:0.5rem 0;"></div>
+      </div>
+    </section>
+
     <!-- Session Log Panel -->
     <section class="panel" id="panel-log">
       <div class="panel-header">
@@ -1443,6 +1507,82 @@
   }
 
   function logout() { sessionStorage.removeItem('cgc_auth'); location.reload(); }
+
+  // ── Presale ───────────────────────────────────────────────────────────────
+  var ADMIN_ROUNDS = [
+    { round:1,  price:20000, target:250000 },
+    { round:2,  price:18000, target:300000 },
+    { round:3,  price:16000, target:400000 },
+    { round:4,  price:14000, target:500000 },
+    { round:5,  price:12000, target:750000 },
+    { round:6,  price:10000, target:1000000 },
+    { round:7,  price:8000,  target:1500000 },
+    { round:8,  price:6000,  target:2000000 },
+    { round:9,  price:4000,  target:2500000 },
+    { round:10, price:2000,  target:3000000 }
+  ];
+
+  function initPresalePanel(presale) {
+    if (!presale) return;
+    var active = !!presale.active;
+    setPresaleToggle(active);
+    var roundEl = document.getElementById('presaleRound');
+    if (roundEl) roundEl.value = presale.currentRound || 1;
+    var raisedEl = document.getElementById('presaleRaised');
+    if (raisedEl) raisedEl.value = presale.roundRaised || 0;
+    var totalEl = document.getElementById('presaleTotalRaised');
+    if (totalEl) totalEl.value = presale.totalRaised || 0;
+    updatePresalePreview();
+    ['presaleRound','presaleRaised','presaleTotalRaised'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('input', updatePresalePreview);
+    });
+  }
+
+  function setPresaleToggle(active) {
+    var slider = document.getElementById('presaleSlider');
+    var thumb  = document.getElementById('presaleThumb');
+    var label  = document.getElementById('presaleActiveLabel');
+    var cb     = document.getElementById('presaleActive');
+    if (!slider) return;
+    cb.checked = active;
+    slider.style.background = active ? 'var(--aqua)' : 'var(--border)';
+    thumb.style.transform   = active ? 'translateX(20px)' : 'translateX(0)';
+    label.textContent       = active ? 'Tracker LIVE on site' : 'Tracker hidden — presale not active';
+    label.style.color       = active ? 'var(--aqua)' : 'var(--text-secondary)';
+  }
+
+  function togglePresale() {
+    var cb = document.getElementById('presaleActive');
+    cb.checked = !cb.checked;
+    setPresaleToggle(cb.checked);
+    updatePresalePreview();
+  }
+
+  function updatePresalePreview() {
+    var el = document.getElementById('presalePreview');
+    if (!el) return;
+    var roundNum = parseInt(document.getElementById('presaleRound').value) || 1;
+    var raised   = parseFloat(document.getElementById('presaleRaised').value) || 0;
+    var rd       = ADMIN_ROUNDS[roundNum - 1];
+    var pct      = rd ? Math.min(100, (raised / rd.target * 100)).toFixed(1) : 0;
+    var remaining = rd ? Math.max(0, (rd.target - raised)) * rd.price : 0;
+    var fmtN = function(n) { return n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? '$'+Math.round(n/1e3)+'K' : '$'+n; };
+    el.innerHTML =
+      'Round ' + roundNum + ' of 10 &nbsp;·&nbsp; ' +
+      (rd ? rd.price.toLocaleString() : '?') + ' $GUIDO/USDC<br>' +
+      '$' + raised.toLocaleString() + ' raised of $' + (rd ? rd.target.toLocaleString() : '?') + ' &nbsp;(' + pct + '%)<br>' +
+      fmtN(remaining) + ' $GUIDO remaining this round';
+  }
+
+  function getPresaleData() {
+    return {
+      active:        document.getElementById('presaleActive').checked,
+      currentRound:  parseInt(document.getElementById('presaleRound').value) || 1,
+      roundRaised:   parseFloat(document.getElementById('presaleRaised').value) || 0,
+      totalRaised:   parseFloat(document.getElementById('presaleTotalRaised').value) || 0
+    };
+  }
 
   // ── Session Log ──────────────────────────────────────────────────────────
   var LOG_KEY = 'cgc_session_log';
@@ -1669,6 +1809,10 @@
         // Re-render checklist with loaded state
         renderChecklist();
       }
+
+      if (cfg.presale) {
+        initPresalePanel(cfg.presale);
+      }
     } catch(e) { /* silent */ }
   }
 
@@ -1701,7 +1845,8 @@
           twitter:  document.getElementById('link-twitter').value.trim(),
           discord:  document.getElementById('link-discord').value.trim(),
           telegram: document.getElementById('link-telegram').value.trim()
-        }
+        },
+        presale: getPresaleData()
       };
 
       const getRes  = await fetch(base + 'config.json', { headers: getH });

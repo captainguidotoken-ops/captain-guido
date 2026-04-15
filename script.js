@@ -708,6 +708,64 @@
         if (map[key]) a.href = map[key];
       });
     }
+
+    // Presale tracker
+    applyPresaleTracker(cfg.presale);
+  }
+
+  var PRESALE_ROUNDS = [
+    { round: 1,  price: 20000, target: 250000 },
+    { round: 2,  price: 18000, target: 300000 },
+    { round: 3,  price: 16000, target: 400000 },
+    { round: 4,  price: 14000, target: 500000 },
+    { round: 5,  price: 12000, target: 750000 },
+    { round: 6,  price: 10000, target: 1000000 },
+    { round: 7,  price: 8000,  target: 1500000 },
+    { round: 8,  price: 6000,  target: 2000000 },
+    { round: 9,  price: 4000,  target: 2500000 },
+    { round: 10, price: 2000,  target: 3000000 }
+  ];
+
+  function applyPresaleTracker(presale) {
+    var tracker   = document.getElementById('presaleTracker');
+    var countdown = document.getElementById('presaleCountdown');
+    if (!tracker) return;
+
+    if (!presale || !presale.active) {
+      tracker.style.display   = 'none';
+      if (countdown) countdown.style.display = '';
+      return;
+    }
+
+    // Hide countdown, show tracker
+    if (countdown) countdown.style.display = 'none';
+    tracker.style.display = 'block';
+
+    var roundNum  = Math.max(1, Math.min(10, parseInt(presale.currentRound, 10) || 1));
+    var roundData = PRESALE_ROUNDS[roundNum - 1];
+    var raised    = parseFloat(presale.roundRaised) || 0;
+    var target    = roundData.target;
+    var pct       = target > 0 ? Math.min(100, (raised / target) * 100) : 0;
+    var remaining = Math.max(0, (target - raised)) * roundData.price;
+
+    function fmtUSDC(n) {
+      if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+      if (n >= 1000)    return '$' + Math.round(n/1000) + 'K';
+      return '$' + n.toLocaleString();
+    }
+    function fmtTokens(n) {
+      if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+      return n.toLocaleString();
+    }
+
+    document.getElementById('trackerRoundBadge').textContent = 'ROUND ' + roundNum + ' OF 10';
+    document.getElementById('trackerPrice').textContent      = roundData.price.toLocaleString();
+    document.getElementById('trackerFill').style.width       = pct.toFixed(1) + '%';
+    document.getElementById('trackerRaised').textContent     = fmtUSDC(raised) + ' raised';
+    document.getElementById('trackerPct').textContent        = pct.toFixed(1) + '%';
+    document.getElementById('trackerTarget').textContent     = 'of ' + fmtUSDC(target);
+    document.getElementById('trackerRemaining').textContent  = fmtTokens(remaining) + ' $GUIDO remaining this round';
   }
 
   // Initialize
