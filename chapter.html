@@ -285,7 +285,7 @@
         return;
       }
 
-      function renderChapter() {
+      function renderChapter(cfg) {
         var pad = chNum < 10 ? '0' + chNum : String(chNum);
         document.title = 'CH.' + pad + ' — ' + chapter.title + ' | Captain Guido';
         document.getElementById('ch-num-label').textContent = 'CH.' + pad + ' — CHAPTER ' + chNum + ' OF ' + chapters.length;
@@ -294,19 +294,30 @@
         document.getElementById('ch-setting').textContent   = 'SETTING: ' + chapter.setting.toUpperCase();
         document.getElementById('ch-body').innerHTML        = chapter.body;
 
-        var prevCh = chapters.find(function (c) { return c.num === chNum - 1; });
-        var nextCh = chapters.find(function (c) { return c.num === chNum + 1; });
         var elPrev = document.getElementById('ch-prev');
         var elNext = document.getElementById('ch-next');
 
-        if (prevCh) {
-          elPrev.href = 'chapter.html?ch=' + prevCh.num;
+        // Helper: is a given chapter number unlocked in config?
+        function isUnlocked(num) {
+          if (!cfg || !cfg.chapters) return false;
+          var c = cfg.chapters.find(function (c) { return parseInt(c.num, 10) === num; });
+          return !!(c && c.unlocked);
+        }
+
+        var prevNum = chNum - 1;
+        var nextNum = chNum + 1;
+        var prevExists = chapters.some(function (c) { return c.num === prevNum; });
+        var nextExists = chapters.some(function (c) { return c.num === nextNum; });
+
+        if (prevExists && isUnlocked(prevNum)) {
+          elPrev.href = 'chapter.html?ch=' + prevNum;
         } else {
           elPrev.setAttribute('disabled', 'true');
           elPrev.removeAttribute('href');
         }
-        if (nextCh) {
-          elNext.href = 'chapter.html?ch=' + nextCh.num;
+
+        if (nextExists && isUnlocked(nextNum)) {
+          elNext.href = 'chapter.html?ch=' + nextNum;
         } else {
           elNext.setAttribute('disabled', 'true');
           elNext.removeAttribute('href');
@@ -324,15 +335,14 @@
             return parseInt(c.num, 10) === chNum;
           });
           if (!chapterCfg || !chapterCfg.unlocked) {
-            // Chapter is locked — send back to voyage
             window.location.replace('index.html#journey');
             return;
           }
-          renderChapter();
+          renderChapter(cfg);
         })
         .catch(function () {
-          // Config unreachable — fail open so legit readers aren't locked out
-          renderChapter();
+          // Config unreachable — fail open, but no prev/next since we can't verify
+          renderChapter(null);
         });
     })();
   </script>
