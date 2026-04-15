@@ -1,7 +1,9 @@
 # Captain Guido Coin - Robots Configuration
-# Allow all good bots
+# Allow all good bots but block chapter story pages until unlocked
 User-agent: *
 Allow: /
+Disallow: /chapter.html
+Disallow: /chapters-data.js
 
 # Block bad bots
 User-agent: SemrushBot

@@ -269,8 +269,8 @@
   <script src="chapters-data.js"></script>
   <script>
     (function () {
-      var params  = new URLSearchParams(window.location.search);
-      var chNum   = parseInt(params.get('ch'), 10);
+      var params   = new URLSearchParams(window.location.search);
+      var chNum    = parseInt(params.get('ch'), 10);
       var chapters = window.CGC_CHAPTERS || [];
       var chapter  = chapters.find(function (c) { return c.num === chNum; });
 
@@ -278,44 +278,62 @@
       var elError   = document.getElementById('chapter-error');
       var elContent = document.getElementById('chapter-content');
 
-      if (!chapter) {
+      // Unknown chapter number → error
+      if (!chapter || isNaN(chNum)) {
         elLoading.style.display = 'none';
         elError.style.display   = 'flex';
         return;
       }
 
-      // Pad number
-      var pad = chNum < 10 ? '0' + chNum : String(chNum);
+      function renderChapter() {
+        var pad = chNum < 10 ? '0' + chNum : String(chNum);
+        document.title = 'CH.' + pad + ' — ' + chapter.title + ' | Captain Guido';
+        document.getElementById('ch-num-label').textContent = 'CH.' + pad + ' — CHAPTER ' + chNum + ' OF ' + chapters.length;
+        document.getElementById('ch-title').textContent     = chapter.title;
+        document.getElementById('ch-location').textContent  = chapter.location;
+        document.getElementById('ch-setting').textContent   = 'SETTING: ' + chapter.setting.toUpperCase();
+        document.getElementById('ch-body').innerHTML        = chapter.body;
 
-      document.title = 'CH.' + pad + ' — ' + chapter.title + ' | Captain Guido';
-      document.getElementById('ch-num-label').textContent  = 'CH.' + pad + ' — CHAPTER ' + chNum + ' OF ' + chapters.length;
-      document.getElementById('ch-title').textContent      = chapter.title;
-      document.getElementById('ch-location').textContent   = chapter.location;
-      document.getElementById('ch-setting').textContent    = 'SETTING: ' + chapter.setting.toUpperCase();
-      document.getElementById('ch-body').innerHTML         = chapter.body;
+        var prevCh = chapters.find(function (c) { return c.num === chNum - 1; });
+        var nextCh = chapters.find(function (c) { return c.num === chNum + 1; });
+        var elPrev = document.getElementById('ch-prev');
+        var elNext = document.getElementById('ch-next');
 
-      // Prev / Next buttons
-      var prevCh = chapters.find(function (c) { return c.num === chNum - 1; });
-      var nextCh = chapters.find(function (c) { return c.num === chNum + 1; });
-      var elPrev = document.getElementById('ch-prev');
-      var elNext = document.getElementById('ch-next');
+        if (prevCh) {
+          elPrev.href = 'chapter.html?ch=' + prevCh.num;
+        } else {
+          elPrev.setAttribute('disabled', 'true');
+          elPrev.removeAttribute('href');
+        }
+        if (nextCh) {
+          elNext.href = 'chapter.html?ch=' + nextCh.num;
+        } else {
+          elNext.setAttribute('disabled', 'true');
+          elNext.removeAttribute('href');
+        }
 
-      if (prevCh) {
-        elPrev.href = 'chapter.html?ch=' + prevCh.num;
-      } else {
-        elPrev.setAttribute('disabled', 'true');
-        elPrev.removeAttribute('href');
+        elLoading.style.display = 'none';
+        elContent.style.display = 'block';
       }
 
-      if (nextCh) {
-        elNext.href = 'chapter.html?ch=' + nextCh.num;
-      } else {
-        elNext.setAttribute('disabled', 'true');
-        elNext.removeAttribute('href');
-      }
-
-      elLoading.style.display = 'none';
-      elContent.style.display = 'block';
+      // Verify unlock state via config.json before showing content
+      fetch('config.json?v=' + Date.now())
+        .then(function (r) { return r.json(); })
+        .then(function (cfg) {
+          var chapterCfg = cfg.chapters && cfg.chapters.find(function (c) {
+            return parseInt(c.num, 10) === chNum;
+          });
+          if (!chapterCfg || !chapterCfg.unlocked) {
+            // Chapter is locked — send back to voyage
+            window.location.replace('index.html#journey');
+            return;
+          }
+          renderChapter();
+        })
+        .catch(function () {
+          // Config unreachable — fail open so legit readers aren't locked out
+          renderChapter();
+        });
     })();
   </script>
 </body>
