@@ -1,1 +1,12 @@
-{"glenn": [], "jude": []}
+{
+  "glenn": [],
+  "jude": [
+    {
+      "startTs": 1776449186669,
+      "endTs": 1776449260468,
+      "duration": 73799,
+      "note": "",
+      "user": "Jude"
+    }
+  ]
+}
