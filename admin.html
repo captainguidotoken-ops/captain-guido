@@ -1718,11 +1718,19 @@
     return ts >= startOfWeek;
   }
 
+  function ttLogEvent(text) {
+    var user    = ttCurrentUser();
+    var entries = loadLog();
+    entries.push({ ts: Date.now(), author: user, text: text });
+    saveLog(entries);
+  }
+
   function ttToggle() {
     if (!ttRunning) {
       // Clock In
       ttRunning = true;
       ttStartTs = Date.now();
+      ttLogEvent('🕐 Clocked in');
       document.getElementById('tt-clock-btn').textContent   = 'CLOCK OUT';
       document.getElementById('tt-clock-btn').style.background = '#e74c3c';
       document.getElementById('tt-status-label').textContent = 'CLOCKED IN';
@@ -1736,8 +1744,9 @@
       var endTs    = Date.now();
       var duration = endTs - ttStartTs;
       var note     = (document.getElementById('tt-note').value || '').trim();
-      // Save session
       var user     = ttCurrentUser();
+      ttLogEvent('🕐 Clocked out — ' + ttFmtDuration(duration) + (note ? ' · ' + note : ''));
+      // Save session
       var entries  = ttLoadLog(user);
       entries.push({ startTs: ttStartTs, endTs: endTs, duration: duration, note: note, user: user });
       ttSaveLog(entries, user);
