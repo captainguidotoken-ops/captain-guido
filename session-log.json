@@ -7,26 +7,31 @@
   {
     "ts": 1776443635045,
     "author": "Glenn",
-    "text": "Jude needs to do the same with his own token ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ each person sets their own on\n   their own machine. Once it's set the red warning disappears and sessions   \n  will save to GitHub.                                                        \n                           1. GitHub ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Settings ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Developer settings ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Personal access tokens ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Tokens \n  (classic)                                                                   \n  2. Click Generate new token (classic)\n  3. Give it a name (e.g. \"CGT Admin\")                                        \n  4. Check repo scope (full repo access)                    \n  5. Generate ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ copy the token          \n  6. Paste it into the Token field in CGT Admin ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ Save Token"
+    "text": "Jude needs to do the same with his own token ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ each person sets their own on\n   their own machine. Once it's set the red warning disappears and sessions   \n  will save to GitHub.                                                        \n                           1. GitHub ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Settings ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Developer settings ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Personal access tokens ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Tokens \n  (classic)                                                                   \n  2. Click Generate new token (classic)\n  3. Give it a name (e.g. \"CGT Admin\")                                        \n  4. Check repo scope (full repo access)                    \n  5. Generate ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ copy the token          \n  6. Paste it into the Token field in CGT Admin ÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ Save Token"
   },
   {
     "ts": 1776449186890,
     "author": "Jude",
-    "text": "ÃÂ°ÃÂÃÂÃÂ Clocked in"
+    "text": "ÃÂÃÂ°ÃÂÃÂÃÂÃÂÃÂÃÂ Clocked in"
   },
   {
     "ts": 1776449260875,
     "author": "Jude",
-    "text": "Ã°ÂÂÂ Clocked out Ã¢ÂÂ 1m 13s"
+    "text": "ÃÂ°ÃÂÃÂÃÂ Clocked out ÃÂ¢ÃÂÃÂ 1m 13s"
   },
   {
     "ts": 1776449298055,
     "author": "Glenn",
-    "text": "ð Clocked in"
+    "text": "Ã°ÂÂÂ Clocked in"
   },
   {
     "ts": 1776449303440,
     "author": "Glenn",
-    "text": "🕐 Clocked out — 0m 5s"
+    "text": "ð Clocked out â 0m 5s"
+  },
+  {
+    "ts": 1776455310565,
+    "author": "Glenn",
+    "text": "🕐 Clocked in"
   }
 ]
