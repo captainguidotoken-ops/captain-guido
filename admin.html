@@ -1309,6 +1309,16 @@
         <button class="btn-secondary" onclick="clearTimeLog()" style="font-size:0.72rem;padding:0.4rem 0.9rem;">Clear History</button>
       </div>
 
+      <!-- User selector -->
+      <div class="card" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div style="font-size:0.72rem;letter-spacing:3px;color:var(--text-muted);">LOGGED IN AS</div>
+        <select id="tt-user" onchange="ttSwitchUser()" style="padding:0.45rem 0.75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.85rem;font-weight:600;cursor:pointer;">
+          <option value="Glenn">Glenn</option>
+          <option value="Jude">Jude</option>
+        </select>
+        <button class="btn-secondary" onclick="showPanel('tt-report')" style="font-size:0.72rem;padding:0.4rem 0.9rem;margin-left:auto;">Weekly Report →</button>
+      </div>
+
       <!-- Clock widget -->
       <div class="card" style="text-align:center;">
         <div id="tt-clock-display" style="font-family:var(--mono,monospace);font-size:3rem;font-weight:700;letter-spacing:6px;color:var(--primary,#6366f1);margin-bottom:0.5rem;transition:color 0.3s;">00:00:00</div>
@@ -1341,6 +1351,18 @@
         <div id="tt-history"></div>
         <p id="tt-empty" style="color:var(--text-muted);font-size:0.82rem;margin:0;">No sessions logged yet.</p>
       </div>
+    </section>
+
+    <!-- Weekly Report Panel -->
+    <section class="panel" id="panel-tt-report">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Weekly Report</div>
+          <div class="panel-sub">Hours logged by each team member this week.</div>
+        </div>
+        <button class="btn-secondary" onclick="showPanel('time')" style="font-size:0.72rem;padding:0.4rem 0.9rem;">← Back</button>
+      </div>
+      <div id="tt-report-content"></div>
     </section>
 
     <!-- Session Log Panel -->
@@ -1633,15 +1655,26 @@
   }
 
   // ── Time Tracker ─────────────────────────────────────────────────────────
-  var TT_KEY      = 'cgc_time_log';
+  var TT_USERS    = ['Glenn', 'Jude'];
   var ttRunning   = false;
   var ttStartTs   = null;
   var ttTick      = null;
 
-  function ttLoadLog() {
-    try { return JSON.parse(localStorage.getItem(TT_KEY)) || []; } catch { return []; }
+  function ttCurrentUser() {
+    return localStorage.getItem('cgc_tt_user') || 'Glenn';
   }
-  function ttSaveLog(entries) { localStorage.setItem(TT_KEY, JSON.stringify(entries)); }
+  function ttKey(user) { return 'cgc_time_log_' + (user || ttCurrentUser()).toLowerCase(); }
+  function ttLoadLog(user) {
+    try { return JSON.parse(localStorage.getItem(ttKey(user))) || []; } catch { return []; }
+  }
+  function ttSaveLog(entries, user) { localStorage.setItem(ttKey(user), JSON.stringify(entries)); }
+
+  function ttSwitchUser() {
+    if (ttRunning) { alert('Clock out before switching users.'); document.getElementById('tt-user').value = ttCurrentUser(); return; }
+    var u = document.getElementById('tt-user').value;
+    localStorage.setItem('cgc_tt_user', u);
+    ttRenderHistory();
+  }
 
   function ttFmtDuration(ms) {
     var s = Math.floor(ms / 1000);
@@ -1695,9 +1728,10 @@
       var duration = endTs - ttStartTs;
       var note     = (document.getElementById('tt-note').value || '').trim();
       // Save session
-      var entries  = ttLoadLog();
-      entries.push({ startTs: ttStartTs, endTs: endTs, duration: duration, note: note });
-      ttSaveLog(entries);
+      var user     = ttCurrentUser();
+      var entries  = ttLoadLog(user);
+      entries.push({ startTs: ttStartTs, endTs: endTs, duration: duration, note: note, user: user });
+      ttSaveLog(entries, user);
       // Reset UI
       ttRunning = false;
       ttStartTs = null;
@@ -1718,7 +1752,9 @@
   }
 
   function ttRenderHistory() {
-    var entries  = ttLoadLog();
+    var userEl = document.getElementById('tt-user');
+    if (userEl) userEl.value = ttCurrentUser();
+    var entries  = ttLoadLog(ttCurrentUser());
     var history  = document.getElementById('tt-history');
     var empty    = document.getElementById('tt-empty');
     if (!history) return;
@@ -1760,16 +1796,66 @@
   }
 
   function ttDelete(idx) {
-    var entries = ttLoadLog();
+    var user = ttCurrentUser();
+    var entries = ttLoadLog(user);
     entries.splice(idx, 1);
-    ttSaveLog(entries);
+    ttSaveLog(entries, user);
     ttRenderHistory();
   }
 
   function clearTimeLog() {
-    if (!confirm('Clear all time tracking history?')) return;
-    ttSaveLog([]);
+    var user = ttCurrentUser();
+    if (!confirm('Clear all time tracking history for ' + user + '?')) return;
+    ttSaveLog([], user);
     ttRenderHistory();
+  }
+
+  function ttRenderReport() {
+    var el = document.getElementById('tt-report-content');
+    if (!el) return;
+    var html = '';
+    TT_USERS.forEach(function(user) {
+      var entries = ttLoadLog(user);
+      var weekMs = 0, todayMs = 0, allMs = 0;
+      entries.forEach(function(e) {
+        allMs += e.duration;
+        if (ttIsThisWeek(e.startTs)) weekMs += e.duration;
+        if (ttIsToday(e.startTs))    todayMs += e.duration;
+      });
+      // Week days breakdown Mon–Sun
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var dayMap = {};
+      entries.filter(function(e){ return ttIsThisWeek(e.startTs); }).forEach(function(e) {
+        var d = days[new Date(e.startTs).getDay()];
+        dayMap[d] = (dayMap[d] || 0) + e.duration;
+      });
+      var bars = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(function(d) {
+        var ms  = dayMap[d] || 0;
+        var hrs = (ms / 3600000).toFixed(1);
+        var pct = Math.min(100, (ms / (8 * 3600000)) * 100).toFixed(0);
+        return '<div style="flex:1;text-align:center;">' +
+          '<div style="height:60px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px;">' +
+            '<div style="width:24px;background:var(--primary,#6366f1);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:' + (ms?2:0) + 'px;transition:height 0.3s;"></div>' +
+          '</div>' +
+          '<div style="font-size:0.6rem;color:var(--text-muted);">' + d + '</div>' +
+          '<div style="font-size:0.65rem;font-family:var(--mono,monospace);color:var(--text-primary);">' + (ms ? hrs + 'h' : '—') + '</div>' +
+        '</div>';
+      }).join('');
+      html +=
+        '<div class="card" style="margin-bottom:1rem;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+            '<div style="font-weight:700;font-size:1rem;">' + user + '</div>' +
+            '<div style="display:flex;gap:1.5rem;">' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(todayMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">TODAY</div></div>' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(weekMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">THIS WEEK</div></div>' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(allMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">ALL TIME</div></div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:4px;align-items:flex-end;">' + bars + '</div>' +
+        '</div>';
+    });
+    if (!html) html = '<p style="color:var(--text-muted);font-size:0.85rem;">No sessions logged yet.</p>';
+    el.innerHTML = html;
   }
 
   // ── Session Log ──────────────────────────────────────────────────────────
@@ -1848,9 +1934,13 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('panel-' + id).classList.add('active');
-    event.currentTarget.classList.add('active');
+    if (event && event.currentTarget && event.currentTarget.classList.contains('nav-item')) {
+      event.currentTarget.classList.add('active');
+    }
     if (id === 'chat' && !_chatInited) { _chatInited = true; initChat(); }
     if (id === 'log') { renderLog(); }
+    if (id === 'time') { ttRenderHistory(); }
+    if (id === 'tt-report') { ttRenderReport(); }
   }
 
   // ── Maintenance ────────────────────────────────────────────────────────────
