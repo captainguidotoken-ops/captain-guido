@@ -1871,6 +1871,9 @@
   }
 
   function renderLog() {
+    // Sync author field to current time-tracker user
+    var authorEl = document.getElementById('log-author');
+    if (authorEl) authorEl.value = ttCurrentUser();
     var entries  = loadLog();
     var elList   = document.getElementById('log-entries');
     var elEmpty  = document.getElementById('log-empty');
@@ -1892,7 +1895,7 @@
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:0.5rem;">' +
           '<span style="font-size:0.7rem;font-family:var(--mono,monospace);color:var(--text-muted);letter-spacing:1px;">' +
             dateStr + ' · ' + timeStr +
-            (e.author ? ' · <strong style="color:var(--text-secondary)">' + escHtml(e.author) + '</strong>' : '') +
+            (e.author ? ' · <strong style="color:' + (e.author.toLowerCase()==='jude'?'#f4a836':'#00d4ff') + ';letter-spacing:1px;">' + escHtml(e.author) + '</strong>' : '') +
           '</span>' +
           '<button onclick="deleteLogEntry(' + e.ts + ')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.75rem;padding:0;line-height:1;" title="Delete entry">✕</button>' +
         '</div>' +
