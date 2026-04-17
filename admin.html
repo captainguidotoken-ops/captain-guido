@@ -1701,11 +1701,54 @@
   function ttCurrentUser() {
     return localStorage.getItem('cgc_tt_user') || 'Glenn';
   }
-  function ttKey(user) { return 'cgc_time_log_' + (user || ttCurrentUser()).toLowerCase(); }
-  function ttLoadLog(user) {
-    try { return JSON.parse(localStorage.getItem(ttKey(user))) || []; } catch { return []; }
+  // GitHub-backed time log — { glenn: [...], jude: [...] }
+  var TT_GH_PATH = 'time-log.json';
+  var TT_GH_URL  = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + TT_GH_PATH;
+  var _ttCache   = null;   // full { glenn:[], jude:[] } object
+  var _ttSha     = null;
+
+  function ttGhHeaders() {
+    var token = localStorage.getItem('cgc_gh_token');
+    return token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : null;
   }
-  function ttSaveLog(entries, user) { localStorage.setItem(ttKey(user), JSON.stringify(entries)); }
+
+  async function ttFetchAll() {
+    var H = ttGhHeaders();
+    if (!H) { _ttCache = _ttCache || { glenn: [], jude: [] }; return _ttCache; }
+    try {
+      var res  = await fetch(TT_GH_URL + '?v=' + Date.now(), { headers: H });
+      if (res.status === 404) { _ttCache = { glenn: [], jude: [] }; _ttSha = null; return _ttCache; }
+      var data = await res.json();
+      _ttSha   = data.sha;
+      _ttCache = JSON.parse(atob(data.content.replace(/\n/g, '')));
+      TT_USERS.forEach(function(u) { if (!_ttCache[u.toLowerCase()]) _ttCache[u.toLowerCase()] = []; });
+    } catch(e) { _ttCache = _ttCache || { glenn: [], jude: [] }; }
+    return _ttCache;
+  }
+
+  async function ttPushAll(obj) {
+    var H = ttGhHeaders();
+    if (!H) return;
+    var body = { message: 'chore: update time log', content: btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2)))) };
+    if (_ttSha) body.sha = _ttSha;
+    try {
+      var res  = await fetch(TT_GH_URL, { method: 'PUT', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var data = await res.json();
+      if (data.content) { _ttSha = data.content.sha; _ttCache = obj; }
+    } catch(e) {}
+  }
+
+  function ttLoadLog(user) {
+    var key = (user || ttCurrentUser()).toLowerCase();
+    return (_ttCache && _ttCache[key]) ? _ttCache[key] : [];
+  }
+
+  async function ttSaveLog(entries, user) {
+    var key = (user || ttCurrentUser()).toLowerCase();
+    var obj = Object.assign({}, _ttCache || { glenn: [], jude: [] });
+    obj[key] = entries;
+    await ttPushAll(obj);
+  }
 
   function ttSwitchUser() {
     if (ttRunning) { alert('Clock out before switching users.'); document.getElementById('tt-user').value = ttCurrentUser(); return; }
@@ -1748,7 +1791,7 @@
     return ts >= startOfWeek;
   }
 
-  function ttToggle() {
+  async function ttToggle() {
     if (!ttRunning) {
       // Clock In
       ttRunning = true;
@@ -1771,9 +1814,10 @@
       var user     = ttCurrentUser();
       ttLogEvent('🕐 Clocked out — ' + ttFmtDuration(duration) + (note ? ' · ' + note : ''));
       // Save session
+      await ttFetchAll();
       var entries  = ttLoadLog(user);
       entries.push({ startTs: ttStartTs, endTs: endTs, duration: duration, note: note, user: user });
-      ttSaveLog(entries, user);
+      await ttSaveLog(entries, user);
       // Reset UI
       ttRunning = false;
       ttStartTs = null;
@@ -1809,7 +1853,7 @@
     }
   }
 
-  function ttRenderHistory() {
+  async function ttRenderHistory() {
     var userEl = document.getElementById('tt-user');
     if (userEl) userEl.value = ttCurrentUser();
     var isGlennSession = ttCurrentUser().toLowerCase() === 'glenn';
@@ -1817,6 +1861,7 @@
     if (switcher) switcher.style.display = isGlennSession ? 'flex' : 'none';
     var viewUserEl = document.getElementById('tt-view-user');
     var viewUser = (isGlennSession && viewUserEl) ? viewUserEl.value : ttCurrentUser();
+    await ttFetchAll();
     var entries  = ttLoadLog(viewUser);
     var history  = document.getElementById('tt-history');
     var empty    = document.getElementById('tt-empty');
@@ -1897,7 +1942,7 @@
     return (isGlenn && el) ? el.value : ttCurrentUser();
   }
 
-  function ttEditSave(idx) {
+  async function ttEditSave(idx) {
     if (ttCurrentUser().toLowerCase() !== 'glenn') return;
     var startEl = document.getElementById('tt-edit-start-' + idx);
     var endEl   = document.getElementById('tt-edit-end-'   + idx);
@@ -1906,32 +1951,34 @@
     var newEnd   = new Date(endEl.value).getTime();
     if (!newStart || !newEnd || newEnd <= newStart) { alert('End time must be after start time.'); return; }
     var user    = ttViewUser();
-    var entries = ttLoadLog(user);
+    var entries = ttLoadLog(user).slice();
     entries[idx].startTs  = newStart;
     entries[idx].endTs    = newEnd;
     entries[idx].duration = newEnd - newStart;
-    ttSaveLog(entries, user);
+    await ttSaveLog(entries, user);
     ttRenderHistory();
   }
 
-  function ttDelete(idx) {
+  async function ttDelete(idx) {
     var user = ttViewUser();
-    var entries = ttLoadLog(user);
+    var entries = ttLoadLog(user).slice();
     entries.splice(idx, 1);
-    ttSaveLog(entries, user);
+    await ttSaveLog(entries, user);
     ttRenderHistory();
   }
 
-  function clearTimeLog() {
+  async function clearTimeLog() {
     var user = ttCurrentUser();
     if (!confirm('Clear all time tracking history for ' + user + '?')) return;
-    ttSaveLog([], user);
+    await ttSaveLog([], user);
     ttRenderHistory();
   }
 
-  function ttRenderReport() {
+  async function ttRenderReport() {
     var el = document.getElementById('tt-report-content');
     if (!el) return;
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.5rem 0;">Loading…</div>';
+    await ttFetchAll();
     var html = '';
     TT_USERS.forEach(function(user) {
       var entries = ttLoadLog(user);
