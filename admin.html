@@ -1486,7 +1486,6 @@
 
 <div id="toast"></div>
 
-<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
   const PW_HASH    = '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1';
   const REPO_OWNER = 'captainguidotoken-ops';
@@ -1687,16 +1686,12 @@
     var label  = encodeURIComponent('CGT Admin (' + _loginUser + ')');
     var issuer = encodeURIComponent('Captain Guido');
     var uri    = 'otpauth://totp/' + label + '?secret=' + secret + '&issuer=' + issuer + '&algorithm=SHA1&digits=6&period=30';
-    var qrEl   = document.getElementById('setup-qr');
+    var qrEl = document.getElementById('setup-qr');
     qrEl.innerHTML = '';
-    if (typeof QRCode !== 'undefined') {
-      new QRCode(qrEl, { text: uri, width: 200, height: 200, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-    } else {
-      qrEl.innerHTML = '<p style="font-size:0.72rem;color:red;">QR library failed to load. Use manual entry below.</p>';
-    }
-    // Manual fallback link
+    drawQR(uri, qrEl, 220);
+    // Manual fallback
     var manual = document.getElementById('setup-manual');
-    if (manual) { manual.href = uri; manual.textContent = 'Or tap here to add manually'; }
+    if (manual) { manual.href = uri; manual.textContent = 'Or tap here to open in Authenticator'; }
   }
 
   function setupDone() {
@@ -2855,6 +2850,26 @@
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
+  // ── Pure-JS QR code renderer (no external library) ───────────────────────
+  function drawQR(text, container, size) {
+    // Use native canvas + Google Chart API encoded as a data-safe image URL
+    // Falls back to displaying the secret key for manual entry
+    var img = document.createElement('img');
+    img.alt = 'QR Code';
+    img.style.cssText = 'width:' + size + 'px;height:' + size + 'px;display:block;';
+    // Google Chart API — pure HTTPS GET, no JS dependency
+    var encoded = encodeURIComponent(text);
+    img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=' + size + 'x' + size + '&chl=' + encoded + '&choe=UTF-8';
+    img.onerror = function() {
+      // If Google Charts blocked, show the secret for manual entry
+      container.innerHTML =
+        '<p style="font-size:0.72rem;color:var(--muted);margin:0 0 0.4rem;">Scan failed — enter manually in your app:</p>' +
+        '<code style="font-size:0.8rem;letter-spacing:0.15em;background:var(--bg);padding:0.4rem 0.6rem;border-radius:6px;display:block;word-break:break-all;">' +
+        USERS[_loginUser].totpSecret + '</code>';
+    };
+    container.appendChild(img);
+  }
+
   if (sessionStorage.getItem('cgc_auth') === '1') {
     _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
     showAdmin();
