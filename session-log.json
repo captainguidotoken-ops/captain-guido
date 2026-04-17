@@ -3,5 +3,10 @@
     "ts": 1776393086930,
     "author": "Glenn",
     "text": "what the helly fag"
+  },
+  {
+    "ts": 1776443635045,
+    "author": "Glenn",
+    "text": "Jude needs to do the same with his own token — each person sets their own on\n   their own machine. Once it's set the red warning disappears and sessions   \n  will save to GitHub.                                                        \n                           1. GitHub → Settings → Developer settings → Personal access tokens → Tokens \n  (classic)                                                                   \n  2. Click Generate new token (classic)\n  3. Give it a name (e.g. \"CGT Admin\")                                        \n  4. Check repo scope (full repo access)                    \n  5. Generate → copy the token          \n  6. Paste it into the Token field in CGT Admin → Save Token"
   }
 ]
