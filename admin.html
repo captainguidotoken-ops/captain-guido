@@ -1351,7 +1351,17 @@
 
       <!-- Session history -->
       <div class="card">
-        <div class="card-title" style="margin-bottom:1rem;">Session History</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+          <div class="card-title">Session History</div>
+          <!-- Glenn only: view any user's history to edit -->
+          <div id="tt-view-switcher" style="display:none;gap:0.5rem;align-items:center;">
+            <span style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);">VIEWING</span>
+            <select id="tt-view-user" onchange="ttRenderHistory()" style="padding:0.3rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.78rem;cursor:pointer;">
+              <option value="Glenn">Glenn</option>
+              <option value="Jude">Jude</option>
+            </select>
+          </div>
+        </div>
         <div id="tt-history"></div>
         <p id="tt-empty" style="color:var(--text-muted);font-size:0.82rem;margin:0;">No sessions logged yet.</p>
       </div>
@@ -1809,7 +1819,12 @@
   function ttRenderHistory() {
     var userEl = document.getElementById('tt-user');
     if (userEl) userEl.value = ttCurrentUser();
-    var entries  = ttLoadLog(ttCurrentUser());
+    var isGlennSession = ttCurrentUser().toLowerCase() === 'glenn';
+    var switcher = document.getElementById('tt-view-switcher');
+    if (switcher) switcher.style.display = isGlennSession ? 'flex' : 'none';
+    var viewUserEl = document.getElementById('tt-view-user');
+    var viewUser = (isGlennSession && viewUserEl) ? viewUserEl.value : ttCurrentUser();
+    var entries  = ttLoadLog(viewUser);
     var history  = document.getElementById('tt-history');
     var empty    = document.getElementById('tt-empty');
     if (!history) return;
@@ -1830,28 +1845,84 @@
     if (entries.length === 0) { empty.style.display = 'block'; return; }
     empty.style.display = 'none';
 
+    var isGlenn = ttCurrentUser().toLowerCase() === 'glenn';
+
     // Show newest first
     entries.slice().reverse().forEach(function(e, idx) {
       var realIdx = entries.length - 1 - idx;
       var row = document.createElement('div');
-      row.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:0.7rem 0;border-bottom:1px solid var(--border);flex-wrap:wrap;';
+      row.id  = 'tt-row-' + realIdx;
+      row.style.cssText = 'padding:0.7rem 0;border-bottom:1px solid var(--border);';
       row.innerHTML =
-        '<div style="flex:1;">' +
-          '<div style="font-size:0.72rem;font-family:var(--mono,monospace);color:var(--text-muted);letter-spacing:1px;margin-bottom:0.2rem;">' +
-            ttFmtDate(e.startTs) + ' · ' + ttFmtTime(e.startTs) + ' → ' + ttFmtTime(e.endTs) +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:0.72rem;font-family:var(--mono,monospace);color:var(--text-muted);letter-spacing:1px;margin-bottom:0.2rem;">' +
+              ttFmtDate(e.startTs) + ' · ' + ttFmtTime(e.startTs) + ' → ' + ttFmtTime(e.endTs) +
+            '</div>' +
+            (e.note ? '<div style="font-size:0.82rem;color:var(--text-primary);">' + escHtml(e.note) + '</div>' : '') +
           '</div>' +
-          (e.note ? '<div style="font-size:0.82rem;color:var(--text-primary);">' + escHtml(e.note) + '</div>' : '') +
+          '<div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">' +
+            '<span style="font-family:var(--mono,monospace);font-size:0.82rem;font-weight:600;color:var(--text-primary);">' + ttFmtDuration(e.duration) + '</span>' +
+            (isGlenn ? '<button onclick="ttEditOpen(' + realIdx + ')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.72rem;padding:0;letter-spacing:1px;" title="Edit times">EDIT</button>' : '') +
+            '<button onclick="ttDelete(' + realIdx + ')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.75rem;padding:0;" title="Delete">✕</button>' +
+          '</div>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">' +
-          '<span style="font-family:var(--mono,monospace);font-size:0.82rem;font-weight:600;color:var(--text-primary);">' + ttFmtDuration(e.duration) + '</span>' +
-          '<button onclick="ttDelete(' + realIdx + ')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:0.75rem;padding:0;" title="Delete">✕</button>' +
-        '</div>';
+        // Inline edit form (hidden by default)
+        (isGlenn ?
+        '<div id="tt-edit-' + realIdx + '" style="display:none;margin-top:0.75rem;padding:0.75rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;">' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem;">' +
+            '<label style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);">CLOCK IN' +
+              '<input type="datetime-local" id="tt-edit-start-' + realIdx + '" value="' + toDatetimeLocal(e.startTs) + '" style="display:block;width:100%;margin-top:4px;padding:0.4rem 0.5rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:0.78rem;">' +
+            '</label>' +
+            '<label style="font-size:0.65rem;letter-spacing:2px;color:var(--text-muted);">CLOCK OUT' +
+              '<input type="datetime-local" id="tt-edit-end-' + realIdx + '" value="' + toDatetimeLocal(e.endTs) + '" style="display:block;width:100%;margin-top:4px;padding:0.4rem 0.5rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:0.78rem;">' +
+            '</label>' +
+          '</div>' +
+          '<div style="display:flex;gap:0.5rem;">' +
+            '<button onclick="ttEditSave(' + realIdx + ')" style="padding:0.35rem 0.85rem;font-size:0.72rem;background:var(--primary,#6366f1);color:#fff;border:none;border-radius:4px;cursor:pointer;">Save</button>' +
+            '<button onclick="ttEditOpen(' + realIdx + ')" style="padding:0.35rem 0.85rem;font-size:0.72rem;background:none;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--text-muted);">Cancel</button>' +
+          '</div>' +
+        '</div>'
+        : '');
       history.appendChild(row);
     });
   }
 
+  function toDatetimeLocal(ts) {
+    var d = new Date(ts - new Date().getTimezoneOffset() * 60000);
+    return d.toISOString().slice(0, 16);
+  }
+
+  function ttEditOpen(idx) {
+    var el = document.getElementById('tt-edit-' + idx);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function ttViewUser() {
+    var isGlenn = ttCurrentUser().toLowerCase() === 'glenn';
+    var el = document.getElementById('tt-view-user');
+    return (isGlenn && el) ? el.value : ttCurrentUser();
+  }
+
+  function ttEditSave(idx) {
+    if (ttCurrentUser().toLowerCase() !== 'glenn') return;
+    var startEl = document.getElementById('tt-edit-start-' + idx);
+    var endEl   = document.getElementById('tt-edit-end-'   + idx);
+    if (!startEl || !endEl) return;
+    var newStart = new Date(startEl.value).getTime();
+    var newEnd   = new Date(endEl.value).getTime();
+    if (!newStart || !newEnd || newEnd <= newStart) { alert('End time must be after start time.'); return; }
+    var user    = ttViewUser();
+    var entries = ttLoadLog(user);
+    entries[idx].startTs  = newStart;
+    entries[idx].endTs    = newEnd;
+    entries[idx].duration = newEnd - newStart;
+    ttSaveLog(entries, user);
+    ttRenderHistory();
+  }
+
   function ttDelete(idx) {
-    var user = ttCurrentUser();
+    var user = ttViewUser();
     var entries = ttLoadLog(user);
     entries.splice(idx, 1);
     ttSaveLog(entries, user);
