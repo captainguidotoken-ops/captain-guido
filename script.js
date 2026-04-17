@@ -606,8 +606,6 @@
       if (existing) existing.remove();
 
       var badge = card.querySelector('.status-badge');
-      var locked = !badge || badge.classList.contains('locked');
-      if (!locked) return;
 
       // Seeded LCG — deterministic variety per card
       var seed = cardIndex * 1664525 + 1013904223;
