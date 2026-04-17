@@ -35,16 +35,13 @@
 
   <!-- Entry / Loading Screen -->
   <div id="entry-screen" role="status" aria-label="Loading Captain Guido">
-    <!-- Cosmic parallax background -->
+    <!-- Sparkles background -->
     <div id="cosmic-bg" aria-hidden="true">
-      <div id="cosmic-stars-far"></div>
-      <div id="cosmic-stars-mid"></div>
-      <div id="cosmic-stars-near"></div>
+      <div id="tsparticles"></div>
       <div id="cosmic-nebula"></div>
       <div id="cosmic-earth"></div>
       <div id="cosmic-horizon"></div>
     </div>
-    <div class="ocean-particles" id="oceanParticles"></div>
     <div class="tech-grid" aria-hidden="true"></div>
 
     <div class="loader-content">
@@ -745,6 +742,7 @@
   </div>
 
   <script src="https://unpkg.com/globe.gl@2.30.0/dist/globe.gl.min.js"></script>
+  <script src="https://unpkg.com/@tsparticles/slim@3/tsparticles.slim.bundle.min.js"></script>
   <script src="script.js"></script>
   <script src="animations.js"></script>
 </body>

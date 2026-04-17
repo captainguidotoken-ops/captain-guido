@@ -3168,9 +3168,6 @@ html {
   [data-text-reveal] .word-inner { transform: none; }
   [data-parallax] { transform: none !important; transition: none; }
   .chapter-card:hover { transform: translateY(-8px); }
-  #cosmic-stars-far,
-  #cosmic-stars-mid,
-  #cosmic-stars-near { animation: none; }
   #cosmic-earth { animation: none; }
   #cosmic-nebula { animation: none; }
 }
@@ -3184,26 +3181,12 @@ html {
   background: radial-gradient(ellipse at 50% 100%, #0a1628 0%, #020810 60%, #000306 100%);
 }
 
-/* Star layers — populated via JS box-shadow trick */
-#cosmic-stars-far,
-#cosmic-stars-mid,
-#cosmic-stars-near {
+/* tsparticles canvas */
+#tsparticles {
   position: absolute;
-  top: 0; left: 0;
-  width: 1px;
-  height: 1px;
-  border-radius: 50%;
-  will-change: transform;
-  transition: transform 0.15s ease-out;
-}
-
-#cosmic-stars-far  { animation: cosmicDrift 120s linear infinite; opacity: 0.55; }
-#cosmic-stars-mid  { animation: cosmicDrift  80s linear infinite; opacity: 0.75; animation-delay: -20s; }
-#cosmic-stars-near { animation: cosmicDrift  50s linear infinite; opacity: 1;    animation-delay: -10s; }
-
-@keyframes cosmicDrift {
-  from { transform: translateY(0); }
-  to   { transform: translateY(-4px); }
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* Nebula clouds */

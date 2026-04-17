@@ -86,82 +86,64 @@
     requestAnimationFrame(tick);
   }
 
-  // ── Cosmic Parallax Background ────────────────────────────────────
+  // ── Sparkles Background (tsparticles) ─────────────────────────────
   function createCosmicBackground() {
-    // Star box-shadow generator — one element, hundreds of stars via box-shadow
-    function makeStarShadow(count, maxW, maxH, minSize, maxSize) {
-      var shadows = [];
-      for (var i = 0; i < count; i++) {
-        var x = Math.floor(Math.random() * maxW);
-        var y = Math.floor(Math.random() * maxH);
-        var sz = (Math.random() * (maxSize - minSize) + minSize).toFixed(1);
-        var a  = (Math.random() * 0.5 + 0.5).toFixed(2);
-        // Slight tint variation: pure white, warm, cool
-        var tint = Math.random();
-        var col = tint < 0.33
-          ? 'rgba(255,255,255,' + a + ')'
-          : tint < 0.66
-          ? 'rgba(200,220,255,' + a + ')'
-          : 'rgba(255,240,200,' + a + ')';
-        shadows.push(x + 'px ' + y + 'px ' + sz + 'px ' + col);
-      }
-      return shadows.join(',');
-    }
+    if (typeof tsParticles === 'undefined') return;
 
-    var W = window.innerWidth  || 1440;
-    var H = window.innerHeight || 900;
-
-    var far  = document.getElementById('cosmic-stars-far');
-    var mid  = document.getElementById('cosmic-stars-mid');
-    var near = document.getElementById('cosmic-stars-near');
-
-    if (far) {
-      far.style.boxShadow = makeStarShadow(500, W, H, 0.5, 1.5);
-      far.style.width  = '1px';
-      far.style.height = '1px';
-    }
-    if (mid) {
-      mid.style.boxShadow = makeStarShadow(200, W, H, 1, 2);
-      mid.style.width  = '1px';
-      mid.style.height = '1px';
-    }
-    if (near) {
-      near.style.boxShadow = makeStarShadow(60, W, H, 1.5, 3);
-      near.style.width  = '1px';
-      near.style.height = '1px';
-    }
-
-    // Parallax on mouse move
+    // Subtle parallax on earth only
     var entry = document.getElementById('entry-screen');
     if (entry) {
       entry.addEventListener('mousemove', function(e) {
         var cx = (e.clientX / window.innerWidth  - 0.5);
         var cy = (e.clientY / window.innerHeight - 0.5);
-        if (far)  far.style.transform  = 'translate(' + ( cx * 6)  + 'px,' + ( cy * 6)  + 'px)';
-        if (mid)  mid.style.transform  = 'translate(' + ( cx * 14) + 'px,' + ( cy * 14) + 'px)';
-        if (near) near.style.transform = 'translate(' + ( cx * 24) + 'px,' + ( cy * 24) + 'px)';
         var earth = document.getElementById('cosmic-earth');
         if (earth) earth.style.transform = 'translate(' + (-cx * 18) + 'px,' + (-cy * 10) + 'px)';
       });
     }
 
-    // Shooting stars — fire one every 4–9s
-    function launchShootingStar() {
-      var bg = document.getElementById('cosmic-bg');
-      if (!bg) return;
-      var shoot = document.createElement('div');
-      shoot.className = 'cosmic-shoot';
-      var startX = Math.random() * W * 0.7 + W * 0.2;
-      var startY = Math.random() * H * 0.4;
-      var dur    = (Math.random() * 1.2 + 0.8).toFixed(2);
-      shoot.style.left = startX + 'px';
-      shoot.style.top  = startY + 'px';
-      shoot.style.animationDuration = dur + 's';
-      bg.appendChild(shoot);
-      setTimeout(function() { shoot.remove(); }, dur * 1000 + 100);
-      setTimeout(launchShootingStar, Math.random() * 5000 + 4000);
-    }
-    setTimeout(launchShootingStar, 2000);
+    tsParticles.load({
+      id: 'tsparticles',
+      options: {
+        background: { color: { value: 'transparent' } },
+        fullScreen: { enable: false },
+        fpsLimit: 60,
+        particles: {
+          number: {
+            value: 180,
+            density: { enable: true, width: 800, height: 800 }
+          },
+          color: { value: ['#ffffff', '#c8dcff', '#ffe8c8', '#00d4ff'] },
+          opacity: {
+            value: { min: 0.1, max: 0.85 },
+            animation: { enable: true, speed: 0.8, sync: false }
+          },
+          size: {
+            value: { min: 0.5, max: 2.2 }
+          },
+          move: {
+            enable: true,
+            speed: { min: 0.05, max: 0.3 },
+            direction: 'none',
+            random: true,
+            straight: false,
+            outModes: { default: 'out' }
+          },
+          shape: { type: 'circle' },
+          twinkle: {
+            particles: { enable: true, frequency: 0.05, opacity: 1 }
+          }
+        },
+        interactivity: {
+          events: {
+            onHover: { enable: true, mode: 'bubble' }
+          },
+          modes: {
+            bubble: { distance: 120, size: 3, opacity: 1, duration: 0.4 }
+          }
+        },
+        detectRetina: true
+      }
+    });
   }
 
   // (createOceanParticles defined later for bioluminescent particles)
