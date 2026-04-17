@@ -987,12 +987,18 @@
 
     <!-- First-time setup: QR code -->
     <div class="login-form" id="step-setup" style="display:none;">
-      <label>First-time setup</label>
-      <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.5rem;">Open <strong>Google Authenticator</strong> or <strong>Authy</strong> and scan this QR code.</p>
-      <div id="setup-qr" style="display:flex;justify-content:center;padding:0.5rem;background:#fff;border-radius:8px;"></div>
-      <p style="font-size:0.7rem;color:var(--muted);margin:0.5rem 0 0;text-align:center;">Scan once — then enter the code below every login.</p>
-      <a id="setup-manual" href="#" style="font-size:0.7rem;color:var(--gold);text-align:center;display:block;"></a>
-      <button class="btn-primary" onclick="setupDone()">I've scanned it →</button>
+      <label>Authenticator Setup</label>
+      <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.5rem;">Open <strong>Google Authenticator</strong> or <strong>Authy</strong>, tap <strong>+</strong>, then scan:</p>
+      <div id="setup-qr" style="display:flex;justify-content:center;padding:0.75rem;background:#fff;border-radius:10px;min-height:220px;align-items:center;"></div>
+      <p style="font-size:0.7rem;color:var(--muted);margin:0.25rem 0 0;text-align:center;">Or tap <strong>+</strong> → <strong>Enter a setup key</strong> and type:</p>
+      <div id="setup-secret-display" style="font-family:monospace;font-size:0.82rem;letter-spacing:0.12em;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;text-align:center;word-break:break-all;color:var(--text);"></div>
+      <a id="setup-manual" href="#" style="font-size:0.7rem;color:var(--gold);text-align:center;display:block;margin-top:0.25rem;"></a>
+      <button class="btn-primary" onclick="setupDone()" style="margin-top:0.5rem;">I've added it →</button>
+    </div>
+
+    <!-- TOTP reset link — shown on step-totp if user is locked out -->
+    <div id="totp-reset-wrap" style="display:none;text-align:center;margin-top:0.5rem;">
+      <button onclick="resetTotpSetup()" style="background:none;border:none;font-size:0.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;">Re-scan QR code</button>
     </div>
   </div>
 </div>
@@ -1666,9 +1672,10 @@
       if (!localStorage.getItem(setupKey)) {
         showTotpSetup();
       } else {
-        document.getElementById('step-pw').style.display   = 'none';
-        document.getElementById('step-totp').style.display = '';
-        document.getElementById('totp-label').textContent  = 'Code from ' + _loginUser + "'s Authenticator";
+        document.getElementById('step-pw').style.display       = 'none';
+        document.getElementById('step-totp').style.display      = '';
+        document.getElementById('totp-reset-wrap').style.display = '';
+        document.getElementById('totp-label').textContent       = 'Code from ' + _loginUser + "'s Authenticator";
         document.getElementById('totp-input').value = '';
         document.getElementById('totp-input').focus();
       }
@@ -1688,19 +1695,29 @@
     var uri    = 'otpauth://totp/' + label + '?secret=' + secret + '&issuer=' + issuer + '&algorithm=SHA1&digits=6&period=30';
     var qrEl = document.getElementById('setup-qr');
     qrEl.innerHTML = '';
-    drawQR(uri, qrEl, 220);
-    // Manual fallback
+    drawQR(uri, qrEl, 210);
+    var secretEl = document.getElementById('setup-secret-display');
+    if (secretEl) secretEl.textContent = secret;
     var manual = document.getElementById('setup-manual');
-    if (manual) { manual.href = uri; manual.textContent = 'Or tap here to open in Authenticator'; }
+    if (manual) { manual.href = uri; manual.textContent = 'Tap here to open in Authenticator (mobile)'; }
   }
 
   function setupDone() {
     localStorage.setItem('cgc_totp_setup_' + _loginUser.toLowerCase(), '1');
-    document.getElementById('step-setup').style.display = 'none';
-    document.getElementById('step-totp').style.display  = '';
-    document.getElementById('totp-label').textContent   = 'Code from ' + _loginUser + "'s Authenticator";
+    document.getElementById('step-setup').style.display     = 'none';
+    document.getElementById('step-totp').style.display       = '';
+    document.getElementById('totp-reset-wrap').style.display = '';
+    document.getElementById('totp-label').textContent        = 'Code from ' + _loginUser + "'s Authenticator";
     document.getElementById('totp-input').value = '';
     document.getElementById('totp-input').focus();
+  }
+
+  function resetTotpSetup() {
+    if (!_loginUser) return;
+    localStorage.removeItem('cgc_totp_setup_' + _loginUser.toLowerCase());
+    document.getElementById('step-totp').style.display       = 'none';
+    document.getElementById('totp-reset-wrap').style.display = 'none';
+    showTotpSetup();
   }
 
   // TOTP verification — RFC 6238, SHA-1, 6 digits, 30s window
@@ -2869,6 +2886,16 @@
     };
     container.appendChild(img);
   }
+
+  // Reset stale TOTP setup so QR shows fresh this deploy
+  (function() {
+    var stamp = '2026-04-17';
+    if (localStorage.getItem('cgc_totp_reset') !== stamp) {
+      localStorage.removeItem('cgc_totp_setup_glenn');
+      localStorage.removeItem('cgc_totp_setup_jude');
+      localStorage.setItem('cgc_totp_reset', stamp);
+    }
+  })();
 
   if (sessionStorage.getItem('cgc_auth') === '1') {
     _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
