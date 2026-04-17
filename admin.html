@@ -974,32 +974,6 @@
       <button class="login-back" onclick="backToStep('step-user')">← Back</button>
     </div>
 
-    <!-- Step 3: TOTP code -->
-    <div class="login-form" id="step-totp" style="display:none;">
-      <label id="totp-label">6-digit code</label>
-      <input type="text" id="totp-input" placeholder="000000" maxlength="6"
-             inputmode="numeric" autocomplete="one-time-code"
-             style="font-size:1.6rem;letter-spacing:0.4em;text-align:center;font-family:monospace;">
-      <div id="totp-error" class="login-error">Invalid code. Try again.</div>
-      <button class="btn-primary" onclick="checkTotp()">Sign in</button>
-      <button class="login-back" onclick="backToStep('step-pw')">← Back</button>
-    </div>
-
-    <!-- First-time setup: QR code -->
-    <div class="login-form" id="step-setup" style="display:none;">
-      <label>Authenticator Setup</label>
-      <p style="font-size:0.78rem;color:var(--muted);margin:0 0 0.5rem;">Open <strong>Google Authenticator</strong> or <strong>Authy</strong>, tap <strong>+</strong>, then scan:</p>
-      <div id="setup-qr" style="display:flex;justify-content:center;padding:0.75rem;background:#fff;border-radius:10px;min-height:220px;align-items:center;"></div>
-      <p style="font-size:0.7rem;color:var(--muted);margin:0.25rem 0 0;text-align:center;">Or tap <strong>+</strong> → <strong>Enter a setup key</strong> and type:</p>
-      <div id="setup-secret-display" style="font-family:monospace;font-size:0.82rem;letter-spacing:0.12em;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.75rem;text-align:center;word-break:break-all;color:var(--text);"></div>
-      <a id="setup-manual" href="#" style="font-size:0.7rem;color:var(--gold);text-align:center;display:block;margin-top:0.25rem;"></a>
-      <button class="btn-primary" onclick="setupDone()" style="margin-top:0.5rem;">I've added it →</button>
-    </div>
-
-    <!-- TOTP reset link — shown on step-totp if user is locked out -->
-    <div id="totp-reset-wrap" style="display:none;text-align:center;margin-top:0.5rem;">
-      <button onclick="resetTotpSetup()" style="background:none;border:none;font-size:0.72rem;color:var(--muted);cursor:pointer;text-decoration:underline;">Re-scan QR code</button>
-    </div>
   </div>
 </div>
 
@@ -1625,27 +1599,20 @@
   ];
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  // Per-user password hashes and TOTP secrets (base32)
+  // Per-user password hashes
   const USERS = {
-    Glenn: {
-      pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1',
-      totpSecret: 'YENUWTFHIK2Z5HKMZVH4FISATAYZZYOT'
-    },
-    Jude: {
-      pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1',
-      totpSecret: 'FW6LLAZCQMGXJB53XNP222GRRSY3USX3'
-    }
+    Glenn: { pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1' },
+    Jude:  { pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1' }
   };
 
   var _loginUser = null;
 
   function backToStep(id) {
-    ['step-user','step-pw','step-totp','step-setup'].forEach(function(s) {
+    ['step-user','step-pw'].forEach(function(s) {
       document.getElementById(s).style.display = 'none';
     });
     document.getElementById(id).style.display = '';
     document.getElementById('login-error').style.display = 'none';
-    document.getElementById('totp-error').style.display  = 'none';
   }
 
   function selectUser(name) {
@@ -1666,19 +1633,10 @@
     if (!_loginUser) return;
     const h = await sha256(document.getElementById('pw-input').value);
     if (h === USERS[_loginUser].pwHash) {
-      document.getElementById('login-error').style.display = 'none';
-      // Check if TOTP setup done
-      var setupKey = 'cgc_totp_setup_' + _loginUser.toLowerCase();
-      if (!localStorage.getItem(setupKey)) {
-        showTotpSetup();
-      } else {
-        document.getElementById('step-pw').style.display       = 'none';
-        document.getElementById('step-totp').style.display      = '';
-        document.getElementById('totp-reset-wrap').style.display = '';
-        document.getElementById('totp-label').textContent       = 'Code from ' + _loginUser + "'s Authenticator";
-        document.getElementById('totp-input').value = '';
-        document.getElementById('totp-input').focus();
-      }
+      sessionStorage.setItem('cgc_auth', '1');
+      sessionStorage.setItem('cgc_login_user', _loginUser);
+      localStorage.setItem('cgc_tt_user', _loginUser);
+      showAdmin();
     } else {
       document.getElementById('login-error').style.display = 'block';
       document.getElementById('pw-input').value = '';
@@ -1686,99 +1644,7 @@
     }
   }
 
-  function showTotpSetup() {
-    document.getElementById('step-pw').style.display    = 'none';
-    document.getElementById('step-setup').style.display = '';
-    var secret = USERS[_loginUser].totpSecret;
-    var label  = encodeURIComponent('CGT Admin (' + _loginUser + ')');
-    var issuer = encodeURIComponent('Captain Guido');
-    var uri    = 'otpauth://totp/' + label + '?secret=' + secret + '&issuer=' + issuer + '&algorithm=SHA1&digits=6&period=30';
-    var qrEl = document.getElementById('setup-qr');
-    qrEl.innerHTML = '';
-    drawQR(uri, qrEl, 210);
-    var secretEl = document.getElementById('setup-secret-display');
-    if (secretEl) secretEl.textContent = secret;
-    var manual = document.getElementById('setup-manual');
-    if (manual) { manual.href = uri; manual.textContent = 'Tap here to open in Authenticator (mobile)'; }
-  }
-
-  function setupDone() {
-    localStorage.setItem('cgc_totp_setup_' + _loginUser.toLowerCase(), '1');
-    document.getElementById('step-setup').style.display     = 'none';
-    document.getElementById('step-totp').style.display       = '';
-    document.getElementById('totp-reset-wrap').style.display = '';
-    document.getElementById('totp-label').textContent        = 'Code from ' + _loginUser + "'s Authenticator";
-    document.getElementById('totp-input').value = '';
-    document.getElementById('totp-input').focus();
-  }
-
-  function resetTotpSetup() {
-    if (!_loginUser) return;
-    localStorage.removeItem('cgc_totp_setup_' + _loginUser.toLowerCase());
-    document.getElementById('step-totp').style.display       = 'none';
-    document.getElementById('totp-reset-wrap').style.display = 'none';
-    showTotpSetup();
-  }
-
-  // TOTP verification — RFC 6238, SHA-1, 6 digits, 30s window
-  async function totpVerify(secret, token) {
-    // base32 decode
-    var b32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    var bits = '', bytes = [];
-    for (var i = 0; i < secret.length; i++) {
-      var v = b32.indexOf(secret[i].toUpperCase());
-      if (v < 0) continue;
-      bits += v.toString(2).padStart(5, '0');
-    }
-    for (var i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i+8), 2));
-    var keyBytes = new Uint8Array(bytes);
-
-    var key = await crypto.subtle.importKey('raw', keyBytes, {name:'HMAC', hash:'SHA-1'}, false, ['sign']);
-
-    async function hotp(counter) {
-      var buf = new ArrayBuffer(8);
-      var view = new DataView(buf);
-      var high = Math.floor(counter / 0x100000000);
-      var low  = counter >>> 0;
-      view.setUint32(0, high, false);
-      view.setUint32(4, low,  false);
-      var sig    = await crypto.subtle.sign('HMAC', key, buf);
-      var arr    = new Uint8Array(sig);
-      var offset = arr[19] & 0xf;
-      var code   = ((arr[offset] & 0x7f) << 24 | arr[offset+1] << 16 | arr[offset+2] << 8 | arr[offset+3]) % 1000000;
-      return String(code).padStart(6, '0');
-    }
-
-    var t = Math.floor(Date.now() / 1000 / 30);
-    // Accept current window ± 1 (30s drift tolerance)
-    for (var d = -1; d <= 1; d++) {
-      if (await hotp(t + d) === token) return true;
-    }
-    return false;
-  }
-
-  async function checkTotp() {
-    var token = document.getElementById('totp-input').value.replace(/\s/g,'');
-    if (token.length !== 6) { document.getElementById('totp-error').style.display = 'block'; return; }
-    var valid = await totpVerify(USERS[_loginUser].totpSecret, token);
-    if (valid) {
-      sessionStorage.setItem('cgc_auth', '1');
-      sessionStorage.setItem('cgc_login_user', _loginUser);
-      localStorage.setItem('cgc_tt_user', _loginUser);
-      showAdmin();
-    } else {
-      document.getElementById('totp-error').style.display = 'block';
-      document.getElementById('totp-input').value = '';
-      document.getElementById('totp-input').focus();
-    }
-  }
-
-  document.getElementById('pw-input').addEventListener('keydown',   e => { if (e.key==='Enter') checkPassword(); });
-  document.getElementById('totp-input').addEventListener('keydown', e => { if (e.key==='Enter') checkTotp(); });
-  document.getElementById('totp-input').addEventListener('input', function() {
-    this.value = this.value.replace(/\D/g,'').slice(0,6);
-    if (this.value.length === 6) checkTotp();
-  });
+  document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key==='Enter') checkPassword(); });
 
   function showAdmin() {
     document.getElementById('login-screen').style.display = 'none';
@@ -1963,6 +1829,7 @@
     var key = (user || ttCurrentUser()).toLowerCase();
     var obj = Object.assign({}, _ttCache || { glenn: [], jude: [] });
     obj[key] = entries;
+    _ttCache = obj; // optimistic update so report sees data immediately
     await ttPushAll(obj);
   }
 
@@ -2002,9 +1869,11 @@
     return d.getDate()===n.getDate() && d.getMonth()===n.getMonth() && d.getFullYear()===n.getFullYear();
   }
   function ttIsThisWeek(ts) {
-    var now = Date.now();
-    var startOfWeek = now - (new Date().getDay() * 86400000);
-    return ts >= startOfWeek;
+    var now = new Date();
+    var startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay()); // back to Sunday
+    startOfWeek.setHours(0, 0, 0, 0);                 // midnight
+    return ts >= startOfWeek.getTime();
   }
 
   async function ttToggle() {
@@ -2196,7 +2065,8 @@
     var el = document.getElementById('tt-report-content');
     if (!el) return;
     el.innerHTML = '<div style="color:var(--text-muted);font-size:0.78rem;padding:0.5rem 0;">Loading…</div>';
-    await ttFetchAll();
+    // Use cached data if available (avoids overwriting optimistic cache with stale GitHub response)
+    if (!_ttCache) await ttFetchAll();
     var html = '';
     TT_USERS.forEach(function(user) {
       var entries = ttLoadLog(user);
@@ -2867,36 +2737,6 @@
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
-  // ── Pure-JS QR code renderer (no external library) ───────────────────────
-  function drawQR(text, container, size) {
-    // Use native canvas + Google Chart API encoded as a data-safe image URL
-    // Falls back to displaying the secret key for manual entry
-    var img = document.createElement('img');
-    img.alt = 'QR Code';
-    img.style.cssText = 'width:' + size + 'px;height:' + size + 'px;display:block;';
-    // Google Chart API — pure HTTPS GET, no JS dependency
-    var encoded = encodeURIComponent(text);
-    img.src = 'https://chart.googleapis.com/chart?cht=qr&chs=' + size + 'x' + size + '&chl=' + encoded + '&choe=UTF-8';
-    img.onerror = function() {
-      // If Google Charts blocked, show the secret for manual entry
-      container.innerHTML =
-        '<p style="font-size:0.72rem;color:var(--muted);margin:0 0 0.4rem;">Scan failed — enter manually in your app:</p>' +
-        '<code style="font-size:0.8rem;letter-spacing:0.15em;background:var(--bg);padding:0.4rem 0.6rem;border-radius:6px;display:block;word-break:break-all;">' +
-        USERS[_loginUser].totpSecret + '</code>';
-    };
-    container.appendChild(img);
-  }
-
-  // Reset stale TOTP setup so QR shows fresh this deploy
-  (function() {
-    var stamp = '2026-04-17';
-    if (localStorage.getItem('cgc_totp_reset') !== stamp) {
-      localStorage.removeItem('cgc_totp_setup_glenn');
-      localStorage.removeItem('cgc_totp_setup_jude');
-      localStorage.setItem('cgc_totp_reset', stamp);
-    }
-  })();
-
   if (sessionStorage.getItem('cgc_auth') === '1') {
     _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
     showAdmin();
