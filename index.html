@@ -745,5 +745,80 @@
   <script src="https://unpkg.com/@tsparticles/slim@3/tsparticles.slim.bundle.min.js"></script>
   <script src="script.js"></script>
   <script src="animations.js"></script>
+  <script>
+  /* ── CGT Visit Tracker ──────────────────────────────────────────────────────
+     Lightweight analytics beacon. Writes to analytics.json via GitHub API.
+     Only fires if a GitHub token is stored in sessionStorage (admin sessions)
+     OR if the user has visited the admin and left a token in localStorage.
+     No third-party services used.
+  ─────────────────────────────────────────────────────────────────────────── */
+  (function() {
+    var REPO_OWNER = 'captainguidotoken-ops';
+    var REPO_NAME  = 'captain-guido';
+    var MON_URL    = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/analytics.json';
+
+    var _startTs = Date.now();
+    var _uid = localStorage.getItem('cgc_vis_uid') || (function() {
+      var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('cgc_vis_uid', id);
+      return id;
+    })();
+
+    function getToken() {
+      // Try sessionStorage (admin session in same tab) then localStorage fallback
+      return sessionStorage.getItem('cgc_gh_token') || localStorage.getItem('cgc_gh_token_pub') || null;
+    }
+
+    async function pushVisit(dur) {
+      var token = getToken();
+      if (!token) return; // no token — skip silently
+      var H = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' };
+      var visit = {
+        ts:  _startTs,
+        dur: dur,
+        uid: _uid,
+        ref: document.referrer || '',
+        dev: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+      };
+      try {
+        // Fetch current file
+        var res  = await fetch(MON_URL + '?v=' + Date.now(), { headers: H });
+        var sha  = null;
+        var data = { visits: [], secEvents: [] };
+        if (res.ok) {
+          var raw = await res.json();
+          sha  = raw.sha;
+          data = JSON.parse(decodeURIComponent(escape(atob(raw.content.replace(/\n/g,'')))));
+          if (!data.visits)    data.visits    = [];
+          if (!data.secEvents) data.secEvents = [];
+        }
+        data.visits.push(visit);
+        // Keep last 2000 visits
+        if (data.visits.length > 2000) data.visits = data.visits.slice(-2000);
+        var body = {
+          message: 'chore: visit beacon',
+          content: btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))))
+        };
+        if (sha) body.sha = sha;
+        await fetch(MON_URL, {
+          method: 'PUT',
+          headers: { ...H, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+      } catch(e) { /* silent — never break the site */ }
+    }
+
+    // Record visit on page unload with session duration
+    window.addEventListener('pagehide', function() {
+      var dur = Date.now() - _startTs;
+      // Use sendBeacon if available for reliability, else async fetch
+      // (sendBeacon can't do authenticated requests, so we fall back to fetch)
+      pushVisit(dur);
+    });
+
+    // Also record immediately so even bounces get counted (dur = 0 initially, updated on unload)
+    pushVisit(0);
+  })();
+  </script>
 </body>
 </html>

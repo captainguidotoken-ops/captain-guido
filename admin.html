@@ -1008,17 +1008,13 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         Command Chat
       </button>
-      <button class="nav-item" onclick="showPanel('stats')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
-        Stats
+      <button class="nav-item" onclick="showPanel('site')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+        Site
       </button>
-      <button class="nav-item" onclick="showPanel('social')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Social Links
-      </button>
-      <button class="nav-item" onclick="showPanel('status')">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Site Status
+      <button class="nav-item" onclick="showPanel('monitor')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Monitor
       </button>
       <button class="nav-item" onclick="showPanel('chapters')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
@@ -1054,21 +1050,22 @@
   <!-- Main -->
   <main class="main-content">
 
-    <!-- Site Status -->
-    <section class="panel" id="panel-status">
+    <!-- Site (merged: Status + Stats + Social) -->
+    <section class="panel" id="panel-site">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Site Status</div>
-          <div class="panel-sub">Control whether the site is live or in maintenance mode.</div>
+          <div class="panel-title">Site</div>
+          <div class="panel-sub">Status, hero stats, and community links — all in one place.</div>
         </div>
       </div>
 
+      <!-- Status -->
       <div class="card">
-        <div class="card-title">Maintenance Mode</div>
+        <div class="card-title">Site Status</div>
         <div class="toggle-row">
           <div class="toggle-info">
-            <h3>Take the site offline</h3>
-            <p>Visitors will be redirected to a holding page while you make updates.</p>
+            <h3>Maintenance mode</h3>
+            <p>Visitors will see a holding page while you make updates.</p>
             <div class="status-pill live" id="maintenance-pill">Site is live</div>
           </div>
           <label class="switch">
@@ -1077,17 +1074,8 @@
           </label>
         </div>
       </div>
-    </section>
 
-    <!-- Stats -->
-    <section class="panel" id="panel-stats">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Stats</div>
-          <div class="panel-sub">Numbers shown in the hero section of the site.</div>
-        </div>
-      </div>
-
+      <!-- Hero Stats -->
       <div class="card">
         <div class="card-title">Hero counters</div>
         <div class="stats-grid">
@@ -1104,6 +1092,103 @@
             <input type="number" id="stat-miles" value="0" min="0">
           </div>
         </div>
+      </div>
+
+      <!-- Social Links -->
+      <div class="card">
+        <div class="card-title">Community links</div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Twitter</label>
+            <input type="url" id="link-twitter" placeholder="https://twitter.com/...">
+          </div>
+          <div class="field-row">
+            <label>Discord</label>
+            <input type="url" id="link-discord" placeholder="https://discord.gg/...">
+          </div>
+          <div class="field-row">
+            <label>Telegram</label>
+            <input type="url" id="link-telegram" placeholder="https://t.me/...">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Monitor -->
+    <section class="panel" id="panel-monitor">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Monitor</div>
+          <div class="panel-sub">Site traffic, visitor behaviour, and security events.</div>
+        </div>
+        <button class="btn-sm" onclick="monitorRefresh()" title="Refresh">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;vertical-align:-2px;margin-right:4px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>Refresh
+        </button>
+      </div>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.75rem;">
+        <div class="card" style="padding:1rem;text-align:center;">
+          <div id="mon-visits" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--gold);">—</div>
+          <div style="font-size:0.6rem;letter-spacing:2px;color:var(--muted);margin-top:4px;">TOTAL VISITS</div>
+        </div>
+        <div class="card" style="padding:1rem;text-align:center;">
+          <div id="mon-today" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--aqua);">—</div>
+          <div style="font-size:0.6rem;letter-spacing:2px;color:var(--muted);margin-top:4px;">TODAY</div>
+        </div>
+        <div class="card" style="padding:1rem;text-align:center;">
+          <div id="mon-avg-dur" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--text);">—</div>
+          <div style="font-size:0.6rem;letter-spacing:2px;color:var(--muted);margin-top:4px;">AVG SESSION</div>
+        </div>
+        <div class="card" style="padding:1rem;text-align:center;">
+          <div id="mon-sec-count" style="font-family:var(--mono);font-size:1.8rem;font-weight:700;color:var(--danger);">0</div>
+          <div style="font-size:0.6rem;letter-spacing:2px;color:var(--muted);margin-top:4px;">SEC EVENTS</div>
+        </div>
+      </div>
+
+      <!-- Traffic chart -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="card-title" style="margin-bottom:0;">Traffic — last 14 days</div>
+          <div style="display:flex;gap:1rem;font-size:0.65rem;color:var(--muted);">
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:2px;background:var(--gold);display:inline-block;border-radius:2px;"></span>Visits</span>
+            <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:2px;background:var(--aqua);display:inline-block;border-radius:2px;"></span>Unique</span>
+          </div>
+        </div>
+        <div id="mon-chart-wrap" style="position:relative;height:120px;">
+          <svg id="mon-chart" width="100%" height="120" style="overflow:visible;"></svg>
+        </div>
+        <div id="mon-chart-labels" style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.58rem;color:var(--muted);font-family:var(--mono);"></div>
+      </div>
+
+      <!-- Security events -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="card-title" style="margin-bottom:0;">Security Events</div>
+          <button onclick="monitorClearSec()" style="background:none;border:none;font-size:0.68rem;color:var(--muted);cursor:pointer;font-family:inherit;padding:0;" title="Clear log">Clear log</button>
+        </div>
+        <div id="mon-sec-list" style="display:flex;flex-direction:column;gap:0.4rem;max-height:220px;overflow-y:auto;">
+          <div style="color:var(--muted);font-size:0.8rem;">No events logged.</div>
+        </div>
+      </div>
+
+      <!-- Top referrers -->
+      <div class="card">
+        <div class="card-title">Top Referrers</div>
+        <div id="mon-refs" style="display:flex;flex-direction:column;gap:0.5rem;">
+          <div style="color:var(--muted);font-size:0.8rem;">No data yet.</div>
+        </div>
+      </div>
+
+      <!-- Setup notice -->
+      <div id="mon-setup-notice" class="card" style="border-color:rgba(244,168,54,0.2);background:rgba(244,168,54,0.04);display:none;">
+        <div class="card-title" style="color:var(--gold);">Analytics Setup</div>
+        <p style="font-size:0.82rem;color:var(--muted);line-height:1.7;margin-bottom:0.75rem;">
+          Traffic data is tracked automatically when visitors land on the site. A GitHub token must be set for data to be saved. Security events (failed logins, suspicious activity) are always logged to your browser and uploaded when a token is available.
+        </p>
+        <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">
+          Visit data is stored in <code style="color:var(--aqua);font-size:0.75rem;">analytics.json</code> in your repo. No third-party tracking is used.
+        </p>
       </div>
     </section>
 
@@ -1125,33 +1210,6 @@
       </div>
     </section>
 
-    <!-- Social -->
-    <section class="panel" id="panel-social">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">Social Links</div>
-          <div class="panel-sub">Update community link URLs — changes go live on publish.</div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Community</div>
-        <div class="field-col">
-          <div class="field-row">
-            <label>Twitter</label>
-            <input type="url" id="link-twitter" placeholder="https://twitter.com/...">
-          </div>
-          <div class="field-row">
-            <label>Discord</label>
-            <input type="url" id="link-discord" placeholder="https://discord.gg/...">
-          </div>
-          <div class="field-row">
-            <label>Telegram</label>
-            <input type="url" id="link-telegram" placeholder="https://t.me/...">
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Token -->
     <section class="panel" id="panel-token">
@@ -1641,6 +1699,7 @@
       document.getElementById('login-error').style.display = 'block';
       document.getElementById('pw-input').value = '';
       document.getElementById('pw-input').focus();
+      monitorLogSecEvent('failed_login', 'User: ' + (_loginUser || 'unknown') + ' — wrong password');
     }
   }
 
@@ -2247,6 +2306,7 @@
     if (id === 'log') { renderLog(); }
     if (id === 'time') { ttRenderHistory(); }
     if (id === 'tt-report') { ttRenderReport(); }
+    if (id === 'monitor') { monitorRefresh(); }
   }
 
   // ── Maintenance ────────────────────────────────────────────────────────────
@@ -2745,6 +2805,254 @@
       hideTyping();
       addMsg('<span class="err">' + escHtml(e.message) + '</span>', 'bot');
     }
+  }
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  if (sessionStorage.getItem('cgc_auth') === '1') {
+    _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
+    showAdmin();
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  MONITOR — analytics, traffic chart, security events
+  // ════════════════════════════════════════════════════════════════════════════
+  var MON_GH_PATH = 'analytics.json';
+  var MON_GH_URL  = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + MON_GH_PATH;
+  var _monCache   = null;
+  var _monSha     = null;
+
+  function monGhHeaders() {
+    var token = sessionStorage.getItem('cgc_gh_token');
+    return token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : null;
+  }
+
+  async function monFetch() {
+    var H = monGhHeaders();
+    if (!H) { _monCache = _monCache || { visits: [], secEvents: [] }; return _monCache; }
+    try {
+      var res  = await fetch(MON_GH_URL + '?v=' + Date.now(), { headers: H });
+      if (res.status === 404) { _monCache = { visits: [], secEvents: [] }; _monSha = null; return _monCache; }
+      var data = await res.json();
+      _monSha   = data.sha;
+      _monCache = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))));
+      if (!_monCache.visits)    _monCache.visits    = [];
+      if (!_monCache.secEvents) _monCache.secEvents = [];
+    } catch(e) { _monCache = _monCache || { visits: [], secEvents: [] }; }
+    return _monCache;
+  }
+
+  async function monPush(obj) {
+    var H = monGhHeaders();
+    if (!H) return;
+    _monCache = obj;
+    async function attempt(sha) {
+      var body = { message: 'chore: update analytics', content: btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2)))) };
+      if (sha) body.sha = sha;
+      var res  = await fetch(MON_GH_URL, { method:'PUT', headers:{...H,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      var data = await res.json();
+      if (res.status === 409 || res.status === 422) {
+        var fresh = await fetch(MON_GH_URL + '?v=' + Date.now(), { headers: H });
+        var fd    = await fresh.json();
+        _monSha   = fd.sha;
+        return attempt(_monSha);
+      }
+      if (data.content) { _monSha = data.content.sha; }
+    }
+    try { await attempt(_monSha); } catch(e) { console.warn('analytics push failed', e); }
+  }
+
+  // Log a security event (called on failed login etc.)
+  function monitorLogSecEvent(type, detail) {
+    var pending = JSON.parse(localStorage.getItem('cgc_sec_pending') || '[]');
+    pending.push({ ts: Date.now(), type: type, detail: detail });
+    localStorage.setItem('cgc_sec_pending', JSON.stringify(pending));
+    // Flush if logged in and have a token
+    if (sessionStorage.getItem('cgc_auth') === '1') monitorFlushSec();
+  }
+
+  async function monitorFlushSec() {
+    var pending = JSON.parse(localStorage.getItem('cgc_sec_pending') || '[]');
+    if (!pending.length) return;
+    var obj = await monFetch();
+    pending.forEach(function(e) { obj.secEvents.push(e); });
+    // Keep only last 200 events
+    if (obj.secEvents.length > 200) obj.secEvents = obj.secEvents.slice(-200);
+    await monPush(obj);
+    localStorage.removeItem('cgc_sec_pending');
+  }
+
+  // ── Render the Monitor panel ──────────────────────────────────────────────
+  async function monitorRefresh() {
+    // Flush any pending sec events first
+    monitorFlushSec();
+
+    var data = await monFetch();
+    var visits    = data.visits    || [];
+    var secEvents = data.secEvents || [];
+
+    // ── KPIs ──────────────────────────────────────────────────────────────
+    var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    var todayVisits = visits.filter(function(v) { return v.ts >= todayStart.getTime(); });
+    var totalVisits = visits.length;
+    var avgDurMs = 0;
+    var withDur  = visits.filter(function(v) { return v.dur > 0; });
+    if (withDur.length) avgDurMs = withDur.reduce(function(s,v){return s+v.dur;},0) / withDur.length;
+
+    var el = function(id) { return document.getElementById(id); };
+    if (el('mon-visits'))    el('mon-visits').textContent    = totalVisits || '—';
+    if (el('mon-today'))     el('mon-today').textContent     = todayVisits.length || '—';
+    if (el('mon-avg-dur'))   el('mon-avg-dur').textContent   = avgDurMs ? monFmtDur(avgDurMs) : '—';
+    if (el('mon-sec-count')) el('mon-sec-count').textContent = secEvents.length;
+
+    // ── Traffic chart (last 14 days) ───────────────────────────────────────
+    monRenderChart(visits);
+
+    // ── Security events ────────────────────────────────────────────────────
+    var secList = el('mon-sec-list');
+    if (secList) {
+      if (!secEvents.length) {
+        secList.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">No events logged.</div>';
+      } else {
+        secList.innerHTML = '';
+        secEvents.slice().reverse().forEach(function(e) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:flex-start;gap:0.75rem;padding:0.55rem 0.75rem;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:8px;';
+          var icon = e.type === 'failed_login'
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" style="flex-shrink:0;margin-top:1px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>'
+            : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+          row.innerHTML =
+            icon +
+            '<div style="flex:1;min-width:0;">' +
+              '<div style="font-size:0.78rem;font-weight:600;color:#f87171;">' + escHtml(e.type.replace(/_/g,' ').toUpperCase()) + '</div>' +
+              '<div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">' + escHtml(e.detail || '') + '</div>' +
+            '</div>' +
+            '<div style="font-size:0.62rem;color:var(--muted);white-space:nowrap;font-family:var(--mono);">' + monFmtTs(e.ts) + '</div>';
+          secList.appendChild(row);
+        });
+      }
+    }
+
+    // ── Top referrers ──────────────────────────────────────────────────────
+    var refMap = {};
+    visits.forEach(function(v) {
+      var ref = v.ref || 'Direct';
+      try { ref = new URL(v.ref).hostname || 'Direct'; } catch(e) { ref = v.ref || 'Direct'; }
+      refMap[ref] = (refMap[ref] || 0) + 1;
+    });
+    var refs = Object.entries(refMap).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+    var refEl = el('mon-refs');
+    if (refEl) {
+      if (!refs.length) {
+        refEl.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;">No data yet.</div>';
+      } else {
+        var maxRef = refs[0][1];
+        refEl.innerHTML = refs.map(function(r) {
+          var pct = Math.round((r[1]/maxRef)*100);
+          return '<div style="display:flex;align-items:center;gap:0.75rem;">' +
+            '<div style="width:110px;font-size:0.78rem;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-shrink:0;">' + escHtml(r[0]) + '</div>' +
+            '<div style="flex:1;height:4px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;">' +
+              '<div style="height:100%;width:' + pct + '%;background:var(--gold);border-radius:4px;transition:width 0.5s;"></div>' +
+            '</div>' +
+            '<div style="font-size:0.72rem;font-family:var(--mono);color:var(--text);width:28px;text-align:right;flex-shrink:0;">' + r[1] + '</div>' +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    // Show setup notice if no data
+    var notice = el('mon-setup-notice');
+    if (notice) notice.style.display = (!visits.length && !secEvents.length) ? 'block' : 'none';
+  }
+
+  function monRenderChart(visits) {
+    var svg = document.getElementById('mon-chart');
+    var labelsEl = document.getElementById('mon-chart-labels');
+    if (!svg) return;
+
+    // Build 14-day buckets
+    var days = [];
+    for (var i = 13; i >= 0; i--) {
+      var d = new Date(); d.setDate(d.getDate() - i); d.setHours(0,0,0,0);
+      days.push({ date: d, ts: d.getTime(), visits: 0, unique: new Set() });
+    }
+    visits.forEach(function(v) {
+      var vDate = new Date(v.ts); vDate.setHours(0,0,0,0);
+      var bucket = days.find(function(d) { return d.ts === vDate.getTime(); });
+      if (bucket) { bucket.visits++; bucket.unique.add(v.uid || v.ts); }
+    });
+
+    var counts  = days.map(function(d){ return d.visits; });
+    var uniques = days.map(function(d){ return d.unique.size; });
+    var maxVal  = Math.max(Math.max.apply(null, counts), Math.max.apply(null, uniques), 1);
+
+    var W = svg.parentElement.clientWidth || 600;
+    var H = 110;
+    var padL = 28, padR = 8, padT = 8, padB = 4;
+    var innerW = W - padL - padR;
+    var innerH = H - padT - padB;
+    var step = innerW / 13;
+
+    function ptX(i) { return padL + i * step; }
+    function ptY(val) { return padT + innerH - (val / maxVal) * innerH; }
+    function polyline(vals, color, gId) {
+      var pts = vals.map(function(v,i){ return ptX(i) + ',' + ptY(v); }).join(' ');
+      var first = ptX(0) + ',' + (padT + innerH);
+      var last  = ptX(13) + ',' + (padT + innerH);
+      return '<defs><linearGradient id="' + gId + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.25"/>' +
+        '<stop offset="100%" stop-color="' + color + '" stop-opacity="0.0"/>' +
+        '</linearGradient></defs>' +
+        '<polygon points="' + first + ' ' + pts + ' ' + last + '" fill="url(#' + gId + ')"/>' +
+        '<polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+        vals.map(function(v,i){
+          return v > 0 ? '<circle cx="' + ptX(i) + '" cy="' + ptY(v) + '" r="3" fill="' + color + '" stroke="var(--bg)" stroke-width="1.5"/>' : '';
+        }).join('');
+    }
+
+    // Y axis labels
+    var yLabels = '';
+    [0, Math.round(maxVal/2), maxVal].forEach(function(v) {
+      var y = ptY(v);
+      yLabels += '<text x="' + (padL - 4) + '" y="' + (y + 4) + '" text-anchor="end" font-size="9" fill="rgba(148,163,184,0.6)" font-family="monospace">' + v + '</text>';
+      yLabels += '<line x1="' + padL + '" y1="' + y + '" x2="' + (padL + innerW) + '" y2="' + y + '" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>';
+    });
+
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('height', H);
+    svg.innerHTML = yLabels + polyline(counts, 'var(--gold)', 'gGold') + polyline(uniques, 'var(--aqua)', 'gAqua');
+
+    // Date labels (show every 2 days)
+    if (labelsEl) {
+      var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      labelsEl.innerHTML = '';
+      days.forEach(function(d, i) {
+        var span = document.createElement('span');
+        span.style.cssText = 'font-size:0.55rem;color:var(--muted);font-family:monospace;';
+        span.textContent = (i % 2 === 0) ? (mo[d.date.getMonth()] + ' ' + d.date.getDate()) : '';
+        labelsEl.appendChild(span);
+      });
+    }
+  }
+
+  async function monitorClearSec() {
+    if (!confirm('Clear all security events?')) return;
+    var obj = await monFetch();
+    obj.secEvents = [];
+    await monPush(obj);
+    monitorRefresh();
+  }
+
+  function monFmtDur(ms) {
+    var s = Math.round(ms / 1000);
+    if (s < 60)  return s + 's';
+    if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's';
+    return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm';
+  }
+
+  function monFmtTs(ts) {
+    var d = new Date(ts);
+    var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return mo[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
   }
 
   // ── Boot ───────────────────────────────────────────────────────────────────
