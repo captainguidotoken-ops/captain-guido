@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CGT Admin</title>
+  <!-- Security headers -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://api.github.com https://api.anthropic.com https://*.workers.dev; frame-ancestors 'none'; base-uri 'self'; form-action 'none';">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="no-referrer">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1660,11 +1665,53 @@
   ];
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  // Per-user password hashes
+  // SHA-256 hashes of passwords (change these — see README for how to generate).
+  // IMPORTANT: each user MUST have a different password → different hash.
+  // Generate: await crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourpassword'))
+  //           then convert ArrayBuffer to hex string.
   const USERS = {
     Glenn: { pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1' },
     Jude:  { pwHash: '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1' }
+    // ↑ BOTH hashes are the same — set different passwords before production!
   };
+
+  // ── Brute-force lockout ───────────────────────────────────────────────────
+  const MAX_ATTEMPTS   = 5;
+  const LOCKOUT_MS     = 15 * 60 * 1000; // 15 minutes
+  const LOCKOUT_KEY    = 'cgc_lockout';
+  const ATTEMPTS_KEY   = 'cgc_attempts';
+
+  function getLockout() {
+    try { return JSON.parse(localStorage.getItem(LOCKOUT_KEY) || 'null'); } catch(e) { return null; }
+  }
+  function isLockedOut() {
+    var l = getLockout();
+    if (!l) return false;
+    if (Date.now() < l.until) return true;
+    localStorage.removeItem(LOCKOUT_KEY);
+    localStorage.removeItem(ATTEMPTS_KEY);
+    return false;
+  }
+  function recordFailedAttempt() {
+    var attempts = (parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10)) + 1;
+    localStorage.setItem(ATTEMPTS_KEY, String(attempts));
+    if (attempts >= MAX_ATTEMPTS) {
+      var until = Date.now() + LOCKOUT_MS;
+      localStorage.setItem(LOCKOUT_KEY, JSON.stringify({ until: until }));
+      localStorage.removeItem(ATTEMPTS_KEY);
+      return true; // newly locked
+    }
+    return false;
+  }
+  function clearAttempts() {
+    localStorage.removeItem(LOCKOUT_KEY);
+    localStorage.removeItem(ATTEMPTS_KEY);
+  }
+  function lockoutMinutesLeft() {
+    var l = getLockout();
+    if (!l) return 0;
+    return Math.ceil((l.until - Date.now()) / 60000);
+  }
 
   var _loginUser = null;
 
@@ -1677,6 +1724,12 @@
   }
 
   function selectUser(name) {
+    if (isLockedOut()) {
+      var errEl = document.getElementById('login-error');
+      errEl.textContent = 'Account locked. Try again in ' + lockoutMinutesLeft() + ' min.';
+      errEl.style.display = 'block';
+      return;
+    }
     _loginUser = name;
     document.getElementById('pw-label').textContent = name + "'s Password";
     document.getElementById('step-user').style.display = 'none';
@@ -1692,14 +1745,34 @@
 
   async function checkPassword() {
     if (!_loginUser) return;
+
+    // Lockout check
+    if (isLockedOut()) {
+      var errEl = document.getElementById('login-error');
+      errEl.textContent = 'Too many failed attempts. Try again in ' + lockoutMinutesLeft() + ' min.';
+      errEl.style.display = 'block';
+      document.getElementById('pw-input').value = '';
+      return;
+    }
+
     const h = await sha256(document.getElementById('pw-input').value);
     if (h === USERS[_loginUser].pwHash) {
+      clearAttempts();
       sessionStorage.setItem('cgc_auth', '1');
       sessionStorage.setItem('cgc_login_user', _loginUser);
       localStorage.setItem('cgc_tt_user', _loginUser);
+      touchSession();
       showAdmin();
     } else {
-      document.getElementById('login-error').style.display = 'block';
+      var locked = recordFailedAttempt();
+      var errEl  = document.getElementById('login-error');
+      if (locked) {
+        errEl.textContent = 'Too many failed attempts. Locked for 15 minutes.';
+      } else {
+        var remaining = MAX_ATTEMPTS - (parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10));
+        errEl.textContent = 'Wrong password. ' + remaining + ' attempt' + (remaining===1?'':'s') + ' left.';
+      }
+      errEl.style.display = 'block';
       document.getElementById('pw-input').value = '';
       document.getElementById('pw-input').focus();
       monitorLogSecEvent('failed_login', 'User: ' + (_loginUser || 'unknown') + ' — wrong password');
@@ -2311,7 +2384,12 @@
   }
 
   function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#x27;');
   }
 
   async function addLogEntry() {
@@ -2385,10 +2463,10 @@
       item.id = 'ch-item-' + i;
       item.innerHTML = `
         <div class="ch-left">
-          <span class="ch-num" id="ch-num-${i}">CH.${ch.num}</span>
+          <span class="ch-num" id="ch-num-${i}">CH.${escHtml(ch.num)}</span>
           <div>
-            <div class="ch-name">${ch.name}</div>
-            <div class="ch-loc">${ch.loc}</div>
+            <div class="ch-name">${escHtml(ch.name)}</div>
+            <div class="ch-loc">${escHtml(ch.loc)}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;">
@@ -2772,6 +2850,15 @@
         var platform=args[0], url=args[1];
         if (!platform||!url) { hideTyping(); addMsg('Usage: <code>social &lt;twitter|discord|telegram&gt; &lt;url&gt;</code>','bot'); return; }
         if (!['twitter','discord','telegram'].includes(platform)) { hideTyping(); addMsg('<span class="err">Unknown platform.</span> Use twitter, discord, or telegram.','bot'); return; }
+        // Validate URL — must be https:// only, no javascript: or data: URIs
+        var safeUrl;
+        try {
+          safeUrl = new URL(url);
+          if (safeUrl.protocol !== 'https:') throw new Error('not https');
+        } catch(e) {
+          hideTyping(); addMsg('<span class="err">Invalid URL.</span> Must be a full https:// address.','bot'); return;
+        }
+        url = safeUrl.href; // normalised
         var d=await chatGhGet(); d.cfg.social=d.cfg.social||{}; d.cfg.social[platform]=url;
         await chatGhPut(d.cfg,d.sha,'update social.'+platform);
         document.getElementById('link-'+platform).value=url;
@@ -2909,10 +2996,42 @@
     }
   }
 
+  // ── Idle session timeout (4 hours) ────────────────────────────────────────
+  const SESSION_TIMEOUT_MS = 4 * 60 * 60 * 1000;
+  const SESSION_TS_KEY     = 'cgc_session_ts';
+  var _idleTimer = null;
+
+  function touchSession() {
+    sessionStorage.setItem(SESSION_TS_KEY, String(Date.now()));
+    clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(function() {
+      if (sessionStorage.getItem('cgc_auth') === '1') {
+        alert('Session expired after 4 hours of inactivity. Please log in again.');
+        logout();
+      }
+    }, SESSION_TIMEOUT_MS);
+  }
+
+  function sessionExpired() {
+    var ts = parseInt(sessionStorage.getItem(SESSION_TS_KEY) || '0', 10);
+    return ts > 0 && (Date.now() - ts) > SESSION_TIMEOUT_MS;
+  }
+
+  // Refresh idle timer on any user interaction
+  ['click','keydown','scroll','mousemove'].forEach(function(ev) {
+    document.addEventListener(ev, touchSession, { passive: true });
+  });
+
   // ── Boot ───────────────────────────────────────────────────────────────────
-  if (sessionStorage.getItem('cgc_auth') === '1') {
+  if (sessionStorage.getItem('cgc_auth') === '1' && !sessionExpired()) {
     _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
+    touchSession();
     showAdmin();
+  } else if (sessionStorage.getItem('cgc_auth') === '1') {
+    // Session expired — clean up
+    sessionStorage.removeItem('cgc_auth');
+    sessionStorage.removeItem('cgc_login_user');
+    sessionStorage.removeItem(SESSION_TS_KEY);
   }
 
   // ════════════════════════════════════════════════════════════════════════════

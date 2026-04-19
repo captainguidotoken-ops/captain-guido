@@ -122,8 +122,21 @@ async function handleBeacon(request, env) {
     });
   }
 
+  // Reject oversized payloads (max 4KB for a beacon)
+  const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+  if (contentLength > 4096) {
+    return new Response(JSON.stringify({ ok: false, error: 'payload too large' }), {
+      status: 413,
+      headers: { ...CORS_PUBLIC, 'Content-Type': 'application/json' },
+    });
+  }
+
   let payload;
-  try { payload = await request.json(); } catch {
+  try {
+    const raw = await request.text();
+    if (raw.length > 4096) throw new Error('too large');
+    payload = JSON.parse(raw);
+  } catch {
     return new Response(JSON.stringify({ ok: false, error: 'bad json' }), {
       status: 400,
       headers: { ...CORS_PUBLIC, 'Content-Type': 'application/json' },
@@ -170,12 +183,25 @@ async function handleAI(request, env) {
   }
 
   let body;
-  try { body = await request.json(); } catch {
+  try {
+    const raw = await request.text();
+    if (raw.length > 32768) throw new Error('too large'); // 32KB max for AI requests
+    body = JSON.parse(raw);
+  } catch {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
       status: 400,
       headers: { ...CORS_PRIVATE, 'Content-Type': 'application/json' },
     });
   }
+
+  // Allowlist safe fields — never blindly forward the full body to Anthropic
+  const safeBody = {
+    model:      typeof body.model      === 'string' ? body.model      : 'claude-sonnet-4-6',
+    max_tokens: typeof body.max_tokens === 'number' ? Math.min(body.max_tokens, 2048) : 600,
+    system:     typeof body.system     === 'string' ? body.system.slice(0, 8192)      : undefined,
+    messages:   Array.isArray(body.messages)        ? body.messages.slice(0, 20)      : [],
+  };
+  if (safeBody.system === undefined) delete safeBody.system;
 
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
     method:  'POST',
@@ -184,7 +210,7 @@ async function handleAI(request, env) {
       'anthropic-version': '2023-06-01',
       'content-type':      'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(safeBody),
   });
 
   const data = await anthropicRes.json();
