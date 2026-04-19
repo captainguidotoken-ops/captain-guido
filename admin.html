@@ -2141,18 +2141,35 @@
         activeEntry = { startTs: act.startTs, endTs: Date.now(), duration: Date.now() - act.startTs, note: '(in progress)', user: act.user };
       } catch(e) {}
     }
+    // ── Helper: get Monday midnight timestamp for any timestamp ──────────────
+    function weekKey(ts) {
+      var d = new Date(ts);
+      var day = d.getDay();
+      var daysToMon = day === 0 ? 6 : day - 1;
+      d.setDate(d.getDate() - daysToMon);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    }
+    function weekLabel(monTs) {
+      var mon = new Date(monTs);
+      var sun = new Date(monTs + 6 * 86400000);
+      var fmt = function(d) { return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
+      return fmt(mon) + ' – ' + fmt(sun);
+    }
+
     var html = '';
     TT_USERS.forEach(function(user) {
       var entries = ttLoadLog(user).slice();
-      // Inject live session for this user if one is running
       if (activeEntry && activeEntry.user === user) entries.push(activeEntry);
+
       var weekMs = 0, todayMs = 0, allMs = 0;
       entries.forEach(function(e) {
         allMs += e.duration;
         if (ttIsThisWeek(e.startTs)) weekMs += e.duration;
         if (ttIsToday(e.startTs))    todayMs += e.duration;
       });
-      // Week days breakdown Mon–Sun
+
+      // Current week day bars Mon–Sun
       var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       var dayMap = {};
       entries.filter(function(e){ return ttIsThisWeek(e.startTs); }).forEach(function(e) {
@@ -2165,26 +2182,51 @@
         var pct = Math.min(100, (ms / (8 * 3600000)) * 100).toFixed(0);
         return '<div style="flex:1;text-align:center;">' +
           '<div style="height:60px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px;">' +
-            '<div style="width:24px;background:var(--primary,#6366f1);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:' + (ms?2:0) + 'px;transition:height 0.3s;"></div>' +
+            '<div style="width:24px;background:var(--gold,#d4af37);border-radius:3px 3px 0 0;height:' + pct + '%;min-height:' + (ms?2:0) + 'px;transition:height 0.3s;"></div>' +
           '</div>' +
-          '<div style="font-size:0.6rem;color:var(--text-muted);">' + d + '</div>' +
-          '<div style="font-size:0.65rem;font-family:var(--mono,monospace);color:var(--text-primary);">' + (ms ? hrs + 'h' : '—') + '</div>' +
+          '<div style="font-size:0.6rem;color:var(--muted);">' + d + '</div>' +
+          '<div style="font-size:0.65rem;font-family:var(--mono,monospace);color:var(--text);">' + (ms ? hrs + 'h' : '—') + '</div>' +
         '</div>';
       }).join('');
+
+      // Past weeks — group all sessions by week, exclude current week
+      var thisWeekKey = weekKey(Date.now());
+      var pastMap = {}; // monTs → ms
+      entries.forEach(function(e) {
+        var wk = weekKey(e.startTs);
+        if (wk === thisWeekKey) return;
+        pastMap[wk] = (pastMap[wk] || 0) + e.duration;
+      });
+      var pastKeys = Object.keys(pastMap).map(Number).sort(function(a,b){ return b-a; }); // newest first
+      var pastRows = pastKeys.map(function(wk) {
+        var ms  = pastMap[wk];
+        var hrs = (ms / 3600000).toFixed(1);
+        return '<tr>' +
+          '<td style="padding:0.35rem 0.5rem;font-size:0.75rem;color:var(--muted);">' + weekLabel(wk) + '</td>' +
+          '<td style="padding:0.35rem 0.5rem;font-family:var(--mono,monospace);font-size:0.8rem;text-align:right;">' + hrs + 'h</td>' +
+        '</tr>';
+      }).join('');
+
       html +=
         '<div class="card" style="margin-bottom:1rem;">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
             '<div style="font-weight:700;font-size:1rem;">' + user + '</div>' +
             '<div style="display:flex;gap:1.5rem;">' +
-              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(todayMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">TODAY</div></div>' +
-              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(weekMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">THIS WEEK</div></div>' +
-              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(allMs) + '</div><div style="font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;">ALL TIME</div></div>' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(todayMs) + '</div><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">TODAY</div></div>' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(weekMs) + '</div><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">THIS WEEK</div></div>' +
+              '<div style="text-align:right;"><div style="font-family:var(--mono,monospace);font-weight:700;">' + ttFmtHM(allMs) + '</div><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;">ALL TIME</div></div>' +
             '</div>' +
           '</div>' +
-          '<div style="display:flex;gap:4px;align-items:flex-end;">' + bars + '</div>' +
+          '<div style="display:flex;gap:4px;align-items:flex-end;margin-bottom:' + (pastRows ? '1.25rem' : '0') + ';">' + bars + '</div>' +
+          (pastRows ?
+            '<div style="border-top:1px solid var(--border);padding-top:0.75rem;">' +
+              '<div style="font-size:0.65rem;color:var(--muted);letter-spacing:2px;margin-bottom:0.4rem;">PREVIOUS WEEKS</div>' +
+              '<table style="width:100%;border-collapse:collapse;">' + pastRows + '</table>' +
+            '</div>'
+          : '') +
         '</div>';
     });
-    if (!html) html = '<p style="color:var(--text-muted);font-size:0.85rem;">No sessions logged yet.</p>';
+    if (!html) html = '<p style="color:var(--muted);font-size:0.85rem;">No sessions logged yet.</p>';
     el.innerHTML = html;
   }
 
