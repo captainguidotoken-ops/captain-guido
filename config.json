@@ -66,7 +66,7 @@
     },
     "p1-3": {
       "done": false,
-      "note": "see if i cant do this via free url\n"
+      "note": ""
     },
     "p1-4": {
       "done": true,
@@ -94,11 +94,11 @@
     },
     "p1-10": {
       "done": true,
-      "note": "done 4/15"
+      "note": ""
     },
     "p2-1": {
-      "done": true,
-      "note": "just got this one done here \n"
+      "done": false,
+      "note": ""
     },
     "p2-2": {
       "done": false,
@@ -109,7 +109,7 @@
       "note": ""
     },
     "p2-4": {
-      "done": true,
+      "done": false,
       "note": ""
     },
     "p2-5": {
@@ -157,7 +157,7 @@
       "note": ""
     },
     "p3-6": {
-      "done": true,
+      "done": false,
       "note": ""
     },
     "p3-7": {
@@ -218,9 +218,9 @@
     }
   },
   "social": {
-    "twitter": "https://twitter.com/CaptainGuido",
-    "discord": "#",
-    "telegram": "#"
+    "twitter": "",
+    "discord": "",
+    "telegram": ""
   },
   "presale": {
     "active": false,
