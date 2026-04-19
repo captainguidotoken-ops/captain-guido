@@ -22,9 +22,9 @@
       "user": "Glenn"
     },
     {
-      "startTs": 1776613828949,
-      "endTs": 1776620431452,
-      "duration": 6602503,
+      "startTs": 1776613800000,
+      "endTs": 1776637200000,
+      "duration": 23400000,
       "note": "",
       "user": "Glenn"
     }
