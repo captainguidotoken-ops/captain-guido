@@ -1310,7 +1310,10 @@
           <div class="panel-title">Launch Checklist</div>
           <div class="panel-sub">40 tasks across 4 phases — check off as you go.</div>
         </div>
-        <div class="progress-label" id="cl-progress-text">0 / 40 done</div>
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          <div class="progress-label" id="cl-progress-text">0 / 40 done</div>
+          <button id="cl-save-btn" onclick="saveNotes()" style="padding:.35rem .9rem;font-size:.75rem;font-family:inherit;font-weight:600;border:1px solid var(--gold);border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold);cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(212,175,55,.25)'" onmouseout="this.style.background='rgba(212,175,55,.12)'">Save Notes</button>
+        </div>
       </div>
 
       <div class="card" style="padding:1rem 1.5rem;">
@@ -2526,6 +2529,50 @@
 
     btn.disabled = false;
     document.getElementById('pub-label').textContent = 'Publish changes';
+  }
+
+  async function saveNotes() {
+    const token = sessionStorage.getItem('cgc_gh_token');
+    if (!token) { showPanel('token'); toast('Enter your GitHub token first', 'err'); return; }
+
+    const btn = document.getElementById('cl-save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
+    const getH = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
+    const putH = { ...getH, 'Content-Type':'application/json' };
+
+    try {
+      const getRes  = await fetch(base + 'config.json', { headers: getH });
+      const getData = await getRes.json();
+      if (!getRes.ok) throw new Error(getData.message || `Read error ${getRes.status}`);
+
+      // Parse existing config and update only task notes/done state
+      let cfg = {};
+      try { cfg = JSON.parse(decodeURIComponent(escape(atob(getData.content.replace(/\n/g,''))))); } catch(e) { cfg = {}; }
+      cfg.tasks = Object.fromEntries(
+        TASKS_FLAT.map(t => [t.id, { done: taskState[t.id].done, note: taskState[t.id].note }])
+      );
+
+      const body = {
+        message: 'admin: save checklist notes',
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(cfg, null, 2)))),
+        sha: getData.sha
+      };
+
+      const putRes  = await fetch(base + 'config.json', { method:'PUT', headers:putH, body: JSON.stringify(body) });
+      const putData = await putRes.json();
+      if (!putRes.ok) throw new Error(putData.message || `Write error ${putRes.status}`);
+
+      toast('Notes saved ✓', 'ok');
+    } catch(err) {
+      console.error('[CGC admin]', err);
+      toast(err.message || 'Something went wrong', 'err');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Save Notes';
   }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
