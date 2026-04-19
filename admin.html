@@ -2886,6 +2886,8 @@
     if (url && !url.startsWith('http')) url = 'https://' + url;
     // Strip trailing slash
     url = url.replace(/\/+$/, '');
+    // Strip any non-ASCII / non-printable characters from secret (breaks HTTP headers)
+    secret = secret.replace(/[^\x20-\x7E]/g, '');
     localStorage.setItem('cgc_ai_url',    url);
     localStorage.setItem('cgc_ai_secret', secret);
     document.getElementById('ai-worker-url').value    = url;
