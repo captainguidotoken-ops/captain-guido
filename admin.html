@@ -1732,7 +1732,7 @@
       }
     } catch(e) {}
 
-    const saved = sessionStorage.getItem('cgc_gh_token');
+    const saved = localStorage.getItem('cgc_gh_token');
     if (saved) {
       document.getElementById('gh-token-input').value = '•'.repeat(20);
       loadConfig();
@@ -1846,7 +1846,7 @@
   var _ttSha     = null;
 
   function ttGhHeaders() {
-    var token = sessionStorage.getItem('cgc_gh_token');
+    var token = localStorage.getItem('cgc_gh_token');
     return token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : null;
   }
 
@@ -2003,7 +2003,7 @@
 
   async function ttRenderHistory() {
     var warn = document.getElementById('tt-token-warn');
-    if (warn) warn.style.display = sessionStorage.getItem('cgc_gh_token') ? 'none' : 'block';
+    if (warn) warn.style.display = localStorage.getItem('cgc_gh_token') ? 'none' : 'block';
     var userEl = document.getElementById('tt-user');
     if (userEl) userEl.value = ttCurrentUser();
     var isGlennSession = ttCurrentUser().toLowerCase() === 'glenn';
@@ -2181,7 +2181,7 @@
   var _logSha   = null;   // GitHub file SHA for updates
 
   function logGhHeaders() {
-    var token = sessionStorage.getItem('cgc_gh_token');
+    var token = localStorage.getItem('cgc_gh_token');
     return token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : null;
   }
   var LOG_GH_PATH = 'session-log.json';
@@ -2371,13 +2371,13 @@
   function saveToken() {
     const v = document.getElementById('gh-token-input').value.trim();
     if (!v || v.startsWith('•')) return;
-    sessionStorage.setItem('cgc_gh_token', v);
+    localStorage.setItem('cgc_gh_token', v);
     document.getElementById('gh-token-input').value = '•'.repeat(20);
     verifyToken();
   }
 
   function clearToken() {
-    sessionStorage.removeItem('cgc_gh_token');
+    localStorage.removeItem('cgc_gh_token');
     document.getElementById('gh-token-input').value = '';
     setTokenStatus(null, 'Token cleared');
   }
@@ -2390,7 +2390,7 @@
   }
 
   async function verifyToken() {
-    const token = sessionStorage.getItem('cgc_gh_token');
+    const token = localStorage.getItem('cgc_gh_token');
     if (!token) { setTokenStatus(false, 'No token saved — enter one above'); return; }
     setTokenStatus(null, 'Checking…');
     try {
@@ -2408,7 +2408,7 @@
 
   // ── Load live config from GitHub ───────────────────────────────────────────
   async function loadConfig() {
-    const token = sessionStorage.getItem('cgc_gh_token');
+    const token = localStorage.getItem('cgc_gh_token');
     if (!token) return;
     const H = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
     const hint = document.querySelector('.publish-hint');
@@ -2475,7 +2475,7 @@
 
   // ── Publish ────────────────────────────────────────────────────────────────
   async function saveChanges() {
-    const token = sessionStorage.getItem('cgc_gh_token');
+    const token = localStorage.getItem('cgc_gh_token');
     if (!token) { showPanel('token'); toast('Enter your GitHub token first', 'err'); return; }
 
     const btn = document.getElementById('pub-btn');
@@ -2532,7 +2532,7 @@
   }
 
   async function saveNotes() {
-    const token = sessionStorage.getItem('cgc_gh_token');
+    const token = localStorage.getItem('cgc_gh_token');
     if (!token) { showPanel('token'); toast('Enter your GitHub token first', 'err'); return; }
 
     const btn = document.getElementById('cl-save-btn');
@@ -2620,7 +2620,7 @@
   function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   async function chatGhGet() {
-    var token = sessionStorage.getItem('cgc_gh_token');
+    var token = localStorage.getItem('cgc_gh_token');
     var H = { Authorization:'Bearer '+token, Accept:'application/vnd.github+json' };
     var res  = await fetch('https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME+'/contents/config.json', { headers:H });
     var data = await res.json();
@@ -2629,7 +2629,7 @@
   }
 
   async function chatGhPut(cfg, sha, message) {
-    var token = sessionStorage.getItem('cgc_gh_token');
+    var token = localStorage.getItem('cgc_gh_token');
     var H = { Authorization:'Bearer '+token, Accept:'application/vnd.github+json', 'Content-Type':'application/json' };
     var res  = await fetch('https://api.github.com/repos/'+REPO_OWNER+'/'+REPO_NAME+'/contents/config.json', {
       method:'PUT', headers:H,
@@ -2653,7 +2653,7 @@
   }
 
   async function runCommand(raw) {
-    if (!sessionStorage.getItem('cgc_gh_token')) {
+    if (!localStorage.getItem('cgc_gh_token')) {
       addMsg('<span class="err">No GitHub token.</span> Go to <b>GitHub Token</b> in the sidebar first.', 'bot'); return;
     }
     showTyping();
@@ -2869,7 +2869,7 @@
   var _monSha     = null;
 
   function monGhHeaders() {
-    var token = sessionStorage.getItem('cgc_gh_token');
+    var token = localStorage.getItem('cgc_gh_token');
     return token ? { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' } : null;
   }
 
