@@ -3305,3 +3305,17 @@ html {
   95%  { opacity: 1; }
   100% { opacity: 0; transform: translate(-400px, 200px); }
 }
+
+/* ── Scroll progress bar ─────────────────────────────────────────── */
+#scroll-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--aqua), var(--biolum), var(--gold-accent));
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.9), 0 0 30px rgba(0, 212, 255, 0.4);
+  z-index: 100000;
+  pointer-events: none;
+  will-change: width;
+  transform-origin: left;
+}
