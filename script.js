@@ -22,38 +22,131 @@
   };
   // ──────────────────────────────────────────────────────────────────────────
   
-  // Entry Screen
+  // ─── AUTO LOADER ─────────────────────────────────────────────────────────
   function enterSite() {
-    const entryScreen = document.getElementById('entry-screen');
+    var entryScreen = document.getElementById('entry-screen');
     if (!entryScreen) return;
-    
     document.body.classList.remove('entry-active');
     entryScreen.classList.add('hidden');
     document.body.style.overflow = 'auto';
-    
-    setTimeout(function() {
-      entryScreen.style.display = 'none';
-    }, 350);
+    setTimeout(function() { entryScreen.style.display = 'none'; }, 750);
   }
 
-  // Create ocean particles
-  function createOceanParticles() {
-    const container = document.getElementById('oceanParticles');
-    if (!container) return;
+  var LOADER_STATUSES = [
+    'INITIALIZING',
+    'LOADING ASSETS',
+    'SYNCING LEDGER',
+    'MAPPING ROUTE',
+    'READY'
+  ];
 
-    for (let i = 0; i < 50; i++) {
-      const particle = document.createElement('div');
-      particle.style.position = 'absolute';
-      particle.style.width = Math.random() * 4 + 2 + 'px';
-      particle.style.height = particle.style.width;
-      particle.style.background = 'rgba(78, 196, 196, ' + (Math.random() * 0.5 + 0.2) + ')';
-      particle.style.borderRadius = '50%';
-      particle.style.left = Math.random() * 100 + '%';
-      particle.style.top = Math.random() * 100 + '%';
-      particle.style.animation = 'float ' + (Math.random() * 10 + 5) + 's ease-in-out infinite';
-      container.appendChild(particle);
+  function runLoader() {
+    var fill    = document.getElementById('loaderBarFill');
+    var pctEl   = document.getElementById('loaderPct');
+    var statEl  = document.getElementById('loaderStatus');
+    if (!fill || !pctEl) { enterSite(); return; }
+
+    var pct      = 0;
+    var target   = 0;
+    var duration = 2600; // total ms to reach 100%
+    var start    = null;
+
+    // Eased progress curve — fast start, slight pause mid, burst to 100
+    function easedPct(t) {
+      // t in [0,1] → pct in [0,100]
+      if (t < 0.6) return 82 * (t / 0.6) * (2 - (t / 0.6)) * 0.5; // ease-in-out to ~82%
+      return 82 + 18 * ((t - 0.6) / 0.4);                           // linear sprint to 100%
     }
+
+    function updateStatus(p) {
+      var idx = p < 20 ? 0 : p < 45 ? 1 : p < 65 ? 2 : p < 90 ? 3 : 4;
+      if (statEl) statEl.textContent = LOADER_STATUSES[idx];
+    }
+
+    function tick(ts) {
+      if (!start) start = ts;
+      var elapsed = Math.min(ts - start, duration);
+      var t       = elapsed / duration;
+      pct         = easedPct(t);
+
+      fill.style.width  = pct + '%';
+      pctEl.textContent = Math.floor(pct) + '%';
+      updateStatus(Math.floor(pct));
+
+      if (pct < 100) {
+        requestAnimationFrame(tick);
+      } else {
+        fill.style.width  = '100%';
+        pctEl.textContent = '100%';
+        if (statEl) statEl.textContent = 'READY';
+        setTimeout(enterSite, 400);
+      }
+    }
+
+    requestAnimationFrame(tick);
   }
+
+  // ── Sparkles Background (tsparticles) ─────────────────────────────
+  function createCosmicBackground() {
+    if (typeof tsParticles === 'undefined') return;
+
+    // Subtle parallax on earth only
+    var entry = document.getElementById('entry-screen');
+    if (entry) {
+      entry.addEventListener('mousemove', function(e) {
+        var cx = (e.clientX / window.innerWidth  - 0.5);
+        var cy = (e.clientY / window.innerHeight - 0.5);
+        var earth = document.getElementById('cosmic-earth');
+        if (earth) earth.style.transform = 'translate(' + (-cx * 18) + 'px,' + (-cy * 10) + 'px)';
+      });
+    }
+
+    tsParticles.load({
+      id: 'tsparticles',
+      options: {
+        background: { color: { value: 'transparent' } },
+        fullScreen: { enable: false },
+        fpsLimit: 60,
+        particles: {
+          number: {
+            value: 180,
+            density: { enable: true, width: 800, height: 800 }
+          },
+          color: { value: ['#ffffff', '#c8dcff', '#ffe8c8', '#00d4ff'] },
+          opacity: {
+            value: { min: 0.1, max: 0.85 },
+            animation: { enable: true, speed: 0.8, sync: false }
+          },
+          size: {
+            value: { min: 0.5, max: 2.2 }
+          },
+          move: {
+            enable: true,
+            speed: { min: 0.05, max: 0.3 },
+            direction: 'none',
+            random: true,
+            straight: false,
+            outModes: { default: 'out' }
+          },
+          shape: { type: 'circle' },
+          twinkle: {
+            particles: { enable: true, frequency: 0.05, opacity: 1 }
+          }
+        },
+        interactivity: {
+          events: {
+            onHover: { enable: true, mode: 'bubble' }
+          },
+          modes: {
+            bubble: { distance: 120, size: 3, opacity: 1, duration: 0.4 }
+          }
+        },
+        detectRetina: true
+      }
+    });
+  }
+
+  // (createOceanParticles defined later for bioluminescent particles)
 
   // Shuffle Text Animation
   function shuffleText(element) {
@@ -98,7 +191,7 @@
     var mapEl = document.getElementById('map');
     if (!mapEl) return;
 
-    var chapters = [
+    var chapters = window._globeChapters = [
       { name: 'Port of Ostia',    lat: 41.73,        lng: 12.29,         unlocked: false, num: 1  },
       { name: 'Signals in Cairo', lat: 30.0444,       lng: 31.2357,       unlocked: false, num: 2  },
       { name: 'Arabian Tides',    lat: 20,            lng: 60,            unlocked: false, num: 3  },
@@ -112,6 +205,15 @@
       { name: 'South Atlantic',   lat: -20,           lng: -30,           unlocked: false, num: 11 },
       { name: 'Return to Ostia',  lat: 41.73,         lng: 12.29,         unlocked: false, num: 12 }
     ];
+
+    // Apply any unlock states fetched from config.json before the globe initialised
+    if (window._chapterUnlockStates) {
+      chapters.forEach(function(c) {
+        if (window._chapterUnlockStates[c.num] !== undefined) {
+          c.unlocked = window._chapterUnlockStates[c.num];
+        }
+      });
+    }
 
     // ── Popup ────────────────────────────────────────────────────────────────
     var popup = document.createElement('div');
@@ -137,7 +239,7 @@
       var statusColor = chapter.unlocked ? '#4ec4c4' : '#999';
       var statusBg    = chapter.unlocked ? 'rgba(78,196,196,0.2)' : 'rgba(100,100,100,0.2)';
       var statusBdr   = chapter.unlocked ? '#4ec4c4' : '#666';
-      var statusText  = chapter.unlocked ? '✓ UNLOCKED' : '🔒 LOCKED';
+      var statusText  = chapter.unlocked ? '✓ UNLOCKED' : 'LOCKED';
       popup.innerHTML =
         '<strong style="color:#f4a836;font-size:0.8rem;letter-spacing:2px;display:block;margin-bottom:0.4rem;">CHAPTER ' + String(chapter.num).padStart(2,'0') + '</strong>' +
         '<span style="font-size:1.1rem;font-weight:bold;display:block;margin-bottom:0.6rem;">' + chapter.name + '</span>' +
@@ -149,12 +251,19 @@
 
     function hidePopup() { popup.style.display = 'none'; }
 
+    // Hide popup on scroll
+    window.addEventListener('scroll', hidePopup, { passive: true });
+
+    // Hide popup AND resume rotation when clicking anywhere outside the globe
     document.addEventListener('click', function(e) {
-      if (!e.target.closest('#map')) hidePopup();
+      if (!e.target.closest('#map')) {
+        hidePopup();
+        controls.autoRotate = true;
+      }
     });
 
     // ── Globe ────────────────────────────────────────────────────────────────
-    var globe = Globe()
+    var globe = window._globe = Globe()
       // Dark dramatic night texture — deep ocean navy look
       .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
       .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
@@ -202,9 +311,10 @@
     controls.enableZoom      = false;
     controls.rotateSpeed     = 0.6;
 
+    // Stop rotation while user interacts with the globe
     mapEl.addEventListener('pointerdown', function() {
       controls.autoRotate = false;
-    }, { once: true });
+    });
 
     // ── Click → arcs + popup ─────────────────────────────────────────────────
     var arcTimer = null;
@@ -248,12 +358,12 @@
     });
   }
 
-  // Smooth scrolling (Lenis takes over anchor handling if loaded)
+  // Smooth scrolling
   function initSmoothScroll() {
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
-        if (window.CGC_lenis) return; // Lenis handles it
+        if (window.CGC_lenis) return; // Lenis handles anchor scrolling
         const target = document.querySelector(this.getAttribute('href'));
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -457,15 +567,286 @@
     }
   }
 
+  // ─── CHAPTER BACKGROUND PATHS ────────────────────────────────────────────
+  // ─── CHAPTER CARD LINKS ──────────────────────────────────────────────────
+  function initChapterLinks() {
+    document.querySelectorAll('.chapter-card[data-chapter]').forEach(function(card) {
+      card.addEventListener('click', function(e) {
+        var badge = card.querySelector('.status-badge');
+        if (!badge || badge.classList.contains('locked')) return;
+        var ch = card.getAttribute('data-chapter');
+        window.location.href = 'chapter.html?ch=' + ch;
+      });
+    });
+  }
+
+  function injectChapterPaths() {
+    var NS = 'http://www.w3.org/2000/svg';
+    var W = 696, H = 316, CX = 348, CY = 158;
+
+    // One unique flow angle per card — spread across all 360° so each tile looks distinct
+    var flowAngles = [0, 135, 270, 45, 180, 315, 90, 225, 60, 150, 300, 30];
+
+    document.querySelectorAll('.chapter-card').forEach(function(card, cardIndex) {
+      var existing = card.querySelector('.chapter-paths-svg');
+      if (existing) existing.remove();
+
+      var badge = card.querySelector('.status-badge');
+
+      // Seeded LCG — deterministic variety per card
+      var seed = cardIndex * 1664525 + 1013904223;
+      function rng() {
+        seed = ((seed * 1664525) + 1013904223) >>> 0;
+        return seed / 0xffffffff;
+      }
+      function rand(min, max) { return min + rng() * (max - min); }
+
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      svg.classList.add('chapter-paths-svg');
+
+      // Rotate the whole path bundle so each card flows in a different direction
+      var angle = flowAngles[cardIndex % flowAngles.length];
+      var g = document.createElementNS(NS, 'g');
+      g.setAttribute('transform', 'rotate(' + angle + ' ' + CX + ' ' + CY + ')');
+      svg.appendChild(g);
+
+      // Paths always flow left→right inside the group; rotation handles direction.
+      // They start far outside the left edge and end far past the right edge so
+      // after any rotation the paths always sweep fully across the card.
+      var pathCount = Math.round(rand(16, 24));
+
+      for (var i = 0; i < pathCount; i++) {
+        // Space paths evenly across the card height with a little jitter
+        var yBase = (H / (pathCount + 1)) * (i + 1);
+        var yOff  = rand(-18, 18);
+
+        var x0  = -W * 0.6;
+        var y0  = yBase + yOff + rand(-25, 25);
+        var cx1 = W * rand(0.1, 0.35);
+        var cy1 = yBase + rand(-70, 70);
+        var cx2 = W * rand(0.65, 0.9);
+        var cy2 = yBase + rand(-70, 70);
+        var x3  = W * 1.6;
+        var y3  = yBase + yOff + rand(-25, 25);
+
+        var d = 'M'  + x0.toFixed(1)  + ' ' + y0.toFixed(1) +
+                ' C' + cx1.toFixed(1) + ' ' + cy1.toFixed(1) +
+                ' '  + cx2.toFixed(1) + ' ' + cy2.toFixed(1) +
+                ' '  + x3.toFixed(1)  + ' ' + y3.toFixed(1);
+
+        var path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', '#00d4ff');
+        path.setAttribute('stroke-width', (0.5 + rand(0, 0.8)).toFixed(2));
+        g.appendChild(path);
+      }
+
+      // Insert before measuring so getTotalLength() works
+      card.insertBefore(svg, card.firstChild);
+
+      // Per-path Web Animation — uses actual path length for correct dasharray
+      g.querySelectorAll('path').forEach(function(path) {
+        var len = path.getTotalLength();
+        path.setAttribute('stroke-dasharray', len);
+        path.setAttribute('stroke-dashoffset', len);
+
+        var dur   = rand(10000, 26000);
+        var delay = -rand(0, dur);   // start mid-cycle so it's never blank on first hover
+        var fwd   = rng() > 0.5;    // half flow left, half flow right within the bundle
+
+        path.animate(
+          [
+            { strokeDashoffset: fwd ?  len : -len, opacity: 0.15 },
+            { strokeDashoffset: len * 0.2,          opacity: 0.9 },
+            { strokeDashoffset: fwd ? -len :  len, opacity: 0.15 }
+          ],
+          {
+            duration:   dur,
+            delay:      delay,
+            iterations: Infinity,
+            easing:     'linear',
+            fill:       'both'
+          }
+        );
+      });
+    });
+  }
+
+  // ─── APPLY CONFIG ────────────────────────────────────────────────────────
+  function applyConfig(cfg) {
+    if (!cfg) return;
+
+    // Maintenance redirect
+    if (cfg.maintenance) {
+      window.location.replace('maintenance.html');
+      return;
+    }
+
+    // Stats
+    if (cfg.stats) {
+      var statEls = {
+        'CHAPTERS':     cfg.stats.chapters,
+        'LBS REMOVED':  cfg.stats.lbs,
+        'MILES CLEANED': cfg.stats.miles
+      };
+      document.querySelectorAll('.stat-value').forEach(function(el) {
+        var label = el.nextElementSibling && el.nextElementSibling.textContent.trim();
+        if (label && statEls[label] !== undefined) {
+          el.textContent = statEls[label];
+        }
+      });
+    }
+
+    // Chapter unlock badges + globe sync
+    if (cfg.chapters) {
+      // Store states globally so the globe can read them when it initialises
+      window._chapterUnlockStates = {};
+      cfg.chapters.forEach(function(ch) {
+        window._chapterUnlockStates[parseInt(ch.num, 10)] = !!ch.unlocked;
+      });
+
+      cfg.chapters.forEach(function(ch) {
+        // Update DOM chapter cards
+        var cards = document.querySelectorAll('.chapter-card');
+        cards.forEach(function(card) {
+          var numEl = card.querySelector('.chapter-number');
+          if (numEl && numEl.textContent.trim() === 'CH. ' + ch.num) {
+            var badge = card.querySelector('.status-badge');
+            if (badge) {
+              badge.textContent = ch.unlocked ? 'UNLOCKED' : 'LOCKED';
+              badge.className   = 'status-badge ' + (ch.unlocked ? 'unlocked' : 'locked');
+            }
+          }
+        });
+
+        // If globe already initialised, update it live
+        if (window._globeChapters) {
+          var gc = window._globeChapters.find(function(c) { return c.num === parseInt(ch.num, 10); });
+          if (gc) gc.unlocked = !!ch.unlocked;
+        }
+      });
+
+      // Refresh globe if already running
+      if (window._globe && window._globeChapters) {
+        window._globe
+          .pointsData(window._globeChapters)
+          .ringsData(window._globeChapters.filter(function(c) { return !c.unlocked; }));
+      }
+
+      // Re-inject background paths now that badges are updated
+      injectChapterPaths();
+      initChapterLinks();
+    }
+
+    // Social links
+    if (cfg.social) {
+      var map = {
+        'twitter':  cfg.social.twitter,
+        'discord':  cfg.social.discord,
+        'telegram': cfg.social.telegram
+      };
+      document.querySelectorAll('a[data-social]').forEach(function(a) {
+        var key = a.getAttribute('data-social');
+        if (map[key]) a.href = map[key];
+      });
+    }
+
+    // Presale tracker
+    applyPresaleTracker(cfg.presale);
+  }
+
+  var PRESALE_ROUNDS = [
+    { round: 1,  price: 20000, target: 250000 },
+    { round: 2,  price: 18000, target: 300000 },
+    { round: 3,  price: 16000, target: 400000 },
+    { round: 4,  price: 14000, target: 500000 },
+    { round: 5,  price: 12000, target: 750000 },
+    { round: 6,  price: 10000, target: 1000000 },
+    { round: 7,  price: 8000,  target: 1500000 },
+    { round: 8,  price: 6000,  target: 2000000 },
+    { round: 9,  price: 4000,  target: 2500000 },
+    { round: 10, price: 2000,  target: 3000000 }
+  ];
+
+  function applyPresaleTracker(presale) {
+    var tracker   = document.getElementById('presaleTracker');
+    var countdown = document.getElementById('presaleCountdown');
+    if (!tracker) return;
+
+    if (!presale || !presale.active) {
+      tracker.style.display   = 'none';
+      if (countdown) countdown.style.display = '';
+      return;
+    }
+
+    // Hide countdown, show tracker
+    if (countdown) countdown.style.display = 'none';
+    tracker.style.display = 'block';
+
+    var roundNum  = Math.max(1, Math.min(10, parseInt(presale.currentRound, 10) || 1));
+    var roundData = PRESALE_ROUNDS[roundNum - 1];
+    var raised    = parseFloat(presale.roundRaised) || 0;
+    var target    = roundData.target;
+    var pct       = target > 0 ? Math.min(100, (raised / target) * 100) : 0;
+    var remaining = Math.max(0, (target - raised)) * roundData.price;
+
+    function fmtUSDC(n) {
+      if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+      if (n >= 1000)    return '$' + Math.round(n/1000) + 'K';
+      return '$' + n.toLocaleString();
+    }
+    function fmtTokens(n) {
+      if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+      if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+      return n.toLocaleString();
+    }
+
+    document.getElementById('trackerRoundBadge').textContent = 'ROUND ' + roundNum + ' OF 10';
+    document.getElementById('trackerPrice').textContent      = roundData.price.toLocaleString();
+    document.getElementById('trackerFill').style.width       = pct.toFixed(1) + '%';
+    document.getElementById('trackerRaised').textContent     = fmtUSDC(raised) + ' raised';
+    document.getElementById('trackerPct').textContent        = pct.toFixed(1) + '%';
+    document.getElementById('trackerTarget').textContent     = 'of ' + fmtUSDC(target);
+    document.getElementById('trackerRemaining').textContent  = fmtTokens(remaining) + ' $GUIDO remaining this round';
+
+    // Tokenomics modal live block
+    var modalLive = document.getElementById('modal-presale-live');
+    if (modalLive) {
+      modalLive.style.display = 'block';
+      document.getElementById('modal-round-badge').textContent    = 'ROUND ' + roundNum + ' OF 10';
+      document.getElementById('modal-presale-price').textContent  = roundData.price.toLocaleString();
+      document.getElementById('modal-presale-raised').textContent = fmtUSDC(raised);
+      document.getElementById('modal-presale-remaining').textContent = fmtTokens(remaining);
+      document.getElementById('modal-presale-bar').style.width    = pct.toFixed(1) + '%';
+    }
+
+    // Highlight active round in the grid
+    document.querySelectorAll('.round-item').forEach(function(el, i) {
+      el.classList.toggle('round-item--active', i === roundNum - 1);
+    });
+  }
+
   // Initialize
   document.addEventListener('DOMContentLoaded', function() {
     originalLog('Captain Guido initialized');
 
+    // Load config.json and apply
+    fetch('config.json?v=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(applyConfig)
+      .catch(function() {});
+
     document.body.classList.add('entry-active');
+    createCosmicBackground();
     createOceanParticles();
     renderImpact();
     initializeMap();
     initNavigation();
+    injectChapterPaths();
+    initChapterLinks();
 
     // Boot sequence fires the first time the map scrolls into view
     var mapSection = document.getElementById('hero-map');
@@ -484,19 +865,12 @@
     }
     initSmoothScroll();
     
-    // Shuffle animation
-    const shuffleTitle = document.getElementById('shuffleTitle');
+    // Shuffle title then kick off auto-loader
+    var shuffleTitle = document.getElementById('shuffleTitle');
     if (shuffleTitle) {
-      setTimeout(function() {
-        shuffleText(shuffleTitle);
-      }, 500);
+      shuffleText(shuffleTitle);
     }
-    
-    // Entry button
-    const enterButton = document.getElementById('enterButton');
-    if (enterButton) {
-      enterButton.addEventListener('click', enterSite);
-    }
+    setTimeout(runLoader, 600);
     
     // Tokenomics modal
     const openTokenomicsBtn = document.getElementById('openTokenomics');
@@ -791,17 +1165,14 @@
     var sEl = document.getElementById('cdSecs');
     if (!dEl) return;
 
-    // Override setInterval tick by watching MutationObserver on each digit
-    [['cdDays', dEl], ['cdHours', hEl], ['cdMins', mEl], ['cdSecs', sEl]].forEach(function(pair) {
-      var id = pair[0], node = pair[1];
-      if (!node) return;
-      var mo = new MutationObserver(function() {
-        node.classList.remove('flip');
-        void node.offsetWidth;
-        node.classList.add('flip');
-      });
-      mo.observe(node, { childList: true, characterData: true, subtree: true });
+    // Only animate seconds — the rest update too infrequently to need it
+    if (!sEl) return;
+    var mo = new MutationObserver(function() {
+      sEl.classList.remove('flip');
+      void sEl.offsetWidth;
+      sEl.classList.add('flip');
     });
+    mo.observe(sEl, { childList: true, characterData: true, subtree: true });
   };
 
   // Initialize everything
