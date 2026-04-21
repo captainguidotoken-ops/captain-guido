@@ -231,56 +231,9 @@
     });
   }
 
-  // ─── 9. SMOOTH SCROLL — LENIS ─────────────────────────────────────────────
+  // ─── 9. SMOOTH MOMENTUM SCROLL ────────────────────────────────────────────
   function initSmoothScroll() {
-    if (prefersReducedMotion) return;
-
-    // ── Lenis path (preferred) ────────────────────────────────────────────────
-    if (typeof Lenis !== 'undefined') {
-      var lenis = new Lenis({
-        duration: 1.2,
-        easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
-        smoothWheel: true,
-        wheelMultiplier: 0.9,
-        touchMultiplier: 1.5,
-      });
-
-      // Expose globally so modals can pause/resume scroll
-      window.CGC_lenis = lenis;
-
-      // Hook into GSAP ticker for the most accurate timing
-      if (window.gsap) {
-        gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
-        gsap.ticker.lagSmoothing(0);
-      } else {
-        (function rafLoop(time) {
-          lenis.raf(time);
-          requestAnimationFrame(rafLoop);
-        })(0);
-      }
-
-      // Keep ScrollTrigger in sync with Lenis scroll position
-      if (window.ScrollTrigger) {
-        lenis.on('scroll', ScrollTrigger.update);
-        ScrollTrigger.addEventListener('refresh', function () { lenis.resize(); });
-        ScrollTrigger.refresh();
-      }
-
-      // Anchor link scrolling via Lenis
-      document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
-        anchor.addEventListener('click', function (e) {
-          e.preventDefault();
-          var target = document.querySelector(this.getAttribute('href'));
-          if (target) lenis.scrollTo(target, { offset: -80, duration: 1.4 });
-        });
-      });
-
-      return; // Lenis is handling everything
-    }
-
-    // ── Fallback: custom rAF momentum scroll ──────────────────────────────────
-    if ('ontouchstart' in window) return;
-    if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) return;
+    if (prefersReducedMotion || 'ontouchstart' in window) return;
 
     var current = 0;
     var target  = 0;
@@ -296,6 +249,9 @@
       ) - window.innerHeight;
     }
 
+    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if (isFirefox) return; // Firefox has native smooth scroll
+
     window.addEventListener('wheel', function (e) {
       e.preventDefault();
       target += e.deltaY * 0.9;
@@ -305,70 +261,17 @@
 
     function tick() {
       current += (target - current) * ease;
+
       if (Math.abs(target - current) < 0.5) {
         current = target;
         window.scrollTo(0, current);
         rafId = null;
         return;
       }
+
       window.scrollTo(0, current);
       rafId = requestAnimationFrame(tick);
     }
-  }
-
-  // ─── 10. SCROLL PROGRESS BAR ──────────────────────────────────────────────
-  function initScrollProgress() {
-    var bar = document.getElementById('scroll-progress');
-    if (!bar) return;
-
-    function update() {
-      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      var docHeight = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight
-      ) - window.innerHeight;
-      bar.style.width = (docHeight > 0 ? (scrollTop / docHeight * 100) : 0) + '%';
-    }
-
-    window.addEventListener('scroll', update, { passive: true });
-  }
-
-  // ─── 11. GSAP CHAPTER CARD STAGGER ────────────────────────────────────────
-  function initGSAPChapterCards() {
-    if (prefersReducedMotion) return;
-    if (!window.gsap || !window.ScrollTrigger) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-
-    var cards = document.querySelectorAll('.chapter-card');
-    if (!cards.length) return;
-
-    // Mark grid visible immediately — suppresses the CSS transition initial state
-    // GSAP will own the entrance animation instead
-    var grid = document.querySelector('.chapters-grid');
-    if (grid) grid.classList.add('visible');
-
-    gsap.set(cards, { opacity: 0, y: 72, scale: 0.96 });
-
-    ScrollTrigger.create({
-      trigger: '.chapters-grid',
-      start: 'top 80%',
-      onEnter: function () {
-        gsap.to(cards, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.75,
-          stagger: { each: 0.055, from: 'start' },
-          ease: 'power3.out',
-          onComplete: function () {
-            // Remove inline transforms so CSS hover effects take over cleanly
-            gsap.set(cards, { clearProps: 'transform,scale' });
-          }
-        });
-      },
-      once: true
-    });
   }
 
   // ─── 10. NUMBER TICKER (enhanced) ─────────────────────────────────────────
@@ -408,6 +311,23 @@
     });
   }
 
+  // ─── 11. SCROLL PROGRESS BAR ──────────────────────────────────────────────
+  function initScrollProgress() {
+    var bar = document.getElementById('scroll-progress');
+    if (!bar) return;
+
+    function update() {
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var docHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      ) - window.innerHeight;
+      bar.style.width = (docHeight > 0 ? (scrollTop / docHeight * 100) : 0) + '%';
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+  }
+
   // ─── INIT ──────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     // initCursor() — removed per user request
@@ -419,7 +339,6 @@
     initGlitch();
     initSmoothScroll();
     initScrollProgress();
-    initGSAPChapterCards();
     initTickers();
   });
 
