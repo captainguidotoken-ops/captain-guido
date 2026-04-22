@@ -23,16 +23,30 @@
   // ──────────────────────────────────────────────────────────────────────────
   
   // ─── AUTO LOADER ─────────────────────────────────────────────────────────
+  var threeScene = null;
+
   function enterSite() {
     var entryScreen = document.getElementById('entry-screen');
     if (!entryScreen) return;
-    // Logo has already filled the viewport — fade entry screen to reveal home page
-    entryScreen.classList.add('zoom-exit');
-    document.body.style.overflow = 'auto';
-    setTimeout(function() {
-      document.body.classList.remove('entry-active');
-      entryScreen.style.display = 'none';
-    }, 800);
+    if (threeScene) {
+      // Final camera burst through the coin, then fade
+      threeScene.burst(function() {
+        entryScreen.classList.add('zoom-exit');
+        document.body.style.overflow = 'auto';
+        setTimeout(function() {
+          document.body.classList.remove('entry-active');
+          entryScreen.style.display = 'none';
+          threeScene.stop();
+        }, 700);
+      });
+    } else {
+      entryScreen.classList.add('zoom-exit');
+      document.body.style.overflow = 'auto';
+      setTimeout(function() {
+        document.body.classList.remove('entry-active');
+        entryScreen.style.display = 'none';
+      }, 700);
+    }
   }
 
   var LOADER_STATUSES = [
@@ -79,21 +93,19 @@
       pctEl.textContent = Math.floor(pct) + '%';
       updateStatus(Math.floor(pct));
 
-      // Dramatic zoom into logo: scale 1 → 5.5 as bar fills 0 → 100%
-      if (logoWrap) {
-        logoWrap.style.transform = 'scale(' + (1 + (pct / 100) * 4.5) + ')';
-      }
+      // Drive Three.js camera zoom proportional to loading progress
+      if (threeScene) threeScene.setProgress(pct);
 
-      // Title + subtitle fade after 50% so logo zoom dominates
-      if (pct > 50) {
-        var titleFade = Math.min((pct - 50) / 35, 1);
-        if (entryTitle) entryTitle.style.opacity = String(1 - titleFade);
-        if (entrySub)   entrySub.style.opacity   = String(1 - titleFade);
+      // Fade title + subtitle after 55%
+      if (pct > 55) {
+        var tf = Math.min((pct - 55) / 35, 1);
+        if (entryTitle) entryTitle.style.opacity = String(1 - tf);
+        if (entrySub)   entrySub.style.opacity   = String(1 - tf);
       }
-      // Bar fades last — stays visible until nearly full
+      // Fade bar last — stays visible until nearly full
       if (pct > 85) {
-        var barFade = Math.min((pct - 85) / 15, 1);
-        if (barWrap) barWrap.style.opacity = String(1 - barFade);
+        var bf = Math.min((pct - 85) / 15, 1);
+        if (barWrap) barWrap.style.opacity = String(1 - bf);
       }
 
       if (pct < 100) {
@@ -109,64 +121,195 @@
     requestAnimationFrame(tick);
   }
 
-  // ── Sparkles Background (tsparticles) ─────────────────────────────
+  // ── Three.js Loading Screen Scene ─────────────────────────────────
   function createCosmicBackground() {
-    if (typeof tsParticles === 'undefined') return;
+    // Hide old CSS background layers
+    var cosmicBg = document.getElementById('cosmic-bg');
+    var techGrid = document.querySelector('.tech-grid');
+    if (cosmicBg) cosmicBg.style.display = 'none';
+    if (techGrid) techGrid.style.display = 'none';
+    // Hide HTML logo — 3D coin is the visual centrepiece
+    var htmlLogo = document.querySelector('.loader-logo-wrap');
+    if (htmlLogo) htmlLogo.style.visibility = 'hidden';
 
-    // Subtle parallax on earth only
-    var entry = document.getElementById('entry-screen');
-    if (entry) {
-      entry.addEventListener('mousemove', function(e) {
-        var cx = (e.clientX / window.innerWidth  - 0.5);
-        var cy = (e.clientY / window.innerHeight - 0.5);
-        var earth = document.getElementById('cosmic-earth');
-        if (earth) earth.style.transform = 'translate(' + (-cx * 18) + 'px,' + (-cy * 10) + 'px)';
+    if (typeof THREE === 'undefined') return null;
+
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+
+    // Renderer
+    var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x01060d, 1);
+    var canvas = renderer.domElement;
+    canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;';
+    var entryEl = document.getElementById('entry-screen');
+    if (!entryEl) { renderer.dispose(); return null; }
+    entryEl.insertBefore(canvas, entryEl.firstChild);
+
+    // Scene & Camera
+    var scene  = new THREE.Scene();
+    scene.fog  = new THREE.FogExp2(0x01060d, 0.028);
+    var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
+    camera.position.set(0, 3, 18);
+    camera.lookAt(0, 0.5, 0);
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0x001833, 0.9));
+    var aquaLight = new THREE.PointLight(0x00d4ff, 3, 40);
+    aquaLight.position.set(0, 6, 8);
+    scene.add(aquaLight);
+    var goldLight = new THREE.PointLight(0xf4a836, 2.5, 30);
+    goldLight.position.set(-5, 2, 4);
+    scene.add(goldLight);
+    var rimLight = new THREE.PointLight(0x00ffe0, 1.5, 30);
+    rimLight.position.set(6, 0, -5);
+    scene.add(rimLight);
+
+    // Stars
+    var starPos = new Float32Array(2000 * 3);
+    for (var si = 0; si < starPos.length; si++) starPos[si] = (Math.random() - 0.5) * 400;
+    var starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    scene.add(new THREE.Points(starGeo,
+      new THREE.PointsMaterial({ color: 0xaaddff, size: 0.28, transparent: true, opacity: 0.7 })
+    ));
+
+    // Ocean wireframe waves — two staggered planes
+    var wRes = 50;
+    function makeWavePlane(col, opacity, rotX, posY, posZ, phase) {
+      var g    = new THREE.PlaneGeometry(70, 45, wRes, wRes);
+      var mat  = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
+      var mesh = new THREE.Mesh(g, mat);
+      mesh.rotation.x = rotX;
+      mesh.position.set(0, posY, posZ);
+      scene.add(mesh);
+      var pos  = g.attributes.position;
+      var orig = new Float32Array(pos.count);
+      for (var i = 0; i < pos.count; i++) orig[i] = pos.getY(i);
+      return { pos: pos, orig: orig, phase: phase };
+    }
+    var wave1 = makeWavePlane(0x00d4ff, 0.22, -Math.PI / 2.1, -4.5, -2,   0);
+    var wave2 = makeWavePlane(0x00ffe0, 0.10, -Math.PI / 2.3, -6.5, -7,  1.3);
+
+    // 3D Coin (CylinderGeometry, face toward camera)
+    var coinR   = 1.8;
+    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xf4a836, metalness: 0.95, roughness: 0.12 });
+    var faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6,  roughness: 0.2  });
+    var coinGeo = new THREE.CylinderGeometry(coinR, coinR, 0.22, 64, 1, false);
+    var coin    = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
+    coin.rotation.x = Math.PI / 2;
+    coin.position.set(0, 0.5, 0);
+    scene.add(coin);
+    new THREE.TextureLoader().load('captain-guido.png', function(tex) {
+      faceMat.map = tex;
+      faceMat.needsUpdate = true;
+    });
+
+    // Rings around coin
+    function makeRing(r, tube, col, opacity, rotX) {
+      var mat  = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: opacity });
+      var mesh = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 16, 120), mat);
+      mesh.rotation.x = rotX;
+      mesh.position.copy(coin.position);
+      scene.add(mesh);
+      return { mesh: mesh, mat: mat };
+    }
+    var ring1 = makeRing(coinR + 0.35, 0.04,  0x00d4ff, 0.9, Math.PI / 2);
+    var ring2 = makeRing(coinR + 0.90, 0.02,  0x00ffe0, 0.5, Math.PI / 2);
+    var ring3 = makeRing(coinR + 1.65, 0.012, 0xf4a836, 0.3, 0.5);
+
+    // Horizontal scan line sweeping down
+    var scanMat  = new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide });
+    var scanMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 0.05), scanMat);
+    scene.add(scanMesh);
+
+    // Resize
+    window.addEventListener('resize', function() {
+      W = window.innerWidth; H = window.innerHeight;
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W, H);
+    });
+
+    // Animation state
+    var clock   = new THREE.Clock();
+    var running = true;
+    var rafId;
+    var camTgtZ = 18;
+    var camTgtY = 3;
+
+    function animLoop() {
+      if (!running) return;
+      rafId = requestAnimationFrame(animLoop);
+      var t = clock.getElapsedTime();
+
+      // Animate wave vertices
+      [wave1, wave2].forEach(function(w, wi) {
+        var s1 = 1.4 - wi * 0.25, s2 = 0.9 + wi * 0.1;
+        for (var vi = 0; vi < w.pos.count; vi++) {
+          var wx = w.pos.getX(vi);
+          var wz = w.pos.getZ(vi);
+          w.pos.setY(vi, w.orig[vi]
+            + Math.sin(wx * 0.28 + t * s1 + w.phase) * 0.7
+            + Math.sin(wz * 0.18 + t * s2) * 0.45
+          );
+        }
+        w.pos.needsUpdate = true;
       });
+
+      // Coin: spin + gentle float + slight tilt
+      coin.rotation.z += 0.005;
+      coin.rotation.y  = Math.sin(t * 0.35) * 0.1;
+      coin.position.y  = 0.5 + Math.sin(t * 0.65) * 0.12;
+
+      // Sync rings to coin
+      ring1.mesh.position.copy(coin.position);
+      ring2.mesh.position.copy(coin.position);
+      ring3.mesh.position.copy(coin.position);
+      ring2.mesh.rotation.z -= 0.003;
+      ring3.mesh.rotation.z += 0.005;
+      ring3.mesh.rotation.y += 0.003;
+      ring1.mat.opacity = 0.70 + Math.sin(t * 2.5) * 0.20;
+      ring2.mat.opacity = 0.30 + Math.sin(t * 1.8 + 1) * 0.15;
+      ring3.mat.opacity = 0.18 + Math.sin(t * 1.4) * 0.10;
+
+      // Scan line sweep + pulse
+      scanMesh.position.y = 8.5 - (t * 2.8 % 18);
+      scanMat.opacity      = 0.12 + Math.sin(t * 4) * 0.08;
+
+      // Pulse aqua light
+      aquaLight.intensity = 2.5 + Math.sin(t * 1.6) * 0.9;
+
+      // Smooth camera follow target
+      camera.position.z += (camTgtZ - camera.position.z) * 0.05;
+      camera.position.y += (camTgtY - camera.position.y) * 0.05;
+      camera.lookAt(coin.position);
+
+      renderer.render(scene, camera);
     }
 
-    tsParticles.load({
-      id: 'tsparticles',
-      options: {
-        background: { color: { value: 'transparent' } },
-        fullScreen: { enable: false },
-        fpsLimit: 60,
-        particles: {
-          number: {
-            value: 180,
-            density: { enable: true, width: 800, height: 800 }
-          },
-          color: { value: ['#ffffff', '#c8dcff', '#ffe8c8', '#00d4ff'] },
-          opacity: {
-            value: { min: 0.1, max: 0.85 },
-            animation: { enable: true, speed: 0.8, sync: false }
-          },
-          size: {
-            value: { min: 0.5, max: 2.2 }
-          },
-          move: {
-            enable: true,
-            speed: { min: 0.05, max: 0.3 },
-            direction: 'none',
-            random: true,
-            straight: false,
-            outModes: { default: 'out' }
-          },
-          shape: { type: 'circle' },
-          twinkle: {
-            particles: { enable: true, frequency: 0.05, opacity: 1 }
-          }
-        },
-        interactivity: {
-          events: {
-            onHover: { enable: true, mode: 'bubble' }
-          },
-          modes: {
-            bubble: { distance: 120, size: 3, opacity: 1, duration: 0.4 }
-          }
-        },
-        detectRetina: true
+    animLoop();
+
+    return {
+      setProgress: function(pct) {
+        // Camera flies toward coin: z 18→4.5, y 3→0.5 as pct 0→100
+        camTgtZ = 18 - (pct / 100) * 13.5;
+        camTgtY = 3  - (pct / 100) * 2.5;
+      },
+      burst: function(onComplete) {
+        // Final punch through the coin face
+        camTgtZ = -5;
+        camTgtY = 0;
+        setTimeout(onComplete || function() {}, 650);
+      },
+      stop: function() {
+        running = false;
+        if (rafId) cancelAnimationFrame(rafId);
+        renderer.dispose();
       }
-    });
+    };
   }
 
   // (createOceanParticles defined later for bioluminescent particles)
@@ -863,7 +1006,7 @@
       .catch(function() {});
 
     document.body.classList.add('entry-active');
-    createCosmicBackground();
+    threeScene = createCosmicBackground();
     createOceanParticles();
     renderImpact();
     initializeMap();
