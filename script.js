@@ -150,7 +150,7 @@
 
     // Scene & Camera
     var scene  = new THREE.Scene();
-    scene.fog  = new THREE.FogExp2(0x01060d, 0.028);
+    scene.fog  = new THREE.FogExp2(0x01060d, 0.025);
     var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
     camera.position.set(0, 3, 18);
     camera.lookAt(0, 0.5, 0);
@@ -160,7 +160,7 @@
     var aquaLight = new THREE.PointLight(0x00d4ff, 3, 40);
     aquaLight.position.set(0, 6, 8);
     scene.add(aquaLight);
-    var goldLight = new THREE.PointLight(0xf4a836, 2.5, 30);
+    var goldLight = new THREE.PointLight(0xc8a050, 2.5, 30);  // soft antique gold
     goldLight.position.set(-5, 2, 4);
     scene.add(goldLight);
     var rimLight = new THREE.PointLight(0x00ffe0, 1.5, 30);
@@ -176,54 +176,39 @@
       new THREE.PointsMaterial({ color: 0xaaddff, size: 0.28, transparent: true, opacity: 0.7 })
     ));
 
-    // Ocean wireframe waves — two staggered planes
-    var wRes = 50;
-    function makeWavePlane(col, opacity, rotX, posY, posZ, phase) {
-      var g    = new THREE.PlaneGeometry(70, 45, wRes, wRes);
+    // Ocean waves — horizontal planes (rotation.x=-PI/2), animate local Z for real height variation
+    var wRes = 60;
+    function makeWavePlane(col, opacity, posY, posZ, phase) {
+      var g    = new THREE.PlaneGeometry(100, 100, wRes, wRes);
       var mat  = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
       var mesh = new THREE.Mesh(g, mat);
-      mesh.rotation.x = rotX;
+      mesh.rotation.x = -Math.PI / 2;           // flat horizontal surface
       mesh.position.set(0, posY, posZ);
       scene.add(mesh);
-      var pos  = g.attributes.position;
-      var orig = new Float32Array(pos.count);
-      for (var i = 0; i < pos.count; i++) orig[i] = pos.getY(i);
-      return { pos: pos, orig: orig, phase: phase };
+      var pos   = g.attributes.position;
+      var origZ = new Float32Array(pos.count);  // flat start — all z=0
+      return { pos: pos, origZ: origZ, phase: phase };
     }
-    var wave1 = makeWavePlane(0x00d4ff, 0.22, -Math.PI / 2.1, -4.5, -2,   0);
-    var wave2 = makeWavePlane(0x00ffe0, 0.10, -Math.PI / 2.3, -6.5, -7,  1.3);
+    // Main ocean surface sits below the coin; second layer further back adds depth
+    var wave1 = makeWavePlane(0x00d4ff, 0.20, -4.0,  -5,  0);
+    var wave2 = makeWavePlane(0x00ffe0, 0.09, -5.8, -18, 1.8);
 
-    // 3D Coin (CylinderGeometry, face toward camera)
+    // 3D Coin — soft antique gold edge, face toward camera
     var coinR   = 1.8;
-    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xf4a836, metalness: 0.95, roughness: 0.12 });
+    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xc8a050, metalness: 0.90, roughness: 0.22 });
     var faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6,  roughness: 0.2  });
     var coinGeo = new THREE.CylinderGeometry(coinR, coinR, 0.22, 64, 1, false);
     var coin    = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
     coin.rotation.x = Math.PI / 2;
     coin.position.set(0, 0.5, 0);
     scene.add(coin);
+    var coinSpin = 0;
     new THREE.TextureLoader().load('captain-guido.png', function(tex) {
+      tex.center.set(0.5, 0.5);
+      tex.rotation = Math.PI / 2;   // correct 90° orientation so logo is upright
       faceMat.map = tex;
       faceMat.needsUpdate = true;
     });
-
-    // Rings around coin
-    function makeRing(r, tube, col, opacity, rotX) {
-      var mat  = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: opacity });
-      var mesh = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 16, 120), mat);
-      mesh.rotation.x = rotX;
-      mesh.position.copy(coin.position);
-      scene.add(mesh);
-      return { mesh: mesh, mat: mat };
-    }
-    var ring1 = makeRing(coinR + 0.35, 0.04,  0x00d4ff, 0.9, Math.PI / 2);
-    var ring2 = makeRing(coinR + 0.90, 0.02,  0x00ffe0, 0.5, Math.PI / 2);
-    var ring3 = makeRing(coinR + 1.65, 0.012, 0xf4a836, 0.3, 0.5);
-
-    // Horizontal scan line sweeping down
-    var scanMat  = new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.28, side: THREE.DoubleSide });
-    var scanMesh = new THREE.Mesh(new THREE.PlaneGeometry(60, 0.05), scanMat);
-    scene.add(scanMesh);
 
     // Resize
     window.addEventListener('resize', function() {
@@ -240,44 +225,36 @@
     var camTgtZ = 18;
     var camTgtY = 3;
 
+    // Multi-frequency wave — primary swell + cross-swell + chop + ripple
+    function waveH(lx, ly, t, phase) {
+      return (
+        Math.sin(lx * 0.15 - t * 1.3 + phase)          * 1.1  +   // long primary swell
+        Math.sin(ly * 0.20 + t * 1.0 + phase * 0.6)    * 0.85 +   // perpendicular swell
+        Math.sin(lx * 0.38 + ly * 0.12 - t * 1.85)     * 0.45 +   // diagonal chop
+        Math.sin(lx * 0.08 - ly * 0.32 + t * 0.7)      * 0.30 +   // low-freq roll
+        Math.sin(lx * 0.60 + ly * 0.42 + t * 2.4)      * 0.14     // high-freq ripple
+      );
+    }
+
     function animLoop() {
       if (!running) return;
       rafId = requestAnimationFrame(animLoop);
       var t = clock.getElapsedTime();
 
-      // Animate wave vertices
-      [wave1, wave2].forEach(function(w, wi) {
-        var s1 = 1.4 - wi * 0.25, s2 = 0.9 + wi * 0.1;
+      // Wave height animation — setZ drives real world-Y displacement on horizontal plane
+      [wave1, wave2].forEach(function(w) {
         for (var vi = 0; vi < w.pos.count; vi++) {
-          var wx = w.pos.getX(vi);
-          var wz = w.pos.getZ(vi);
-          w.pos.setY(vi, w.orig[vi]
-            + Math.sin(wx * 0.28 + t * s1 + w.phase) * 0.7
-            + Math.sin(wz * 0.18 + t * s2) * 0.45
-          );
+          var lx = w.pos.getX(vi);
+          var ly = w.pos.getY(vi);
+          w.pos.setZ(vi, w.origZ[vi] + waveH(lx, ly, t, w.phase));
         }
         w.pos.needsUpdate = true;
       });
 
-      // Coin: spin + gentle float + slight tilt
-      coin.rotation.z += 0.005;
-      coin.rotation.y  = Math.sin(t * 0.35) * 0.1;
-      coin.position.y  = 0.5 + Math.sin(t * 0.65) * 0.12;
-
-      // Sync rings to coin
-      ring1.mesh.position.copy(coin.position);
-      ring2.mesh.position.copy(coin.position);
-      ring3.mesh.position.copy(coin.position);
-      ring2.mesh.rotation.z -= 0.003;
-      ring3.mesh.rotation.z += 0.005;
-      ring3.mesh.rotation.y += 0.003;
-      ring1.mat.opacity = 0.70 + Math.sin(t * 2.5) * 0.20;
-      ring2.mat.opacity = 0.30 + Math.sin(t * 1.8 + 1) * 0.15;
-      ring3.mat.opacity = 0.18 + Math.sin(t * 1.4) * 0.10;
-
-      // Scan line sweep + pulse
-      scanMesh.position.y = 8.5 - (t * 2.8 % 18);
-      scanMat.opacity      = 0.12 + Math.sin(t * 4) * 0.08;
+      // Coin: slow spin + gentle float + subtle tilt
+      coinSpin += 0.005;
+      coin.rotation.set(Math.PI / 2, Math.sin(t * 0.35) * 0.1, coinSpin);
+      coin.position.y = 0.5 + Math.sin(t * 0.65) * 0.12;
 
       // Pulse aqua light
       aquaLight.intensity = 2.5 + Math.sin(t * 1.6) * 0.9;
@@ -299,7 +276,6 @@
         camTgtY = 3  - (pct / 100) * 2.5;
       },
       burst: function(onComplete) {
-        // Final punch through the coin face
         camTgtZ = -5;
         camTgtY = 0;
         setTimeout(onComplete || function() {}, 650);
