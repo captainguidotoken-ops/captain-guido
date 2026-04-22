@@ -3312,15 +3312,11 @@ html {
   overflow: visible;
 }
 
-/* Logo fills screen during loading — entry screen fades to reveal home page */
+/* Entry screen fades to reveal home page after logo punch */
 #entry-screen.zoom-exit {
-  animation: entryScreenExit 0.8s ease-out forwards;
+  opacity: 0;
   pointer-events: none;
-}
-
-@keyframes entryScreenExit {
-  0%   { opacity: 1; }
-  100% { opacity: 0; }
+  transition: opacity 0.7s ease-out;
 }
 
 /* ── Scroll progress bar ─────────────────────────────────────────── */
