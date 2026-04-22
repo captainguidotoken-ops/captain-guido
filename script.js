@@ -187,21 +187,20 @@
       var g    = new THREE.PlaneGeometry(100, 100, wRes, wRes);
       var mat  = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
       var mesh = new THREE.Mesh(g, mat);
-      mesh.rotation.x = -Math.PI / 2;           // flat horizontal surface
+      mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(0, posY, posZ);
       scene.add(mesh);
       var pos   = g.attributes.position;
-      var origZ = new Float32Array(pos.count);  // flat start — all z=0
-      return { pos: pos, origZ: origZ, phase: phase };
+      var origZ = new Float32Array(pos.count);
+      return { pos: pos, origZ: origZ, phase: phase, mat: mat, baseOpacity: opacity };
     }
-    // Waves pulled well back and below so they don't visually overlap the coin
-    var wave1 = makeWavePlane(0x00d4ff, 0.13, -6.0, -14,  0);
-    var wave2 = makeWavePlane(0x00ffe0, 0.06, -8.0, -28, 1.8);
+    var wave1 = makeWavePlane(0x00d4ff, 0.28, -2.5, -10,  0);
+    var wave2 = makeWavePlane(0x00ffe0, 0.15, -4.5, -20, 1.8);
 
     // 3D Coin — embossed logo on metallic gold face
     var coinR   = 1.8;
-    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xf0c030, metalness: 0.95, roughness: 0.10 });
-    var faceMat = new THREE.MeshStandardMaterial({ color: 0xf5d055, metalness: 0.78, roughness: 0.12 });
+    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xf0c030, metalness: 0.95, roughness: 0.10, transparent: true });
+    var faceMat = new THREE.MeshStandardMaterial({ color: 0xf5d055, metalness: 0.78, roughness: 0.12, transparent: true });
     var coinGeo = new THREE.CylinderGeometry(coinR, coinR, 0.26, 64, 1, false);
     var coin    = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
     coin.rotation.x = Math.PI / 2;  // face toward camera within the group
@@ -252,11 +251,15 @@
     var camTgtY         = 3;
     // Coin flip state
     var flipAngle       = 0;
-    var flipSpeed       = 0.12;     // rad/frame — ~3 flips over the 2.6s load
+    var flipSpeed       = 0.12;
     var flipSlowing     = false;
     var flipLanded      = false;
     var landingCb       = null;
     var landingTimerSet = false;
+    // Coin exit — fade out then wave reveal before transition
+    var coinFading      = false;
+    var coinFadeStart   = 0;
+    var coinGone        = false;
 
     // Multi-frequency wave — primary swell + cross-swell + chop + ripple
     function waveH(lx, ly, t, phase) {
@@ -296,19 +299,42 @@
           flipLanded = true;
           if (!landingTimerSet) {
             landingTimerSet = true;
-            setTimeout(function() { if (landingCb) landingCb(); }, 500);
+            // Brief hold, then fade coin and reveal waves before transitioning
+            setTimeout(function() {
+              coinFading    = true;
+              coinFadeStart = clock.getElapsedTime();
+            }, 500);
           }
         }
       }
       coinGroup.rotation.x = flipAngle;
       coinGroup.position.y = 0.5 + Math.sin(t * 0.65) * 0.12;
-      // Subtle sway while flipping, settle to zero when landed
       coinGroup.rotation.y = flipLanded ? 0 : Math.sin(t * 0.35) * 0.08;
 
-      // Aqua light: steady during flip, strong glow pulse on reveal
-      aquaLight.intensity = flipLanded
-        ? 4.0 + Math.sin(t * 2.8) * 1.2
-        : 2.5 + Math.sin(t * 1.6) * 0.9;
+      // Coin fade-out → wave surge
+      if (coinFading && !coinGone) {
+        var fadeElapsed = t - coinFadeStart;
+        var fadeP       = Math.min(1, fadeElapsed / 0.5);
+        var coinOpacity = 1 - fadeP;
+        edgeMat.opacity = coinOpacity;
+        faceMat.opacity = coinOpacity;
+        // Waves surge as coin fades
+        wave1.mat.opacity = wave1.baseOpacity + (0.52 - wave1.baseOpacity) * fadeP;
+        wave2.mat.opacity = wave2.baseOpacity + (0.30 - wave2.baseOpacity) * fadeP;
+        if (fadeP >= 1) {
+          coinGone = true;
+          coinGroup.visible = false;
+          // Hold waves briefly, then trigger transition
+          setTimeout(function() { if (landingCb) landingCb(); }, 450);
+        }
+      }
+
+      // Light
+      aquaLight.intensity = coinGone
+        ? 3.5 + Math.sin(t * 2.2) * 1.5
+        : flipLanded
+          ? 4.0 + Math.sin(t * 2.8) * 1.2
+          : 2.5 + Math.sin(t * 1.6) * 0.9;
 
       // Smooth camera follow target
       camera.position.z += (camTgtZ - camera.position.z) * 0.05;
