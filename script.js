@@ -160,15 +160,16 @@
     camera.lookAt(0, 0.5, 0);
 
     // Lights
-    scene.add(new THREE.AmbientLight(0x001833, 0.9));
-    var aquaLight = new THREE.PointLight(0x00d4ff, 3, 40);
-    aquaLight.position.set(0, 6, 8);
+    scene.add(new THREE.AmbientLight(0x334466, 1.5));
+    // Warm key light from camera — directly illuminates coin face when facing forward
+    var keyLight = new THREE.DirectionalLight(0xfff2cc, 3.5);
+    keyLight.position.set(1, 4, 15);
+    scene.add(keyLight);
+    var aquaLight = new THREE.PointLight(0x00c8ff, 2.0, 45);
+    aquaLight.position.set(-5, 6, 6);
     scene.add(aquaLight);
-    var goldLight = new THREE.PointLight(0xc8a050, 2.5, 30);  // soft antique gold
-    goldLight.position.set(-5, 2, 4);
-    scene.add(goldLight);
-    var rimLight = new THREE.PointLight(0x00ffe0, 1.5, 30);
-    rimLight.position.set(6, 0, -5);
+    var rimLight = new THREE.PointLight(0x00ffe0, 2.0, 35);
+    rimLight.position.set(7, 1, -6);
     scene.add(rimLight);
 
     // Stars
@@ -197,12 +198,12 @@
     var wave1 = makeWavePlane(0x00d4ff, 0.13, -6.0, -14,  0);
     var wave2 = makeWavePlane(0x00ffe0, 0.06, -8.0, -28, 1.8);
 
-    // 3D Coin — light bright gold, wrapped in Group for flip animation
-    var coinR     = 1.8;
-    var edgeMat   = new THREE.MeshStandardMaterial({ color: 0xf8e080, metalness: 0.88, roughness: 0.20 });
-    var faceMat   = new THREE.MeshBasicMaterial({ color: 0xffffff }); // always full brightness — no lighting dependency
-    var coinGeo   = new THREE.CylinderGeometry(coinR, coinR, 0.22, 64, 1, false);
-    var coin      = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
+    // 3D Coin — embossed logo on metallic gold face
+    var coinR   = 1.8;
+    var edgeMat = new THREE.MeshStandardMaterial({ color: 0xf0c030, metalness: 0.95, roughness: 0.10 });
+    var faceMat = new THREE.MeshStandardMaterial({ color: 0xf5d055, metalness: 0.78, roughness: 0.12 });
+    var coinGeo = new THREE.CylinderGeometry(coinR, coinR, 0.26, 64, 1, false);
+    var coin    = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
     coin.rotation.x = Math.PI / 2;  // face toward camera within the group
     var coinGroup = new THREE.Group();
     coinGroup.position.set(0, 0.5, 0);
@@ -213,14 +214,25 @@
       var cvs = document.createElement('canvas');
       cvs.width = sz; cvs.height = sz;
       var ctx = cvs.getContext('2d');
-      // Fill gold so transparent PNG areas show coin colour, not black
-      ctx.fillStyle = '#f8e080';
+      ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, sz, sz);
       ctx.drawImage(loaded.image, 0, 0, sz, sz);
-      var tex = new THREE.CanvasTexture(cvs);
-      tex.center.set(0.5, 0.5);
-      tex.rotation = Math.PI / 2;
-      faceMat.map = tex;
+      // Alpha-based bump map — raised where logo exists, flat where transparent
+      var imgData = ctx.getImageData(0, 0, sz, sz);
+      var d = imgData.data;
+      for (var i = 0; i < d.length; i += 4) {
+        var a   = d[i+3] / 255;
+        var lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
+        var val = Math.min(255, (a * 0.75 + lum * 0.25) * 330);
+        d[i] = d[i+1] = d[i+2] = val;
+        d[i+3] = 255;
+      }
+      ctx.putImageData(imgData, 0, 0);
+      var bumpTex = new THREE.CanvasTexture(cvs);
+      bumpTex.center.set(0.5, 0.5);
+      bumpTex.rotation = Math.PI / 2;
+      faceMat.bumpMap   = bumpTex;
+      faceMat.bumpScale = 2.2;
       faceMat.needsUpdate = true;
     });
 
