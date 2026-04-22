@@ -199,7 +199,7 @@
 
     // 3D Coin — light bright gold, wrapped in Group for flip animation
     var coinR     = 1.8;
-    var edgeMat   = new THREE.MeshStandardMaterial({ color: 0xe0c060, metalness: 0.88, roughness: 0.20 });
+    var edgeMat   = new THREE.MeshStandardMaterial({ color: 0xf8e080, metalness: 0.88, roughness: 0.20 });
     var faceMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6,  roughness: 0.2  });
     var coinGeo   = new THREE.CylinderGeometry(coinR, coinR, 0.22, 64, 1, false);
     var coin      = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
@@ -275,7 +275,7 @@
           flipLanded = true;
           if (!landingTimerSet) {
             landingTimerSet = true;
-            setTimeout(function() { if (landingCb) landingCb(); }, 1500);
+            setTimeout(function() { if (landingCb) landingCb(); }, 750);
           }
         }
       }
