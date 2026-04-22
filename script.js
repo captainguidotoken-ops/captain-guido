@@ -29,7 +29,6 @@
     var entryScreen = document.getElementById('entry-screen');
     if (!entryScreen) return;
     if (threeScene) {
-      // Final camera burst through the coin, then fade
       threeScene.burst(function() {
         entryScreen.classList.add('zoom-exit');
         document.body.style.overflow = 'auto';
@@ -37,7 +36,7 @@
           document.body.classList.remove('entry-active');
           entryScreen.style.display = 'none';
           threeScene.stop();
-        }, 700);
+        }, 350);
       });
     } else {
       entryScreen.classList.add('zoom-exit');
@@ -335,11 +334,10 @@
           flipLanded = true;
           if (!landingTimerSet) {
             landingTimerSet = true;
-            // Brief hold, then fade coin and reveal waves before transitioning
-            setTimeout(function() {
-              coinFading    = true;
-              coinFadeStart = clock.getElapsedTime();
-            }, 500);
+            coinFading    = true;
+            coinFadeStart = clock.getElapsedTime();
+            // Screen exit starts immediately (coin fades concurrently)
+            if (landingCb) landingCb();
           }
         }
       }
@@ -347,30 +345,20 @@
       coinGroup.position.y = 0.5 + Math.sin(t * 0.65) * 0.12;
       coinGroup.rotation.y = flipLanded ? 0 : Math.sin(t * 0.35) * 0.08;
 
-      // Coin fade-out → wave surge
+      // Coin fade-out (concurrent with screen transition)
       if (coinFading && !coinGone) {
         var fadeElapsed = t - coinFadeStart;
-        var fadeP       = Math.min(1, fadeElapsed / 0.5);
-        var coinOpacity = 1 - fadeP;
-        edgeMat.opacity = coinOpacity;
-        faceMat.opacity = coinOpacity;
-        // Waves surge as coin fades
-        wave1.mat.opacity = wave1.baseOpacity + (0.52 - wave1.baseOpacity) * fadeP;
-        wave2.mat.opacity = wave2.baseOpacity + (0.30 - wave2.baseOpacity) * fadeP;
+        var fadeP       = Math.min(1, fadeElapsed / 0.28);
+        edgeMat.opacity = 1 - fadeP;
+        faceMat.opacity = 1 - fadeP;
         if (fadeP >= 1) {
           coinGone = true;
           coinGroup.visible = false;
-          // Hold waves briefly, then trigger transition
-          setTimeout(function() { if (landingCb) landingCb(); }, 450);
         }
       }
 
-      // Light
-      aquaLight.intensity = coinGone
-        ? 3.5 + Math.sin(t * 2.2) * 1.5
-        : flipLanded
-          ? 4.0 + Math.sin(t * 2.8) * 1.2
-          : 2.5 + Math.sin(t * 1.6) * 0.9;
+      // Steady light — no state-triggered jumps that cause the glitch
+      aquaLight.intensity = 2.8 + Math.sin(t * 1.8) * 0.7;
 
       // Smooth camera follow target
       camera.position.z += (camTgtZ - camera.position.z) * 0.05;
@@ -392,9 +380,7 @@
         landingCb   = cb;
       },
       burst: function(onComplete) {
-        camTgtZ = -5;
-        camTgtY = 0;
-        setTimeout(onComplete || function() {}, 650);
+        if (onComplete) onComplete();
       },
       stop: function() {
         running = false;
