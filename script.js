@@ -193,14 +193,14 @@
       var origZ = new Float32Array(pos.count);  // flat start — all z=0
       return { pos: pos, origZ: origZ, phase: phase };
     }
-    // Main ocean surface sits below the coin; second layer further back adds depth
-    var wave1 = makeWavePlane(0x00d4ff, 0.20, -4.0,  -5,  0);
-    var wave2 = makeWavePlane(0x00ffe0, 0.09, -5.8, -18, 1.8);
+    // Waves pulled well back and below so they don't visually overlap the coin
+    var wave1 = makeWavePlane(0x00d4ff, 0.13, -6.0, -14,  0);
+    var wave2 = makeWavePlane(0x00ffe0, 0.06, -8.0, -28, 1.8);
 
     // 3D Coin — light bright gold, wrapped in Group for flip animation
     var coinR     = 1.8;
     var edgeMat   = new THREE.MeshStandardMaterial({ color: 0xf8e080, metalness: 0.88, roughness: 0.20 });
-    var faceMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6,  roughness: 0.2  });
+    var faceMat   = new THREE.MeshBasicMaterial({ color: 0xffffff }); // always full brightness — no lighting dependency
     var coinGeo   = new THREE.CylinderGeometry(coinR, coinR, 0.22, 64, 1, false);
     var coin      = new THREE.Mesh(coinGeo, [edgeMat, faceMat, faceMat]);
     coin.rotation.x = Math.PI / 2;  // face toward camera within the group
@@ -275,7 +275,7 @@
           flipLanded = true;
           if (!landingTimerSet) {
             landingTimerSet = true;
-            setTimeout(function() { if (landingCb) landingCb(); }, 750);
+            setTimeout(function() { if (landingCb) landingCb(); }, 500);
           }
         }
       }
