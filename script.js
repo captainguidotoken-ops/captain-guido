@@ -209,29 +209,65 @@
     coinGroup.add(coin);
     scene.add(coinGroup);
     new THREE.TextureLoader().load('captain-guido.png', function(loaded) {
-      var sz  = 512;
+      var sz = 512;
+      var cx = sz / 2, cy = sz / 2;
+
+      // Sample logo alpha from source image on an isolated canvas
+      var tmpCvs = document.createElement('canvas');
+      tmpCvs.width = sz; tmpCvs.height = sz;
+      var tmpCtx = tmpCvs.getContext('2d');
+      tmpCtx.drawImage(loaded.image, 0, 0, sz, sz);
+      var ld = tmpCtx.getImageData(0, 0, sz, sz).data;
+
+      // Bump canvas: black = flat, bright = raised
       var cvs = document.createElement('canvas');
       cvs.width = sz; cvs.height = sz;
       var ctx = cvs.getContext('2d');
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, sz, sz);
-      ctx.drawImage(loaded.image, 0, 0, sz, sz);
-      // Alpha-based bump map — raised where logo exists, flat where transparent
-      var imgData = ctx.getImageData(0, 0, sz, sz);
-      var d = imgData.data;
-      for (var i = 0; i < d.length; i += 4) {
-        var a   = d[i+3] / 255;
-        var lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
-        var val = Math.min(255, (a * 0.75 + lum * 0.25) * 330);
-        d[i] = d[i+1] = d[i+2] = val;
-        d[i+3] = 255;
+
+      // Logo silhouette as raised bump (driven by alpha, not colour so dark logo still lifts)
+      var bd = ctx.getImageData(0, 0, sz, sz);
+      var d  = bd.data;
+      for (var i = 0; i < ld.length; i += 4) {
+        var alpha = ld[i + 3] / 255;
+        if (alpha > 0.08) {
+          var lum = (ld[i] * 0.299 + ld[i+1] * 0.587 + ld[i+2] * 0.114) / 255;
+          var val = Math.min(255, Math.round((0.55 + lum * 0.45) * alpha * 255));
+          d[i] = d[i+1] = d[i+2] = val;
+          d[i+3] = 255;
+        }
       }
-      ctx.putImageData(imgData, 0, 0);
+      ctx.putImageData(bd, 0, 0);
+
+      // ── Engrave "CAPTAIN GUIDO TOKEN" around the rim ──────────────────────
+      // tex.rotation = PI/2 maps canvas-right → coin-top, so centre arc at angle=0
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 21px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      var text   = 'CAPTAIN GUIDO TOKEN';
+      var chars  = text.split('');
+      var textR  = 213;
+      var total  = Math.PI * 1.05;            // ~190° arc sitting at the top of the coin
+      var aStart = -(total / 2);              // centred at angle=0 (canvas right = coin top)
+      var aStep  = total / (chars.length - 1);
+      chars.forEach(function(ch, i) {
+        var a = aStart + i * aStep;
+        ctx.save();
+        ctx.translate(cx + textR * Math.cos(a), cy + textR * Math.sin(a));
+        ctx.rotate(a + Math.PI / 2);          // characters face outward
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
+      });
+      ctx.restore();
+
       var bumpTex = new THREE.CanvasTexture(cvs);
       bumpTex.center.set(0.5, 0.5);
       bumpTex.rotation = Math.PI / 2;
       faceMat.bumpMap   = bumpTex;
-      faceMat.bumpScale = 2.2;
+      faceMat.bumpScale = 2.4;
       faceMat.needsUpdate = true;
     });
 
