@@ -48,6 +48,47 @@
     }
   }
 
+  // ── Text exit: words slide up → title punches toward camera ──────────────
+  function playTextExit(cb) {
+    var sub   = document.querySelector('.entry-subtitle');
+    var title = document.getElementById('shuffleTitle');
+
+    // Subtitle gone, title fades back in from the mid-load fade
+    if (sub)   { sub.style.transition = 'opacity 0.25s'; sub.style.opacity = '0'; }
+    if (title) { title.style.transition = 'opacity 0.45s'; title.style.opacity = '1'; }
+
+    setTimeout(function() {
+      if (!title) { cb(); return; }
+
+      // Split into clipped word spans
+      var words = title.textContent.trim().split(/\s+/);
+      title.innerHTML = '';
+      title.setAttribute('aria-label', words.join(' '));
+      words.forEach(function(word, i) {
+        var outer = document.createElement('span');
+        outer.className = 'lte-outer';
+        var inner = document.createElement('span');
+        inner.className = 'lte-inner';
+        inner.textContent = word + (i < words.length - 1 ? '\u00A0' : '');
+        inner.style.transitionDelay = (i * 0.13) + 's';
+        outer.appendChild(inner);
+        title.appendChild(outer);
+      });
+
+      // Double rAF ensures layout is ready before triggering transitions
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          title.classList.add('lte-reveal');
+          var revealMs = words.length * 130 + 520;
+          setTimeout(function() {
+            title.classList.add('lte-zoom');
+            setTimeout(cb, 780);
+          }, revealMs);
+        });
+      });
+    }, 480);
+  }
+
   var LOADER_STATUSES = [
     'INITIALIZING',
     'LOADING ASSETS',
@@ -114,9 +155,9 @@
         pctEl.textContent = '100%';
         if (statEl) statEl.textContent = 'READY';
         if (threeScene) {
-          threeScene.startLanding(enterSite);
+          threeScene.startLanding(function() { playTextExit(enterSite); });
         } else {
-          setTimeout(enterSite, 400);
+          playTextExit(enterSite);
         }
       }
     }
@@ -196,30 +237,6 @@
     var wave1 = makeWavePlane(0x00d4ff, 0.28, -2.5, -10,  0);
     var wave2 = makeWavePlane(0x00ffe0, 0.15, -4.5, -20, 1.8);
 
-    // 3D Sphere — logo on front hemisphere, back blends into scene
-    var coinR   = 1.8;
-    var faceMat = new THREE.MeshBasicMaterial({ transparent: true });
-    var coinGeo = new THREE.SphereGeometry(coinR, 48, 48);
-    var coin    = new THREE.Mesh(coinGeo, faceMat);
-    coin.rotation.y = -Math.PI / 2;  // UV offset so logo centre faces camera
-    var coinGroup = new THREE.Group();
-    coinGroup.position.set(0, 0.5, 0);
-    coinGroup.add(coin);
-    scene.add(coinGroup);
-    new THREE.TextureLoader().load('captain-guido.png', function(loaded) {
-      var sz  = 512;
-      var cvs = document.createElement('canvas');
-      cvs.width = sz; cvs.height = sz;
-      var ctx = cvs.getContext('2d');
-      // Fill with exact scene fog colour so the disc face is invisible
-      ctx.fillStyle = '#01060d';
-      ctx.fillRect(0, 0, sz, sz);
-      ctx.drawImage(loaded.image, 0, 0, sz, sz);
-      var tex = new THREE.CanvasTexture(cvs);
-      faceMat.map = tex;
-      faceMat.needsUpdate = true;
-    });
-
     // Resize
     window.addEventListener('resize', function() {
       W = window.innerWidth; H = window.innerHeight;
@@ -229,22 +246,11 @@
     });
 
     // Animation state
-    var clock           = new THREE.Clock();
-    var running         = true;
+    var clock   = new THREE.Clock();
+    var running = true;
     var rafId;
-    var camTgtZ         = 18;
-    var camTgtY         = 3;
-    // Coin flip state
-    var flipAngle       = 0;
-    var flipSpeed       = 0.12;
-    var flipSlowing     = false;
-    var flipLanded      = false;
-    var landingCb       = null;
-    var landingTimerSet = false;
-    // Coin exit — fade out then wave reveal before transition
-    var coinFading      = false;
-    var coinFadeStart   = 0;
-    var coinGone        = false;
+    var camTgtZ = 18;
+    var camTgtY = 3;
 
     // Multi-frequency wave — primary swell + cross-swell + chop + ripple
     function waveH(lx, ly, t, phase) {
@@ -272,48 +278,13 @@
         w.pos.needsUpdate = true;
       });
 
-      // Coin flip — toss → decelerate → land face-on
-      if (!flipSlowing) {
-        flipAngle += flipSpeed;
-      } else if (!flipLanded) {
-        var target = Math.round(flipAngle / (2 * Math.PI)) * (2 * Math.PI);
-        var diff   = target - flipAngle;
-        flipAngle += diff * 0.10;
-        if (Math.abs(diff) < 0.008) {
-          flipAngle = target;
-          flipLanded = true;
-          if (!landingTimerSet) {
-            landingTimerSet = true;
-            coinFading    = true;
-            coinFadeStart = clock.getElapsedTime();
-            // Screen exit starts immediately (coin fades concurrently)
-            if (landingCb) landingCb();
-          }
-        }
-      }
-      coinGroup.rotation.x = flipAngle;
-      coinGroup.position.y = 0.5 + Math.sin(t * 0.65) * 0.12;
-      coinGroup.rotation.y = flipLanded ? 0 : Math.sin(t * 0.35) * 0.08;
-
-      // Coin fade-out (concurrent with screen transition)
-      if (coinFading && !coinGone) {
-        var fadeElapsed = t - coinFadeStart;
-        var fadeP       = Math.min(1, fadeElapsed / 0.28);
-        edgeMat.opacity = 1 - fadeP;
-        faceMat.opacity = 1 - fadeP;
-        if (fadeP >= 1) {
-          coinGone = true;
-          coinGroup.visible = false;
-        }
-      }
-
-      // Steady light — no state-triggered jumps that cause the glitch
+      // Light pulse
       aquaLight.intensity = 2.8 + Math.sin(t * 1.8) * 0.7;
 
-      // Smooth camera follow target
+      // Smooth camera ease toward target
       camera.position.z += (camTgtZ - camera.position.z) * 0.05;
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
-      camera.lookAt(coinGroup.position);
+      camera.lookAt(0, 0.5, 0);
 
       renderer.render(scene, camera);
     }
@@ -326,8 +297,7 @@
         camTgtY = 3  - (pct / 100) * 2.5;
       },
       startLanding: function(cb) {
-        flipSlowing = true;
-        landingCb   = cb;
+        if (cb) cb();
       },
       burst: function(onComplete) {
         if (onComplete) onComplete();
