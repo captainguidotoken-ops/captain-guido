@@ -12,7 +12,7 @@
   <meta name="robots" content="noindex, nofollow, noarchive">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -29,6 +29,13 @@
       --radius:  14px;
       --shadow:  0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
       --sidebar: 240px;
+      --aqua:           #00d4ff;
+      --primary:        #6366f1;
+      --text-primary:   #111827;
+      --text-secondary: #6b7280;
+      --text-muted:     #9ca3af;
+      --bg-secondary:   #f9fafb;
+      --mono:           'JetBrains Mono', monospace;
     }
 
     body {
@@ -133,6 +140,30 @@
 
     .btn-primary:hover  { background: var(--gold-dk); }
     .btn-primary:active { transform: scale(0.98); }
+
+    .btn-secondary {
+      padding: 0.6rem 1.1rem;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold-dk); }
+
+    .form-label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
 
     .login-user-btn {
       flex: 1;
@@ -1534,7 +1565,6 @@
 <div id="toast"></div>
 
 <script>
-  const PW_HASH    = '6c30a00ea8714f8f0f8de7d70f3ac80a763ea77d1547ce41db7ecd4383619af1';
   const REPO_OWNER = 'captainguidotoken-ops';
   const REPO_NAME  = 'captain-guido';
 
@@ -2757,8 +2787,6 @@
   function showTyping() { document.getElementById('chat-typing').classList.add('show'); var w=document.getElementById('chat-window'); w.scrollTop=w.scrollHeight; }
   function hideTyping()  { document.getElementById('chat-typing').classList.remove('show'); }
 
-  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
   async function chatGhGet() {
     var data = await ghGet('config.json');
     if (!data.content) throw new Error(data.message || 'Read failed');
@@ -3267,11 +3295,6 @@
     return mo[d.getMonth()] + ' ' + d.getDate() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
   }
 
-  // ── Boot ───────────────────────────────────────────────────────────────────
-  if (sessionStorage.getItem('cgc_auth') === '1') {
-    _loginUser = sessionStorage.getItem('cgc_login_user') || 'Glenn';
-    showAdmin();
-  }
 </script>
 </body>
 </html>
