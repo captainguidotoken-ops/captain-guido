@@ -7,65 +7,7 @@
 
   var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ─── 1. CUSTOM CURSOR ──────────────────────────────────────────────────────
-  function initCursor() {
-    if (prefersReducedMotion || 'ontouchstart' in window) return;
-
-    var dot  = document.getElementById('cursor-dot');
-    var ring = document.getElementById('cursor-ring');
-    if (!dot || !ring) return;
-
-    var mx = window.innerWidth / 2;
-    var my = window.innerHeight / 2;
-    var rx = mx, ry = my;
-    var hovering = false;
-    var clicking = false;
-
-    document.addEventListener('mousemove', function (e) {
-      mx = e.clientX;
-      my = e.clientY;
-      dot.style.transform = 'translate(' + (mx - 4) + 'px,' + (my - 4) + 'px)';
-    });
-
-    // Lag ring follows with rAF
-    function tickRing() {
-      rx += (mx - rx) * 0.12;
-      ry += (my - ry) * 0.12;
-      ring.style.transform = 'translate(' + (rx - 22) + 'px,' + (ry - 22) + 'px)' +
-                             (hovering ? ' scale(1.6)' : '') +
-                             (clicking ? ' scale(0.85)' : '');
-      requestAnimationFrame(tickRing);
-    }
-    requestAnimationFrame(tickRing);
-
-    // Hover detection
-    document.addEventListener('mouseover', function (e) {
-      var el = e.target.closest('a, button, [data-magnetic], .chapter-card, .wallet-option, .enter-btn');
-      if (el) {
-        hovering = true;
-        dot.classList.add('cursor-hover');
-        ring.classList.add('cursor-hover');
-      } else {
-        hovering = false;
-        dot.classList.remove('cursor-hover');
-        ring.classList.remove('cursor-hover');
-      }
-    });
-
-    document.addEventListener('mousedown', function () {
-      clicking = true;
-      dot.classList.add('cursor-click');
-    });
-
-    document.addEventListener('mouseup', function () {
-      clicking = false;
-      dot.classList.remove('cursor-click');
-    });
-
-    document.body.classList.add('custom-cursor-active');
-  }
-
-  // ─── 2. MAGNETIC BUTTONS ───────────────────────────────────────────────────
+  // ─── 1. MAGNETIC BUTTONS ───────────────────────────────────────────────────
   function initMagnetic() {
     if (prefersReducedMotion || 'ontouchstart' in window) return;
 
@@ -186,10 +128,9 @@
 
   // ─── 6. MARQUEE BAND ──────────────────────────────────────────────────────
   function initMarquee() {
-    document.querySelectorAll('.marquee-track').forEach(function (track) {
-      // Duplicate content for seamless loop
-      var content = track.innerHTML;
-      track.innerHTML = content + content;
+    document.querySelectorAll('.marquee-track:not([data-duped])').forEach(function (track) {
+      track.innerHTML += track.innerHTML;
+      track.setAttribute('data-duped', '1');
     });
   }
 
@@ -212,26 +153,7 @@
     });
   }
 
-  // ─── 8. GLITCH EFFECT ON HERO TITLE ───────────────────────────────────────
-  function initGlitch() {
-    var el = document.getElementById('glitchTitle');
-    if (!el) return;
-
-    var text = el.getAttribute('data-text') || el.textContent;
-    el.setAttribute('data-text', text);
-
-    if (prefersReducedMotion) return;
-
-    el.addEventListener('mouseenter', function () {
-      el.classList.add('glitching');
-    });
-
-    el.addEventListener('mouseleave', function () {
-      el.classList.remove('glitching');
-    });
-  }
-
-  // ─── 9. SMOOTH MOMENTUM SCROLL ────────────────────────────────────────────
+  // ─── 8. SMOOTH MOMENTUM SCROLL ────────────────────────────────────────────
   function initSmoothScroll() {
     if (prefersReducedMotion || 'ontouchstart' in window) return;
 
@@ -254,7 +176,10 @@
 
     window.addEventListener('wheel', function (e) {
       e.preventDefault();
-      target += e.deltaY * 0.9;
+      var delta = e.deltaMode === 1 ? e.deltaY * 16
+                : e.deltaMode === 2 ? e.deltaY * window.innerHeight
+                : e.deltaY;
+      target += delta * 0.9;
       target  = Math.max(0, Math.min(target, getMaxScroll()));
       if (!rafId) tick();
     }, { passive: false });
@@ -316,6 +241,7 @@
     var bar = document.getElementById('scroll-progress');
     if (!bar) return;
 
+    var ticking = false;
     function update() {
       var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       var docHeight = Math.max(
@@ -323,9 +249,12 @@
         document.documentElement.scrollHeight
       ) - window.innerHeight;
       bar.style.width = (docHeight > 0 ? (scrollTop / docHeight * 100) : 0) + '%';
+      ticking = false;
     }
 
-    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('scroll', function () {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
   }
 
   // ─── INIT ──────────────────────────────────────────────────────────────────
@@ -336,7 +265,6 @@
     initFloatingCoins();
     initMarquee();
     initClipReveal();
-    initGlitch();
     initSmoothScroll();
     initScrollProgress();
     initTickers();
