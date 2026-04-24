@@ -1217,21 +1217,6 @@
     });
   }
 
-  // ─── COUNTDOWN FLIP ANIMATION ─────────────────────────────────────────────
-  var prevCountdownVals = {};
-
-  function triggerFlip(elId, newVal) {
-    var el = document.getElementById(elId);
-    if (!el) return;
-    if (prevCountdownVals[elId] !== newVal) {
-      prevCountdownVals[elId] = newVal;
-      el.classList.remove('flip');
-      // Force reflow so the animation restarts
-      void el.offsetWidth;
-      el.classList.add('flip');
-    }
-  }
-
   // ─── BIOLUMINESCENT PARTICLES ─────────────────────────────────────────────
   function createOceanParticles() {
     var container = document.getElementById('oceanParticles');
@@ -1347,5 +1332,3 @@
   });
 
 })();
-
-console.log('Captain Guido Coin - Website Loaded');
