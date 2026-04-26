@@ -389,7 +389,7 @@
         }
 
         // Small delay before typing starts so it feels intentional
-        setTimeout(typeLine, 500);
+        setTimeout(typeLine, 1000);
       },
       burst: function(onComplete) {
         // Zoom the globe from altitude 6.5 → 2.0 over exactly 1.2s —
