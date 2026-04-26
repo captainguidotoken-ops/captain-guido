@@ -226,28 +226,62 @@
       var sc = starCanvas.getContext('2d');
       sc.clearRect(0, 0, starCanvas.width, starCanvas.height);
 
-      // Draw 1200 stars across the full canvas
-      for (var s = 0; s < 1200; s++) {
-        var sx = Math.random() * starCanvas.width;
-        var sy = Math.random() * starCanvas.height;
-        var sr = Math.random() * 1.3 + 0.2;
-        var sa = Math.random() * 0.55 + 0.45;
+      var sw = starCanvas.width;
+      var sh = starCanvas.height;
+
+      // Tier 1 — many tiny background stars, cool blue-white, very dim
+      for (var i = 0; i < 900; i++) {
+        var x = Math.random() * sw;
+        var y = Math.random() * sh;
+        var r = Math.random() * 0.5 + 0.15;
+        var a = Math.random() * 0.35 + 0.15;
         sc.beginPath();
-        sc.arc(sx, sy, sr, 0, Math.PI * 2);
-        sc.fillStyle = 'rgba(255,255,255,' + sa + ')';
+        sc.arc(x, y, r, 0, Math.PI * 2);
+        sc.fillStyle = 'rgba(180,210,255,' + a + ')';
         sc.fill();
       }
 
-      // Gradient mask — stars stay bright at top, fade to transparent
-      // at ~65% down so they meet the wave horizon with no hard edge.
-      var mask = sc.createLinearGradient(0, 0, 0, starCanvas.height);
+      // Tier 2 — medium stars, slightly brighter
+      for (var j = 0; j < 200; j++) {
+        var x2 = Math.random() * sw;
+        var y2 = Math.random() * sh;
+        var r2 = Math.random() * 0.7 + 0.4;
+        var a2 = Math.random() * 0.3 + 0.45;
+        sc.beginPath();
+        sc.arc(x2, y2, r2, 0, Math.PI * 2);
+        sc.fillStyle = 'rgba(210,230,255,' + a2 + ')';
+        sc.fill();
+      }
+
+      // Tier 3 — a handful of bright stars with a soft radial glow
+      for (var k = 0; k < 35; k++) {
+        var x3 = Math.random() * sw;
+        var y3 = Math.random() * sh;
+        var r3 = Math.random() * 1.0 + 0.8;
+        var glow = sc.createRadialGradient(x3, y3, 0, x3, y3, r3 * 5);
+        glow.addColorStop(0,   'rgba(220,240,255,0.9)');
+        glow.addColorStop(0.3, 'rgba(180,215,255,0.35)');
+        glow.addColorStop(1,   'rgba(180,215,255,0)');
+        sc.beginPath();
+        sc.arc(x3, y3, r3 * 5, 0, Math.PI * 2);
+        sc.fillStyle = glow;
+        sc.fill();
+        // Bright core
+        sc.beginPath();
+        sc.arc(x3, y3, r3, 0, Math.PI * 2);
+        sc.fillStyle = 'rgba(240,248,255,0.95)';
+        sc.fill();
+      }
+
+      // Gradient mask — dissolve stars into wave horizon, no hard line
+      var mask = sc.createLinearGradient(0, 0, 0, sh);
       mask.addColorStop(0,    'rgba(0,0,0,0)');
-      mask.addColorStop(0.55, 'rgba(0,0,0,0)');
-      mask.addColorStop(0.78, 'rgba(0,0,0,1)');
+      mask.addColorStop(0.52, 'rgba(0,0,0,0)');
+      mask.addColorStop(0.75, 'rgba(0,0,0,1)');
       mask.addColorStop(1,    'rgba(0,0,0,1)');
       sc.globalCompositeOperation = 'destination-out';
       sc.fillStyle = mask;
-      sc.fillRect(0, 0, starCanvas.width, starCanvas.height);
+      sc.fillRect(0, 0, sw, sh);
       sc.globalCompositeOperation = 'source-over';
     }
     drawStars();
