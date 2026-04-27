@@ -898,6 +898,40 @@
 
   // ─── CHAPTER BACKGROUND PATHS ────────────────────────────────────────────
   // ─── CHAPTER CARD LINKS ──────────────────────────────────────────────────
+  function updateChapterSonar() {
+    // Remove any previous sonar state
+    document.querySelectorAll('.chapter-sonar-ring').forEach(function(el) { el.remove(); });
+    document.querySelectorAll('.chapter-card').forEach(function(card) {
+      card.classList.remove('chapter-unlocked', 'chapter-sonar-active');
+    });
+
+    // Collect unlocked cards and their chapter numbers
+    var unlocked = [];
+    document.querySelectorAll('.chapter-card').forEach(function(card) {
+      var badge  = card.querySelector('.status-badge');
+      var numEl  = card.querySelector('.chapter-number');
+      if (!badge || !numEl || !badge.classList.contains('unlocked')) return;
+      var num = parseInt(numEl.textContent.replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(num)) unlocked.push({ card: card, num: num });
+    });
+
+    if (!unlocked.length) return;
+
+    // All unlocked → orange accent
+    unlocked.forEach(function(item) {
+      item.card.classList.add('chapter-unlocked');
+    });
+
+    // Highest-numbered unlocked → sonar ring
+    unlocked.sort(function(a, b) { return b.num - a.num; });
+    var latest = unlocked[0].card;
+    latest.classList.add('chapter-sonar-active');
+
+    var ring = document.createElement('div');
+    ring.className = 'chapter-sonar-ring';
+    latest.appendChild(ring);
+  }
+
   function initChapterLinks() {
     document.querySelectorAll('.chapter-card[data-chapter]').forEach(function(card) {
       card.addEventListener('click', function(e) {
@@ -1068,6 +1102,7 @@
       // Re-inject background paths now that badges are updated
       injectChapterPaths();
       initChapterLinks();
+      updateChapterSonar();
     }
 
     // Social links
@@ -1176,6 +1211,7 @@
     initNavigation();
     injectChapterPaths();
     initChapterLinks();
+    updateChapterSonar();
 
     // Boot sequence fires the first time the map scrolls into view
     var mapSection = document.getElementById('hero-map');
