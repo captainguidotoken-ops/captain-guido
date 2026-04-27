@@ -1054,6 +1054,10 @@
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Monitor
       </button>
+      <button class="nav-item" onclick="showPanel('analytics')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </button>
       <button class="nav-item" onclick="showPanel('chapters')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Chapters
@@ -1230,6 +1234,80 @@
         <p style="font-size:0.78rem;color:var(--muted);line-height:1.6;">
           Visit data is stored in <code style="color:var(--aqua);font-size:0.75rem;">analytics.json</code> in your repo. No third-party tracking is used.
         </p>
+      </div>
+    </section>
+
+    <!-- Analytics -->
+    <section class="panel" id="panel-analytics">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Site Analytics</div>
+          <div class="panel-sub">Google Analytics 4 — tracking all visitor activity on the public site.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title" style="margin-bottom:0.75rem;">Tracking Status</div>
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;box-shadow:0 0 6px rgba(16,185,129,0.6);"></span>
+          <span style="font-size:0.85rem;color:var(--text-primary);">Active — <code style="color:var(--aqua);font-size:0.8rem;">G-T0RX338XXF</code></span>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;margin:0;">
+          Every visit to <strong style="color:var(--text-primary);">captainguidotoken-ops.github.io</strong> is tracked automatically. Data appears in Google Analytics within 24–48 hours. Use the Realtime report to see live visitors right now.
+        </p>
+      </div>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-title" style="margin-bottom:0.75rem;">Quick Reports</div>
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text-primary);font-size:0.82rem;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='var(--aqua)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span>
+              <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;color:var(--aqua);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              Realtime — See who's on the site right now
+            </span>
+            <svg style="width:12px;height:12px;color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text-primary);font-size:0.82rem;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='var(--aqua)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span>
+              <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;color:var(--aqua);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              Audience — Sessions, users, retention
+            </span>
+            <svg style="width:12px;height:12px;color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text-primary);font-size:0.82rem;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='var(--aqua)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span>
+              <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;color:var(--aqua);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Acquisition — Where traffic comes from
+            </span>
+            <svg style="width:12px;height:12px;color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+          <a href="https://analytics.google.com/analytics/web/" target="_blank" rel="noopener noreferrer"
+             style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;text-decoration:none;color:var(--text-primary);font-size:0.82rem;transition:border-color 0.2s;"
+             onmouseover="this.style.borderColor='var(--aqua)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span>
+              <svg style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;color:var(--aqua);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Pages — Top pages by views and time on page
+            </span>
+            <svg style="width:12px;height:12px;color:var(--text-muted);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:0.75rem;">What's Being Tracked</div>
+        <ul style="margin:0;padding-left:1.2rem;font-size:0.8rem;color:var(--text-muted);line-height:2;">
+          <li>Page views and session duration</li>
+          <li>Traffic sources (social, direct, referral)</li>
+          <li>Device type — mobile vs desktop</li>
+          <li>Country and city of visitors</li>
+          <li>Bounce rate and engagement</li>
+        </ul>
       </div>
     </section>
 
