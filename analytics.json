@@ -1,1 +1,10 @@
-{"visits":[],"secEvents":[]}
+{
+  "visits": [],
+  "secEvents": [
+    {
+      "ts": 1777257151858,
+      "type": "failed_login",
+      "detail": "User: Glenn — wrong password"
+    }
+  ]
+}
