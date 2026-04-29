@@ -41,9 +41,24 @@
   <style>
     body{background:#020810}
     #entry-screen{position:fixed;top:0;left:0;width:100%;height:100vh;display:flex;align-items:center;justify-content:center;z-index:10000}
+    #entry-screen.hidden{opacity:0;transform:scale(1.04);visibility:hidden;pointer-events:none}
     #cosmic-bg{position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse at 50% 100%,#0a1628 0%,#020810 60%,#000306 100%)}
-    .loader-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
-    .entry-logo{width:250px;height:250px;border-radius:50%;border:3px solid #4ec4c4}
+    .loader-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;width:min(540px,90vw)}
+    .loader-logo-wrap{position:relative;margin-bottom:2rem;display:inline-flex;align-items:center;justify-content:center}
+    .entry-logo{width:250px;height:250px;margin-bottom:0;border-radius:50%;border:3px solid #00d4ff;box-shadow:0 0 0 8px rgba(78,196,196,0.08),0 0 40px rgba(78,196,196,0.35),0 0 80px rgba(244,168,54,0.2)}
+    .entry-title{font-size:4.5rem;font-weight:700;letter-spacing:12px;margin-bottom:1rem;background:linear-gradient(135deg,#ffffff 0%,#dff0ff 40%,#00d4ff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .entry-subtitle{font-size:0.85rem;color:rgba(0,212,255,0.7);letter-spacing:6px;margin-bottom:3rem;font-weight:400}
+    .loader-bar-wrap{width:100%;margin-top:2.5rem}
+    .loader-bar-track{width:100%;height:2px;background:rgba(0,212,255,0.12);position:relative;overflow:hidden}
+    .loader-bar-fill{position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#00d4ff 0%,#f4a836 100%);box-shadow:0 0 12px rgba(0,212,255,0.7);transition:width 0.05s linear}
+    .loader-meta{display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem}
+    .loader-status{font-size:0.65rem;letter-spacing:4px;color:rgba(0,212,255,0.45)}
+    .loader-pct{font-size:0.75rem;font-weight:700;letter-spacing:2px;color:#00d4ff}
+    .sonar-rings{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:0;height:0;pointer-events:none;z-index:0}
+    .sonar-rings::before,.sonar-rings::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.3);border-radius:50%;border:1px solid rgba(0,212,255,0.25);animation:sonarPulse 5s ease-out infinite}
+    .sonar-rings::before{width:500px;height:500px}
+    .sonar-rings::after{width:700px;height:700px;animation-delay:2.5s}
+    @keyframes sonarPulse{0%{opacity:0.8;transform:translate(-50%,-50%) scale(0.2)}80%{opacity:0.1}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}
   </style>
   <link rel="stylesheet" href="style.css">
 </head>
