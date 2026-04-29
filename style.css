@@ -2645,6 +2645,143 @@ footer {
   transform: translateY(0) scale(1);
 }
 
+/* ── Charity Partner Cards ───────────────────────────────────────── */
+.partners-section {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.08);
+}
+
+.partners-heading {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.partners-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 6px;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin: 0.75rem 0 0.75rem;
+  background: linear-gradient(135deg, #ffffff 0%, #dff0ff 40%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.partners-sub {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.partners-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  perspective: 1000px;
+}
+
+.partner-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.75rem;
+  background: rgba(5, 18, 38, 0.7);
+  border: 1px solid rgba(0, 212, 255, 0.12);
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.partner-card:not(.partner-pending):hover {
+  border-color: rgba(0, 212, 255, 0.4);
+  box-shadow: 0 20px 60px rgba(0, 212, 255, 0.12), 0 0 0 1px rgba(0, 212, 255, 0.15);
+}
+
+.partner-card.partner-pending {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.partner-card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.partner-card:not(.partner-pending):hover .partner-card-glow {
+  opacity: 1;
+}
+
+.partner-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(0, 212, 255, 0.06);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  color: var(--aqua);
+  flex-shrink: 0;
+}
+
+.partner-tag {
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--aqua);
+  font-family: var(--font-mono);
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.partner-name {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+}
+
+.partner-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.partner-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--aqua);
+  font-family: var(--font-mono);
+  transition: gap 0.2s ease;
+}
+
+.partner-card:not(.partner-pending):hover .partner-cta {
+  gap: 0.75rem;
+}
+
 /* ── Impact target counter pulse ─────────────────────────────────── */
 @keyframes counterPop {
   0%   { transform: scale(1); }

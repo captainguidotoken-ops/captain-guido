@@ -846,6 +846,21 @@
   }
 
   // Render Impact section based on IMPACT_DATA config
+  function initPartnerCards() {
+    var cards = document.querySelectorAll('.partner-card:not(.partner-pending)');
+    cards.forEach(function(card) {
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width  - 0.5;
+        var y = (e.clientY - rect.top)  / rect.height - 0.5;
+        card.style.transform = 'perspective(800px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 10) + 'deg) scale3d(1.03,1.03,1.03)';
+      });
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+      });
+    });
+  }
+
   function renderImpact() {
     const prelaunch = document.getElementById('impactPrelaunch');
     const live = document.getElementById('impactLive');
@@ -1245,6 +1260,7 @@
     threeScene = createCosmicBackground();
     createOceanParticles();
     renderImpact();
+    initPartnerCards();
     initializeMap();
     initNavigation();
     injectChapterPaths();
