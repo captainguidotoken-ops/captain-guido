@@ -253,23 +253,23 @@
         sc.fill();
       }
 
-      // Tier 3 — a handful of bright stars with a soft radial glow
+      // Tier 3 — a handful of bright stars with a tight pinpoint glow
       for (var k = 0; k < 35; k++) {
         var x3 = Math.random() * sw;
         var y3 = Math.random() * sh;
         var r3 = Math.random() * 1.0 + 0.8;
-        var glow = sc.createRadialGradient(x3, y3, 0, x3, y3, r3 * 5);
-        glow.addColorStop(0,   'rgba(220,240,255,0.9)');
-        glow.addColorStop(0.3, 'rgba(180,215,255,0.35)');
+        var glow = sc.createRadialGradient(x3, y3, 0, x3, y3, r3 * 2.2);
+        glow.addColorStop(0,   'rgba(220,240,255,0.6)');
+        glow.addColorStop(0.5, 'rgba(180,215,255,0.12)');
         glow.addColorStop(1,   'rgba(180,215,255,0)');
         sc.beginPath();
-        sc.arc(x3, y3, r3 * 5, 0, Math.PI * 2);
+        sc.arc(x3, y3, r3 * 2.2, 0, Math.PI * 2);
         sc.fillStyle = glow;
         sc.fill();
         // Bright core
         sc.beginPath();
         sc.arc(x3, y3, r3, 0, Math.PI * 2);
-        sc.fillStyle = 'rgba(240,248,255,0.95)';
+        sc.fillStyle = 'rgba(240,248,255,0.98)';
         sc.fill();
       }
 
