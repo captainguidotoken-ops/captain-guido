@@ -594,43 +594,6 @@
     .btn-row { display: flex; gap: 0.6rem; }
 
     /* ─── PUBLISH BAR ─────────────────────────────────────────── */
-    .publish-bar {
-      position: fixed;
-      bottom: 0;
-      left: var(--sidebar);
-      right: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      z-index: 40;
-    }
-
-    .publish-bar.visible { display: flex; }
-
-    .publish-hint { font-size: 0.8rem; color: var(--muted); }
-
-    .btn-publish {
-      padding: 0.7rem 2rem;
-      background: var(--text);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-publish:hover { background: #374151; }
-    .btn-publish:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* ─── TOAST ───────────────────────────────────────────────── */
     #toast {
@@ -1114,7 +1077,7 @@
             <div class="status-pill live" id="maintenance-pill">Site is live</div>
           </div>
           <label class="switch">
-            <input type="checkbox" id="maintenance-toggle" onchange="updateMaintenancePill()">
+            <input type="checkbox" id="maintenance-toggle" onchange="updateMaintenancePill(); autoSave()">
             <span class="switch-track"></span>
           </label>
         </div>
@@ -1126,15 +1089,15 @@
         <div class="stats-grid">
           <div class="stat-field">
             <label>Chapters</label>
-            <input type="number" id="stat-chapters" value="12" min="0">
+            <input type="number" id="stat-chapters" value="12" min="0" oninput="autoSave()">
           </div>
           <div class="stat-field">
             <label>Lbs Removed</label>
-            <input type="number" id="stat-lbs" value="0" min="0">
+            <input type="number" id="stat-lbs" value="0" min="0" oninput="autoSave()">
           </div>
           <div class="stat-field">
             <label>Miles Cleaned</label>
-            <input type="number" id="stat-miles" value="0" min="0">
+            <input type="number" id="stat-miles" value="0" min="0" oninput="autoSave()">
           </div>
         </div>
       </div>
@@ -1145,15 +1108,15 @@
         <div class="field-col">
           <div class="field-row">
             <label>Twitter</label>
-            <input type="url" id="link-twitter" placeholder="https://twitter.com/...">
+            <input type="url" id="link-twitter" placeholder="https://twitter.com/..." oninput="autoSave()">
           </div>
           <div class="field-row">
             <label>Discord</label>
-            <input type="url" id="link-discord" placeholder="https://discord.gg/...">
+            <input type="url" id="link-discord" placeholder="https://discord.gg/..." oninput="autoSave()">
           </div>
           <div class="field-row">
             <label>Telegram</label>
-            <input type="url" id="link-telegram" placeholder="https://t.me/...">
+            <input type="url" id="link-telegram" placeholder="https://t.me/..." oninput="autoSave()">
           </div>
         </div>
       </div>
@@ -1408,7 +1371,6 @@
         </div>
         <div style="display:flex;align-items:center;gap:.75rem;">
           <div class="progress-label" id="cl-progress-text">0 / 40 done</div>
-          <button id="cl-save-btn" onclick="saveNotes()" style="padding:.35rem .9rem;font-size:.75rem;font-family:inherit;font-weight:600;border:1px solid var(--gold);border-radius:6px;background:rgba(212,175,55,.12);color:var(--gold);cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(212,175,55,.25)'" onmouseout="this.style.background='rgba(212,175,55,.12)'">Save Notes</button>
         </div>
       </div>
 
@@ -1610,14 +1572,6 @@
     <div class="scroll-pad"></div>
   </main>
 
-  <!-- Publish bar -->
-  <div class="publish-bar visible" id="publish-bar">
-    <div class="publish-hint">Changes are saved locally until you publish.</div>
-    <button class="btn-publish" id="pub-btn" onclick="saveChanges()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      <span id="pub-label">Publish changes</span>
-    </button>
-  </div>
 
 </div><!-- /admin-panel -->
 
@@ -1752,7 +1706,7 @@
                 <span class="tag tag-${t.priority.toLowerCase()}">${t.priority}</span>
                 <span class="tag tag-due">${t.due}</span>
               </div>
-              <textarea class="task-note" id="note-${t.id}" placeholder="Add a note…" oninput="taskState['${t.id}'].note = this.value">${state.note}</textarea>
+              <textarea class="task-note" id="note-${t.id}" placeholder="Add a note…" oninput="taskState['${t.id}'].note = this.value; autoSave()">${state.note}</textarea>
             </div>
           </div>`;
         list.appendChild(item);
@@ -1766,6 +1720,7 @@
     const item = document.getElementById('ti-' + id);
     if (item) item.className = 'task-item' + (done ? ' done' : '');
     updateChecklistProgress();
+    autoSave();
   }
 
   function updateChecklistProgress() {
@@ -1983,7 +1938,7 @@
     updatePresalePreview();
     ['presaleRound','presaleRaised','presaleTotalRaised'].forEach(function(id) {
       var el = document.getElementById(id);
-      if (el) el.addEventListener('input', updatePresalePreview);
+      if (el) el.addEventListener('input', function() { updatePresalePreview(); autoSave(); });
     });
   }
 
@@ -2005,6 +1960,7 @@
     cb.checked = !cb.checked;
     setPresaleToggle(cb.checked);
     updatePresalePreview();
+    autoSave();
   }
 
   function updatePresalePreview() {
@@ -2593,6 +2549,7 @@
     const badge = document.getElementById('ch-badge-' + i);
     item.className  = 'chapter-item' + (unlocked ? ' ch-unlocked' : '');
     badge.textContent = unlocked ? 'UNLOCKED' : 'LOCKED';
+    autoSave();
   }
 
   function setAllChapters(unlocked) {
@@ -2610,13 +2567,10 @@
   // ── Load live config from GitHub ───────────────────────────────────────────
   async function loadConfig() {
     if (!ghReady()) return;
-    const hint = document.querySelector('.publish-hint');
-    if (hint) hint.textContent = 'Syncing config from GitHub…';
     try {
       const data = await ghGet('config.json');
       if (!data.content) {
-        if (hint) hint.textContent = 'Changes are saved locally until you publish.';
-        toast('Config load failed — check Worker/token config', 'err');
+        toast('Config load failed — check Render environment variables', 'err');
         return;
       }
       const cfg = b64dec(data.content);
@@ -2664,21 +2618,20 @@
       if (cfg.presale) {
         initPresalePanel(cfg.presale);
       }
-      if (hint) hint.textContent = 'Changes are saved locally until you publish.';
     } catch(e) {
-      if (hint) hint.textContent = 'Changes are saved locally until you publish.';
-      toast('Could not reach GitHub — check network or token', 'err');
+      toast('Could not load config — check Render environment variables', 'err');
     }
   }
 
-  // ── Publish ────────────────────────────────────────────────────────────────
-  async function saveChanges() {
-    if (!ghReady()) { showPanel('token'); toast('Configure the Worker or a GitHub token first', 'err'); return; }
+  // ── Auto-save ─────────────────────────────────────────────────────────────
+  var _autoSaveTimer = null;
+  function autoSave() {
+    clearTimeout(_autoSaveTimer);
+    _autoSaveTimer = setTimeout(_commitConfig, 1200);
+  }
 
-    const btn = document.getElementById('pub-btn');
-    btn.disabled = true;
-    document.getElementById('pub-label').textContent = 'Publishing…';
-
+  async function _commitConfig() {
+    if (!ghReady()) return;
     try {
       const cfg = {
         maintenance: document.getElementById('maintenance-toggle').checked,
@@ -2698,47 +2651,15 @@
         },
         presale: getPresaleData()
       };
-
       const getData = await ghGet('config.json');
       if (!getData.sha) throw new Error(getData.message || 'Could not read config');
       const putData = await ghPut('config.json', `admin: update config${cfg.maintenance ? ' [maintenance on]' : ''}`, b64enc(cfg), getData.sha);
       if (putData.message && !putData.content) throw new Error(putData.message);
-
-      toast('Published — changes live in ~30s', 'ok');
+      toast('Saved — live in ~30s', 'ok');
     } catch(err) {
       console.error('[CGC admin]', err);
-      toast(err.message || 'Something went wrong', 'err');
+      toast(err.message || 'Save failed', 'err');
     }
-
-    btn.disabled = false;
-    document.getElementById('pub-label').textContent = 'Publish changes';
-  }
-
-  async function saveNotes() {
-    if (!ghReady()) { showPanel('token'); toast('Configure the Worker or a GitHub token first', 'err'); return; }
-
-    const btn = document.getElementById('cl-save-btn');
-    btn.disabled = true;
-    btn.textContent = 'Saving…';
-
-    try {
-      const getData = await ghGet('config.json');
-      if (!getData.sha) throw new Error(getData.message || 'Could not read config');
-      let cfg = {};
-      try { cfg = b64dec(getData.content); } catch(e) { cfg = {}; }
-      cfg.tasks = Object.fromEntries(
-        TASKS_FLAT.map(t => [t.id, { done: taskState[t.id].done, note: taskState[t.id].note }])
-      );
-      const putData = await ghPut('config.json', 'admin: save checklist notes', b64enc(cfg), getData.sha);
-      if (putData.message && !putData.content) throw new Error(putData.message);
-      toast('Notes saved ✓', 'ok');
-    } catch(err) {
-      console.error('[CGC admin]', err);
-      toast(err.message || 'Something went wrong', 'err');
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Save Notes';
   }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
