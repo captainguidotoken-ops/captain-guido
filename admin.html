@@ -1071,7 +1071,7 @@
       <div class="nav-label">Settings</div>
       <button class="nav-item" onclick="showPanel('token')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        GitHub Token
+        Settings
       </button>
     </nav>
 
@@ -1330,36 +1330,13 @@
     </section>
 
 
-    <!-- Token -->
+    <!-- Settings -->
     <section class="panel" id="panel-token">
       <div class="panel-header">
         <div>
-          <div class="panel-title">GitHub Token</div>
-          <div class="panel-sub">Required to publish changes. Stored locally in your browser only.</div>
+          <div class="panel-title">Settings</div>
+          <div class="panel-sub">AI assistant configuration.</div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Access Token</div>
-        <div id="token-status" class="token-status" style="margin-bottom:1rem;">
-          <span class="token-dot" id="token-dot"></span>
-          <span id="token-status-text">Not verified</span>
-        </div>
-        <div class="field-col">
-          <div class="field-row">
-            <label>Token</label>
-            <input type="password" id="gh-token-input" placeholder="github_pat_...">
-          </div>
-          <div class="btn-row" style="padding-left:calc(90px + 0.9rem)">
-            <button class="btn-sm accent" onclick="saveToken()">Save</button>
-            <button class="btn-sm" onclick="verifyToken()">Verify connection</button>
-            <button class="btn-sm" onclick="clearToken()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Clear</button>
-          </div>
-        </div>
-        <p style="margin-top:1.1rem;font-size:0.77rem;color:var(--muted);line-height:1.7;">
-          Create a fine-grained token at <strong>github.com → Settings → Developer settings → Fine-grained tokens</strong>.<br>
-          Repository: <strong>captain-guido</strong> &nbsp;·&nbsp; Permission: <strong>Contents — Read &amp; Write</strong>
-        </p>
       </div>
 
       <div class="card">
@@ -1650,8 +1627,7 @@
   const REPO_OWNER = 'captainguidotoken-ops';
   const REPO_NAME  = 'captain-guido';
 
-  // ── Unified GitHub access — prefers Worker proxy so Jude never needs a PAT ──
-  // Priority: 1) Worker /gh endpoint (uses server-side token), 2) local PAT
+  // ── GitHub access via server proxy ────────────────────────────────────────
   function _ghWorker() {
     var url    = localStorage.getItem('cgc_ai_url');
     var secret = localStorage.getItem('cgc_ai_secret');
@@ -1662,46 +1638,25 @@
     secret = secret.replace(/[^\x20-\x7E]/g, '');
     return { base: url + '/gh', secret };
   }
-  function _ghPat() {
-    var t = localStorage.getItem('cgc_gh_token');
-    return t ? { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json' } : null;
-  }
-  function _ghDirectBase() {
-    return 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/';
-  }
-  function ghReady() { return !!(_ghWorker() || _ghPat()); }
+  function ghReady() { return !!_ghWorker(); }
 
   async function ghGet(path) {
     var w = _ghWorker();
-    if (w) {
-      var res = await fetch(w.base + '?path=' + encodeURIComponent(path) + '&v=' + Date.now(), {
-        headers: { 'X-Secret': w.secret }
-      });
-      return res.json();
-    }
-    var H = _ghPat();
-    if (!H) throw new Error('No GitHub access — configure the Worker or a PAT');
-    var res = await fetch(_ghDirectBase() + path + '?v=' + Date.now(), { headers: H });
+    if (!w) throw new Error('Not connected to server');
+    var res = await fetch(w.base + '?path=' + encodeURIComponent(path) + '&v=' + Date.now(), {
+      headers: { 'X-Secret': w.secret }
+    });
     return res.json();
   }
 
   async function ghPut(path, message, content, sha) {
+    var w = _ghWorker();
+    if (!w) throw new Error('Not connected to server');
     var body = { message: message, content: content };
     if (sha) body.sha = sha;
-    var w = _ghWorker();
-    if (w) {
-      var res = await fetch(w.base + '?path=' + encodeURIComponent(path), {
-        method: 'PUT',
-        headers: { 'X-Secret': w.secret, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      return res.json();
-    }
-    var H = _ghPat();
-    if (!H) throw new Error('No GitHub access — configure the Worker or a PAT');
-    var res = await fetch(_ghDirectBase() + path, {
+    var res = await fetch(w.base + '?path=' + encodeURIComponent(path), {
       method: 'PUT',
-      headers: { ...H, 'Content-Type': 'application/json' },
+      headers: { 'X-Secret': w.secret, 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
     return res.json();
@@ -1984,14 +1939,11 @@
       }
     } catch(e) {}
 
-    const saved = localStorage.getItem('cgc_gh_token');
-    if (saved) document.getElementById('gh-token-input').value = '•'.repeat(20);
     if (localStorage.getItem('cgc_ai_url')) {
       document.getElementById('ai-worker-url').value    = localStorage.getItem('cgc_ai_url');
       document.getElementById('ai-worker-secret').value = '•'.repeat(16);
       setAIStatus(true, 'AI configured');
     }
-    if (_ghWorker() && !saved) setTokenStatus(true, 'Connected via server');
     if (ghReady()) loadConfig();
     ttRenderHistory();
   }
@@ -2655,45 +2607,6 @@
     });
   }
 
-  // ── Token ──────────────────────────────────────────────────────────────────
-  function saveToken() {
-    const v = document.getElementById('gh-token-input').value.trim();
-    if (!v || v.startsWith('•')) return;
-    localStorage.setItem('cgc_gh_token', v);
-    document.getElementById('gh-token-input').value = '•'.repeat(20);
-    verifyToken();
-  }
-
-  function clearToken() {
-    localStorage.removeItem('cgc_gh_token');
-    document.getElementById('gh-token-input').value = '';
-    setTokenStatus(null, 'Token cleared');
-  }
-
-  function setTokenStatus(ok, msg) {
-    const dot  = document.getElementById('token-dot');
-    const text = document.getElementById('token-status-text');
-    dot.className  = 'token-dot' + (ok === true ? ' ok' : ok === false ? ' err' : '');
-    text.textContent = msg;
-  }
-
-  async function verifyToken() {
-    const token = localStorage.getItem('cgc_gh_token');
-    if (!token) { setTokenStatus(false, 'No token saved — enter one above'); return; }
-    setTokenStatus(null, 'Checking…');
-    try {
-      const H    = { Authorization:`Bearer ${token}`, Accept:'application/vnd.github+json' };
-      const res  = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`, { headers: H });
-      const data = await res.json();
-      if (!res.ok) { setTokenStatus(false, data.message || `Error ${res.status}`); return; }
-      const canWrite = data.permissions && data.permissions.push;
-      if (!canWrite) { setTokenStatus(false, 'Read-only — needs Contents: Read & Write'); return; }
-      setTokenStatus(true, 'Connected — read & write access confirmed');
-    } catch(e) {
-      setTokenStatus(false, 'Network error');
-    }
-  }
-
   // ── Load live config from GitHub ───────────────────────────────────────────
   async function loadConfig() {
     if (!ghReady()) return;
@@ -2896,7 +2809,7 @@
 
   async function runCommand(raw) {
     if (!ghReady()) {
-      addMsg('<span class="err">No GitHub access.</span> Go to <b>GitHub Token → AI Assistant</b> and configure the Worker URL + secret.', 'bot'); return;
+      addMsg('<span class="err">Not connected to server.</span> Check the Render deployment and environment variables.', 'bot'); return;
     }
     showTyping();
     var parts = raw.toLowerCase().replace(/^\//,'').trim().split(/\s+/);
@@ -2987,7 +2900,7 @@
     var hasAI = !!localStorage.getItem('cgc_ai_url');
     addMsg(
       'Hey! I can manage the site via commands and answer questions about the project.' +
-      (hasAI ? '' : ' <span class="muted">(Add your AI worker in <b>GitHub Token → AI Assistant</b> to unlock question-answering.)</span>') +
+      (hasAI ? '' : ' <span class="muted">(Configure the AI worker in <b>Settings</b> to unlock question-answering.)</span>') +
       '<br><br>Try <code>status</code>, <code>unlock 3</code>, or just ask me a question.<br><span class="muted">Commands publish instantly.</span>',
       'bot'
     );
@@ -3074,7 +2987,7 @@
     var url    = localStorage.getItem('cgc_ai_url');
     var secret = localStorage.getItem('cgc_ai_secret');
     if (!url || !secret) {
-      addMsg('AI not configured yet. Go to <b>GitHub Token → AI Assistant</b> in the sidebar to set it up.', 'bot');
+      addMsg('AI not configured yet. Go to <b>Settings</b> in the sidebar to set it up.', 'bot');
       return;
     }
 
