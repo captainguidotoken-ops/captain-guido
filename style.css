@@ -3160,11 +3160,30 @@ body.custom-cursor-active * {
 /* ── Enhanced card hover with depth ─────────────────────────────── */
 .chapter-card {
   transform-style: preserve-3d;
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.5s ease,
+              box-shadow 0.5s ease;
+  will-change: transform;
 }
 
+/* JS overrides this on mousemove; kept as touch/no-JS fallback */
 .chapter-card:hover {
-  transform: translateY(-14px) rotateX(2deg) rotateY(-1deg);
+  transform: perspective(900px) translateY(-10px) rotateX(2deg);
+}
+
+/* Spotlight glow injected by JS — follows cursor */
+.chapter-card-spotlight {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,212,255,0.07) 0%, transparent 55%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.chapter-card:hover .chapter-card-spotlight {
+  opacity: 1;
 }
 
 /* ── Feature image with depth ring ──────────────────────────────── */

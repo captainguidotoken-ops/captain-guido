@@ -846,6 +846,30 @@
   }
 
   // Render Impact section based on IMPACT_DATA config
+  function initChapterCards() {
+    var cards = document.querySelectorAll('.chapter-card');
+    cards.forEach(function(card) {
+      var spotlight = document.createElement('div');
+      spotlight.className = 'chapter-card-spotlight';
+      card.appendChild(spotlight);
+
+      card.addEventListener('mousemove', function(e) {
+        var rect = card.getBoundingClientRect();
+        var x = (e.clientX - rect.left) / rect.width - 0.5;
+        var y = (e.clientY - rect.top)  / rect.height - 0.5;
+        card.style.transform = 'perspective(900px) rotateY(' + (x * 8) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-10px) scale3d(1.02,1.02,1.02)';
+        card.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', ((e.clientY - rect.top)  / rect.height * 100).toFixed(1) + '%');
+      });
+
+      card.addEventListener('mouseleave', function() {
+        card.style.transform = '';
+        card.style.removeProperty('--mx');
+        card.style.removeProperty('--my');
+      });
+    });
+  }
+
   function initPartnerCards() {
     var cards = document.querySelectorAll('.partner-card:not(.partner-pending)');
     cards.forEach(function(card) {
@@ -1265,6 +1289,7 @@
     }
     createOceanParticles();
     renderImpact();
+    initChapterCards();
     initPartnerCards();
     initializeMap();
     initNavigation();
