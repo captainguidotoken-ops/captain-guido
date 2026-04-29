@@ -1258,6 +1258,11 @@
 
     document.body.classList.add('entry-active');
     threeScene = createCosmicBackground();
+    // If Three.js didn't load, reveal the HTML logo fallback
+    if (!threeScene) {
+      var htmlLogo = document.querySelector('.loader-logo-wrap');
+      if (htmlLogo) htmlLogo.style.visibility = 'visible';
+    }
     createOceanParticles();
     renderImpact();
     initPartnerCards();
