@@ -15,7 +15,7 @@
   <meta property="og:image" content="captain-guido.png">
   
   <!-- Security Headers -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https://unpkg.com https://www.google-analytics.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://api.coingecko.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com; worker-src blob:; frame-ancestors 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://unpkg.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: blob: https://unpkg.com https://www.google-analytics.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://unpkg.com https://api.coingecko.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://*.onrender.com; worker-src blob:; frame-ancestors 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests; manifest-src 'self';">
   <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -790,57 +790,5 @@
   <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
   <script src="script.js"></script>
   <script src="animations.js"></script>
-  <script>
-  /* ── CGT Visit Tracker ──────────────────────────────────────────────────────
-     Posts visit data to the Cloudflare Worker /beacon endpoint.
-     The worker writes to analytics.json on GitHub server-side.
-     Works for ALL visitors — no token required on the client.
-  ─────────────────────────────────────────────────────────────────────────── */
-  (function() {
-    // ← update this to your deployed Worker URL
-    var BEACON_URL = localStorage.getItem('cgc_ai_url')
-      ? localStorage.getItem('cgc_ai_url').replace(/\/?$/, '/beacon')
-      : null;
-
-    if (!BEACON_URL) return; // Worker URL not configured yet — skip silently
-
-    var _startTs = Date.now();
-    var _uid = localStorage.getItem('cgc_vis_uid') || (function() {
-      var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem('cgc_vis_uid', id);
-      return id;
-    })();
-
-    function sendBeacon(dur) {
-      var payload = JSON.stringify({
-        ts:  _startTs,
-        dur: dur,
-        uid: _uid,
-        ref: document.referrer || '',
-        dev: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
-      });
-      // Use navigator.sendBeacon on unload (more reliable than fetch on pagehide)
-      // Falls back to fetch for the initial fire
-      if (dur > 0 && navigator.sendBeacon) {
-        navigator.sendBeacon(BEACON_URL, new Blob([payload], { type: 'application/json' }));
-      } else {
-        fetch(BEACON_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload,
-          keepalive: true
-        }).catch(function() {});
-      }
-    }
-
-    // Fire immediately (dur=0) to count even instant bounces
-    sendBeacon(0);
-
-    // Fire on unload with real session duration
-    window.addEventListener('pagehide', function() {
-      sendBeacon(Date.now() - _startTs);
-    });
-  })();
-  </script>
 </body>
 </html>

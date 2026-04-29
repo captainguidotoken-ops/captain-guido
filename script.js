@@ -1130,6 +1130,34 @@
 
     // Presale tracker
     applyPresaleTracker(cfg.presale);
+
+    // Visit beacon
+    if (cfg.beaconUrl) initBeacon(cfg.beaconUrl);
+  }
+
+  function initBeacon(beaconUrl) {
+    var _startTs = Date.now();
+    var _uid = localStorage.getItem('cgc_vis_uid') || (function() {
+      var id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('cgc_vis_uid', id);
+      return id;
+    })();
+    function sendBeacon(dur) {
+      var payload = JSON.stringify({
+        ts:  _startTs,
+        dur: dur,
+        uid: _uid,
+        ref: document.referrer || '',
+        dev: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+      });
+      if (dur > 0 && navigator.sendBeacon) {
+        navigator.sendBeacon(beaconUrl, new Blob([payload], { type: 'application/json' }));
+      } else {
+        fetch(beaconUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, keepalive: true }).catch(function() {});
+      }
+    }
+    sendBeacon(0);
+    window.addEventListener('pagehide', function() { sendBeacon(Date.now() - _startTs); });
   }
 
   var PRESALE_ROUNDS = [

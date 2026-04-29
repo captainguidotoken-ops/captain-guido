@@ -227,5 +227,6 @@
     "currentRound": 1,
     "roundRaised": 0,
     "totalRaised": 0
-  }
+  },
+  "beaconUrl": ""
 }

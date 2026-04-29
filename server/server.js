@@ -29,14 +29,12 @@ app.get('/', (req, res) => {
   const htmlPath = path.join(__dirname, '..', 'admin.html');
   let html = fs.readFileSync(htmlPath, 'utf8');
 
-  // Pre-configure worker URL and secret so the admin never prompts for a token
   const inject = `<script>
   localStorage.setItem('cgc_ai_url',    '${SERVER_URL}/gh');
   localStorage.setItem('cgc_ai_secret', '${SECRET}');
 </script>`;
   html = html.replace('</head>', inject + '\n</head>');
 
-  // Serve with a permissive CSP that allows self for connect-src
   res.setHeader('Content-Security-Policy', [
     "default-src 'none'",
     "script-src 'self' 'unsafe-inline'",
@@ -55,7 +53,6 @@ app.get('/', (req, res) => {
 });
 
 // ── GitHub proxy ───────────────────────────────────────────────────────────────
-// GET /gh?path=config.json  →  GitHub GET contents
 app.get('/gh', requireSecret, async (req, res) => {
   if (!TOKEN) return res.status(500).json({ error: 'GITHUB_TOKEN not set on server' });
   const filePath = req.query.path || '';
@@ -73,7 +70,6 @@ app.get('/gh', requireSecret, async (req, res) => {
   }
 });
 
-// PUT /gh?path=config.json  →  GitHub PUT contents
 app.put('/gh', requireSecret, async (req, res) => {
   if (!TOKEN) return res.status(500).json({ error: 'GITHUB_TOKEN not set on server' });
   const filePath = req.query.path || '';
@@ -95,7 +91,6 @@ app.put('/gh', requireSecret, async (req, res) => {
 });
 
 // ── Anthropic AI proxy ─────────────────────────────────────────────────────────
-// POST /  →  Anthropic messages API
 app.post('/', requireSecret, async (req, res) => {
   if (!AI_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set on server' });
   try {
@@ -112,6 +107,79 @@ app.post('/', requireSecret, async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ── Visit beacon — open endpoint, no auth, called by the public site ───────────
+// Buffers visits in memory and flushes to analytics.json every 20 visits or 5 min.
+const _visitBuffer = [];
+let _flushTimer    = null;
+
+async function flushVisits() {
+  clearTimeout(_flushTimer);
+  _flushTimer = null;
+  if (!_visitBuffer.length || !TOKEN) return;
+  const batch = _visitBuffer.splice(0);
+  try {
+    const ghHeaders = {
+      Authorization: `Bearer ${TOKEN}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'CGT-Admin-Server/1.0',
+    };
+    const getRes = await fetch(GH_BASE + 'analytics.json', { headers: ghHeaders });
+    let analytics = { visits: [] };
+    let sha;
+    if (getRes.ok) {
+      const data = await getRes.json();
+      sha = data.sha;
+      try {
+        analytics = JSON.parse(Buffer.from(data.content.replace(/\n/g, ''), 'base64').toString());
+      } catch (e) {}
+    }
+    if (!Array.isArray(analytics.visits)) analytics.visits = [];
+    analytics.visits.push(...batch);
+    if (analytics.visits.length > 1000) analytics.visits = analytics.visits.slice(-1000);
+
+    const content = Buffer.from(JSON.stringify(analytics, null, 2)).toString('base64');
+    const body = { message: `chore: log ${batch.length} visit(s)`, content };
+    if (sha) body.sha = sha;
+
+    await fetch(GH_BASE + 'analytics.json', {
+      method: 'PUT',
+      headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    // Put batch back and retry in 1 minute
+    _visitBuffer.unshift(...batch);
+    _flushTimer = setTimeout(flushVisits, 60 * 1000);
+  }
+}
+
+function scheduleFlush() {
+  if (_flushTimer) return;
+  _flushTimer = setTimeout(flushVisits, 5 * 60 * 1000);
+}
+
+app.options('/beacon', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://captainguidotoken-ops.github.io');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.sendStatus(204);
+});
+
+app.post('/beacon', (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://captainguidotoken-ops.github.io');
+  res.sendStatus(204);
+  if (!TOKEN) return;
+  _visitBuffer.push({
+    ts:  Number(req.body.ts)  || Date.now(),
+    dur: Number(req.body.dur) || 0,
+    uid: String(req.body.uid || '').slice(0, 32),
+    ref: String(req.body.ref || '').slice(0, 200),
+    dev: req.body.dev === 'mobile' ? 'mobile' : 'desktop',
+  });
+  if (_visitBuffer.length >= 20) flushVisits();
+  else scheduleFlush();
 });
 
 app.listen(PORT, () => {

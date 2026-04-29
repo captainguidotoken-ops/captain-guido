@@ -1303,6 +1303,19 @@
       </div>
 
       <div class="card">
+        <div class="card-title">Visitor Beacon</div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Beacon URL</label>
+            <input type="text" id="beacon-url-input" placeholder="https://your-app.onrender.com/beacon" oninput="saveBeaconUrl()">
+          </div>
+        </div>
+        <p style="margin-top:1.1rem;font-size:0.77rem;color:var(--muted);line-height:1.7;">
+          Paste your Render server URL with <code>/beacon</code> at the end. The public site will send a visit ping here for every visitor — results show up in the Monitor panel.
+        </p>
+      </div>
+
+      <div class="card">
         <div class="card-title">AI Assistant (Claude)</div>
         <div id="ai-status" class="token-status" style="margin-bottom:1rem;">
           <span class="token-dot" id="ai-dot"></span>
@@ -2618,6 +2631,8 @@
       if (cfg.presale) {
         initPresalePanel(cfg.presale);
       }
+      var beaconInput = document.getElementById('beacon-url-input');
+      if (beaconInput && cfg.beaconUrl) beaconInput.value = cfg.beaconUrl;
     } catch(e) {
       toast('Could not load config — check Render environment variables', 'err');
     }
@@ -2649,7 +2664,8 @@
           discord:  document.getElementById('link-discord').value.trim(),
           telegram: document.getElementById('link-telegram').value.trim()
         },
-        presale: getPresaleData()
+        presale:   getPresaleData(),
+        beaconUrl: (document.getElementById('beacon-url-input').value || '').trim()
       };
       const getData = await ghGet('config.json');
       if (!getData.sha) throw new Error(getData.message || 'Could not read config');
@@ -2828,6 +2844,9 @@
   }
 
   // ── AI settings ───────────────────────────────────────────────────────────
+  // ── Beacon URL ────────────────────────────────────────────────────────────
+  function saveBeaconUrl() { autoSave(); }
+
   function saveAI() {
     var url    = document.getElementById('ai-worker-url').value.trim();
     var secret = document.getElementById('ai-worker-secret').value.trim();
