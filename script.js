@@ -846,6 +846,148 @@
   }
 
   // Render Impact section based on IMPACT_DATA config
+  // ── Ocean Dive Transition ──────────────────────────────────────────────────
+  function initDiveSection() {
+    var section = document.getElementById('dive-section');
+    var canvas  = document.getElementById('dive-canvas');
+    if (!section || !canvas || typeof THREE === 'undefined') return;
+
+    var lowPerf = window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+                  (navigator.hardwareConcurrency || 4) < 4;
+    if (lowPerf) { section.classList.add('dive-fallback'); return; }
+
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !lowPerf, alpha: false });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setClearColor(0x01060d, 1);
+
+    var scene  = new THREE.Scene();
+    scene.fog  = new THREE.FogExp2(0x01060d, 0.020);
+    var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
+    camera.position.set(0, 5, 22);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0x0a1a2a, 2.0));
+    var aquaLight = new THREE.PointLight(0x00c8ff, 1.2, 50);
+    aquaLight.position.set(-4, 4, 5);
+    scene.add(aquaLight);
+
+    var wRes = W < 768 ? 35 : 55;
+
+    function makeWave(col, opacity, posY, posZ, phase) {
+      var g   = new THREE.PlaneGeometry(130, 130, wRes, wRes);
+      var mat = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
+      var mesh = new THREE.Mesh(g, mat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(0, posY, posZ);
+      scene.add(mesh);
+      return { pos: g.attributes.position, mat: mat, baseOpacity: opacity, phase: phase };
+    }
+
+    var waves = [
+      makeWave(0x0d3575, 0.55, -1.5,  -5,  0.0),
+      makeWave(0x082250, 0.38, -3.0, -14,  1.8),
+      makeWave(0x041530, 0.22, -4.5, -22,  3.6),
+    ];
+
+    // Same multi-frequency formula as the loading screen
+    function waveH(lx, ly, t, phase) {
+      return (
+        Math.sin(lx * 0.15 - t * 1.3 + phase)        * 1.10 +
+        Math.sin(ly * 0.20 + t * 1.0 + phase * 0.6)   * 0.85 +
+        Math.sin(lx * 0.38 + ly * 0.12 - t * 1.85)    * 0.45 +
+        Math.sin(lx * 0.08 - ly * 0.32 + t * 0.70)    * 0.30 +
+        Math.sin(lx * 0.60 + ly * 0.42 + t * 2.40)    * 0.14
+      );
+    }
+
+    var clock   = new THREE.Clock();
+    var running = false;
+    var rafId;
+    var camTgtY = 5;
+    var camTgtZ = 22;
+    var fogTgt  = 0.020;
+
+    function animLoop() {
+      if (!running) return;
+      rafId = requestAnimationFrame(animLoop);
+      var t = clock.getElapsedTime();
+
+      waves.forEach(function(w) {
+        for (var vi = 0; vi < w.pos.count; vi++) {
+          w.pos.setZ(vi, waveH(w.pos.getX(vi), w.pos.getY(vi), t, w.phase));
+        }
+        w.pos.needsUpdate = true;
+      });
+
+      camera.position.y  += (camTgtY - camera.position.y)  * 0.04;
+      camera.position.z  += (camTgtZ - camera.position.z)  * 0.04;
+      scene.fog.density  += (fogTgt  - scene.fog.density)  * 0.04;
+      camera.lookAt(0, camera.position.y - 0.5, 0);
+      aquaLight.intensity = 1.2 + Math.sin(t * 1.5) * 0.4;
+
+      renderer.render(scene, camera);
+    }
+
+    function onDiveScroll() {
+      var top  = section.getBoundingClientRect().top;
+      var h    = section.offsetHeight - H;
+      var prog = Math.max(0, Math.min(1, -top / h));
+
+      // Camera journey: horizon → surface → underwater
+      if (prog < 0.5) {
+        var p  = prog / 0.5;
+        camTgtY = 5    - p * 6.5;
+        camTgtZ = 22   - p * 13;
+        fogTgt  = 0.020 + p * 0.020;
+      } else {
+        var p2  = (prog - 0.5) / 0.5;
+        camTgtY = -1.5  - p2 * 5.0;
+        camTgtZ = 9     - p2 * 5.0;
+        fogTgt  = 0.040 + p2 * 0.040;
+      }
+
+      // Wave depth colour shift
+      waves.forEach(function(w) {
+        w.mat.opacity = Math.min(0.9, w.baseOpacity * (1 + prog * 0.6));
+      });
+
+      // HUD
+      var hint  = document.getElementById('diveHint');
+      var depth = document.getElementById('diveDepth');
+      var val   = document.getElementById('depthValue');
+      if (hint)  hint.style.opacity  = Math.max(0, 1 - prog * 12);
+      if (depth) depth.style.opacity = prog < 0.08 ? 0 : Math.min(1, (prog - 0.08) * 8);
+      if (val)   val.textContent     = Math.round(prog * 150) + ' ft';
+    }
+
+    window.addEventListener('scroll', onDiveScroll, { passive: true });
+
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          running = true;
+          clock.start();
+          animLoop();
+        } else {
+          running = false;
+          cancelAnimationFrame(rafId);
+        }
+      });
+    }, { threshold: 0 });
+    io.observe(section);
+
+    window.addEventListener('resize', function() {
+      W = window.innerWidth; H = window.innerHeight;
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W, H);
+    });
+  }
+
   function initChapterCards() {
     var cards = document.querySelectorAll('.chapter-card');
     cards.forEach(function(card) {
@@ -1289,6 +1431,7 @@
     }
     createOceanParticles();
     renderImpact();
+    initDiveSection();
     initChapterCards();
     initPartnerCards();
     initializeMap();
