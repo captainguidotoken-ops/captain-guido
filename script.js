@@ -852,130 +852,236 @@
     var canvas  = document.getElementById('dive-canvas');
     if (!section || !canvas || typeof THREE === 'undefined') return;
 
-    var lowPerf = window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-                  (navigator.hardwareConcurrency || 4) < 4;
-    if (lowPerf) { section.classList.add('dive-fallback'); return; }
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var isMobile = window.innerWidth < 768;
+
+    if (isMobile || prefersReduced) {
+      section.classList.add('dive-fallback');
+      return;
+    }
 
     var W = window.innerWidth;
     var H = window.innerHeight;
 
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !lowPerf, alpha: false });
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setClearColor(0x01060d, 1);
+    renderer.setClearColor(0x020810, 1);
 
     var scene  = new THREE.Scene();
-    scene.fog  = new THREE.FogExp2(0x01060d, 0.020);
-    var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
-    camera.position.set(0, 5, 22);
+    scene.fog  = new THREE.FogExp2(0x020810, 0.018);
+
+    var camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 300);
+    camera.position.set(0, 1.5, 12);
     camera.lookAt(0, 0, 0);
 
-    scene.add(new THREE.AmbientLight(0x0a1a2a, 2.0));
-    var aquaLight = new THREE.PointLight(0x00c8ff, 1.2, 50);
-    aquaLight.position.set(-4, 4, 5);
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x0a1828, 3.0));
+    var sunLight = new THREE.DirectionalLight(0x2244aa, 0.8);
+    sunLight.position.set(0, 20, -10);
+    scene.add(sunLight);
+    var aquaLight = new THREE.PointLight(0x00c8ff, 1.5, 40);
+    aquaLight.position.set(-3, -2, 5);
     scene.add(aquaLight);
+    var deepLight = new THREE.PointLight(0x004488, 0.0, 60);
+    deepLight.position.set(0, -10, 0);
+    scene.add(deepLight);
 
-    var wRes = W < 768 ? 35 : 55;
+    var wRes = 72;
 
-    function makeWave(col, opacity, posY, posZ, phase) {
-      var g   = new THREE.PlaneGeometry(130, 130, wRes, wRes);
-      var mat = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
+    function makeWave(colTop, colBot, opacity, posY, posZ, phase) {
+      var g = new THREE.PlaneGeometry(140, 80, wRes, wRes);
+      var cnt = g.attributes.position.count;
+      var cols = new Float32Array(cnt * 3);
+      var c1 = new THREE.Color(colTop);
+      var c2 = new THREE.Color(colBot);
+      for (var i = 0; i < cnt; i++) {
+        var t = (g.attributes.position.getY(i) + 40) / 80;
+        var c = c2.clone().lerp(c1, t);
+        cols[i * 3] = c.r; cols[i * 3 + 1] = c.g; cols[i * 3 + 2] = c.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      var mat = new THREE.MeshPhongMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: opacity,
+        shininess: 55,
+        specular: new THREE.Color(0x003355),
+        side: THREE.DoubleSide
+      });
       var mesh = new THREE.Mesh(g, mat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(0, posY, posZ);
       scene.add(mesh);
-      return { pos: g.attributes.position, mat: mat, baseOpacity: opacity, phase: phase };
+      return { pos: g.attributes.position, colorAttr: g.attributes.color, mat: mat, baseOpacity: opacity, phase: phase, c1: c1, c2: c2 };
     }
 
     var waves = [
-      makeWave(0x0d3575, 0.55, -1.5,  -5,  0.0),
-      makeWave(0x082250, 0.38, -3.0, -14,  1.8),
-      makeWave(0x041530, 0.22, -4.5, -22,  3.6),
+      makeWave(0x1a4a8a, 0x0a2244, 0.90,  0.0,   0,  0.0),
+      makeWave(0x0d3060, 0x061830, 0.75, -1.8, -12,  1.8),
+      makeWave(0x071e40, 0x030e20, 0.60, -3.5, -22,  3.2),
+      makeWave(0x040e28, 0x020810, 0.45, -5.0, -32,  4.8),
     ];
 
-    // Same multi-frequency formula as the loading screen
+    // God rays
+    var godRays = [];
+    [[2.5,8,-10,0.08,12],[-2,8,-14,-0.09,10],[0.5,8,-8,0.04,14],[-3.5,8,-12,-0.06,11],[4,8,-16,0.10,13]].forEach(function(p, i) {
+      var geo = new THREE.CylinderGeometry(0.08, 2.5, p[4], 4);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x0066aa, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(p[0], p[1] - p[4] / 2, p[2]);
+      mesh.rotation.z = p[3];
+      scene.add(mesh);
+      godRays.push({ mesh: mesh, mat: mat, phase: i * 1.2, targetOpacity: 0 });
+    });
+
+    // 3D coin
+    var coinGroup = new THREE.Group();
+    var coinMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 1.2, 0.12, 48),
+      new THREE.MeshPhongMaterial({ color: 0xc89020, shininess: 120, specular: new THREE.Color(0xffdd44), emissive: new THREE.Color(0x1a0800) })
+    );
+    coinMesh.rotation.x = Math.PI / 2;
+    coinGroup.add(coinMesh);
+    var ringMesh = new THREE.Mesh(
+      new THREE.TorusGeometry(1.45, 0.04, 8, 48),
+      new THREE.MeshBasicMaterial({ color: 0xf4a836, transparent: true, opacity: 0.6 })
+    );
+    ringMesh.rotation.x = Math.PI / 2;
+    coinGroup.add(ringMesh);
+    coinGroup.position.set(0, -6, -4);
+    coinGroup.visible = false;
+    scene.add(coinGroup);
+
+    // Ambient ocean sound
+    var sound = (function() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        var ctx = new AC();
+        var sr = ctx.sampleRate;
+        var buf = ctx.createBuffer(1, sr * 4, sr);
+        var d = buf.getChannelData(0);
+        for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        var src = ctx.createBufferSource();
+        src.buffer = buf; src.loop = true;
+        var lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = 220; lp.Q.value = 0.7;
+        var gain = ctx.createGain(); gain.gain.value = 0;
+        src.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
+        return { ctx: ctx, gain: gain, started: false,
+          start: function() { if (this.started) return; this.started = true; ctx.resume(); src.start(); },
+          vol: function(v) { gain.gain.linearRampToValueAtTime(v * 0.14, ctx.currentTime + 0.8); }
+        };
+      } catch(e) { return null; }
+    })();
+
+    // Wave height — identical formula to loading screen
     function waveH(lx, ly, t, phase) {
-      return (
-        Math.sin(lx * 0.15 - t * 1.3 + phase)        * 1.10 +
-        Math.sin(ly * 0.20 + t * 1.0 + phase * 0.6)   * 0.85 +
-        Math.sin(lx * 0.38 + ly * 0.12 - t * 1.85)    * 0.45 +
-        Math.sin(lx * 0.08 - ly * 0.32 + t * 0.70)    * 0.30 +
-        Math.sin(lx * 0.60 + ly * 0.42 + t * 2.40)    * 0.14
-      );
+      return Math.sin(lx*0.15 - t*1.3 + phase)*1.10 + Math.sin(ly*0.20 + t*1.0 + phase*0.6)*0.85 + Math.sin(lx*0.38 + ly*0.12 - t*1.85)*0.45 + Math.sin(lx*0.08 - ly*0.32 + t*0.70)*0.30 + Math.sin(lx*0.60 + ly*0.42 + t*2.40)*0.14;
     }
 
-    var clock   = new THREE.Clock();
-    var running = false;
-    var rafId;
-    var camTgtY = 5;
-    var camTgtZ = 22;
-    var fogTgt  = 0.020;
+    var clock = new THREE.Clock();
+    var running = false, rafId;
+    var camTgtY = 1.5, camTgtZ = 12;
+    var fogTgt = 0.018;
+    var clearCur = new THREE.Color(0x020810);
+    var clearTgt = new THREE.Color(0x020810);
+    var diveProgress = 0;
+
+    // Depth palette keyframes
+    var keyframes = [
+      { bg: 0x020810, fog: 0.018, camY: 1.5,  camZ: 12.0 },
+      { bg: 0x010610, fog: 0.026, camY: -0.5, camZ: 9.0  },
+      { bg: 0x010408, fog: 0.040, camY: -2.5, camZ: 7.0  },
+      { bg: 0x000306, fog: 0.065, camY: -5.2, camZ: 4.8  },
+    ];
+
+    function applyDepth(p) {
+      var kLen = keyframes.length - 1;
+      var idx  = p * kLen;
+      var lo   = keyframes[Math.floor(idx)];
+      var hi   = keyframes[Math.min(kLen, Math.ceil(idx))];
+      var t    = idx - Math.floor(idx);
+      clearTgt.setHex(lo.bg).lerp(new THREE.Color(hi.bg), t);
+      fogTgt  = lo.fog  + (hi.fog  - lo.fog)  * t;
+      camTgtY = lo.camY + (hi.camY - lo.camY) * t;
+      camTgtZ = lo.camZ + (hi.camZ - lo.camZ) * t;
+    }
+
+    function onDiveScroll() {
+      var top = section.getBoundingClientRect().top;
+      var h   = section.offsetHeight - H;
+      diveProgress = Math.max(0, Math.min(1, -top / h));
+      applyDepth(diveProgress);
+
+      waves.forEach(function(w) {
+        w.mat.opacity = Math.min(0.98, w.baseOpacity + diveProgress * 0.25);
+      });
+
+      // God rays from 50% depth
+      var rp = diveProgress > 0.5 ? Math.min(1, (diveProgress - 0.5) / 0.35) : 0;
+      godRays.forEach(function(r) { r.targetOpacity = r === godRays[0] ? 0.07 * rp : 0.05 * rp; });
+      deepLight.intensity = rp * 1.4;
+
+      // Coin 25–82%
+      coinGroup.visible = diveProgress > 0.25 && diveProgress < 0.82;
+
+      // Sound
+      if (sound) {
+        if (diveProgress > 0.05) { sound.start(); sound.vol(diveProgress); }
+        else sound.vol(0);
+      }
+    }
 
     function animLoop() {
       if (!running) return;
       rafId = requestAnimationFrame(animLoop);
       var t = clock.getElapsedTime();
 
-      waves.forEach(function(w) {
+      waves.forEach(function(w, wi) {
         for (var vi = 0; vi < w.pos.count; vi++) {
-          w.pos.setZ(vi, waveH(w.pos.getX(vi), w.pos.getY(vi), t, w.phase));
+          var lx = w.pos.getX(vi), ly = w.pos.getY(vi);
+          var h = waveH(lx, ly, t, w.phase);
+          w.pos.setZ(vi, h);
+          if (wi === 0) {
+            var peak = Math.max(0, h / 2.2);
+            var col = w.c2.clone().lerp(w.c1, (ly + 40) / 80).lerp(new THREE.Color(0x4488cc), peak * 0.28);
+            w.colorAttr.setXYZ(vi, col.r, col.g, col.b);
+          }
         }
         w.pos.needsUpdate = true;
+        if (wi === 0) w.colorAttr.needsUpdate = true;
       });
 
-      camera.position.y  += (camTgtY - camera.position.y)  * 0.04;
-      camera.position.z  += (camTgtZ - camera.position.z)  * 0.04;
-      scene.fog.density  += (fogTgt  - scene.fog.density)  * 0.04;
-      camera.lookAt(0, camera.position.y - 0.5, 0);
-      aquaLight.intensity = 1.2 + Math.sin(t * 1.5) * 0.4;
+      camera.position.y += (camTgtY - camera.position.y) * 0.045;
+      camera.position.z += (camTgtZ - camera.position.z) * 0.045;
+      camera.lookAt(0, camera.position.y - 0.8, 0);
+      scene.fog.density += (fogTgt - scene.fog.density) * 0.04;
+      clearCur.lerp(clearTgt, 0.04);
+      renderer.setClearColor(clearCur, 1);
+      aquaLight.intensity = 1.5 + Math.sin(t * 1.4) * 0.4;
 
-      renderer.render(scene, camera);
-    }
+      godRays.forEach(function(r) {
+        r.mat.opacity += (r.targetOpacity - r.mat.opacity) * 0.06;
+        r.mesh.rotation.y = Math.sin(t * 0.28 + r.phase) * 0.09;
+      });
 
-    function onDiveScroll() {
-      var top  = section.getBoundingClientRect().top;
-      var h    = section.offsetHeight - H;
-      var prog = Math.max(0, Math.min(1, -top / h));
-
-      // Camera journey: horizon → surface → underwater
-      if (prog < 0.5) {
-        var p  = prog / 0.5;
-        camTgtY = 5    - p * 6.5;
-        camTgtZ = 22   - p * 13;
-        fogTgt  = 0.020 + p * 0.020;
-      } else {
-        var p2  = (prog - 0.5) / 0.5;
-        camTgtY = -1.5  - p2 * 5.0;
-        camTgtZ = 9     - p2 * 5.0;
-        fogTgt  = 0.040 + p2 * 0.040;
+      if (coinGroup.visible) {
+        coinGroup.rotation.y = t * 0.35;
+        coinGroup.position.y = -6 + Math.sin(t * 0.5) * 0.4 + diveProgress * 4;
       }
 
-      // Wave depth colour shift
-      waves.forEach(function(w) {
-        w.mat.opacity = Math.min(0.9, w.baseOpacity * (1 + prog * 0.6));
-      });
-
-      // HUD
-      var hint  = document.getElementById('diveHint');
-      var depth = document.getElementById('diveDepth');
-      var val   = document.getElementById('depthValue');
-      if (hint)  hint.style.opacity  = Math.max(0, 1 - prog * 12);
-      if (depth) depth.style.opacity = prog < 0.08 ? 0 : Math.min(1, (prog - 0.08) * 8);
-      if (val)   val.textContent     = Math.round(prog * 150) + ' ft';
+      renderer.render(scene, camera);
     }
 
     window.addEventListener('scroll', onDiveScroll, { passive: true });
 
     var io = new IntersectionObserver(function(entries) {
       entries.forEach(function(e) {
-        if (e.isIntersecting) {
-          running = true;
-          clock.start();
-          animLoop();
-        } else {
-          running = false;
-          cancelAnimationFrame(rafId);
-        }
+        running = e.isIntersecting;
+        if (running) { clock.start(); animLoop(); }
+        else cancelAnimationFrame(rafId);
       });
     }, { threshold: 0 });
     io.observe(section);
