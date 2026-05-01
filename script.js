@@ -21,7 +21,52 @@
     ]
   };
   // ──────────────────────────────────────────────────────────────────────────
-  
+
+  // ─── MASTER rAF COORDINATOR ──────────────────────────────────────────────
+  // One requestAnimationFrame loop drives every Three.js scene on the page.
+  // Each scene registers a tick function and an `active` flag. The coordinator
+  // walks the registry every frame and invokes only the active ticks.
+  // Scenes call `setActive(false)` from an IntersectionObserver when they're
+  // off-screen, so we never burn CPU on hidden canvases.
+  // Why this matters: previously every scene called requestAnimationFrame
+  // independently, scheduling 3+ separate frames per browser tick. Browsers
+  // *do* coalesce them, but each callback does its own scroll math + GPU
+  // command flush. Consolidating gives the GPU a single command list and
+  // shares one frame budget.
+  var _cgRAF = (function() {
+    var ticks    = [];
+    var running  = false;
+    function loop(t) {
+      if (!running) return;
+      requestAnimationFrame(loop);
+      // Index-based iteration so register/unregister mid-frame doesn't break.
+      for (var i = 0; i < ticks.length; i++) {
+        var entry = ticks[i];
+        if (entry && entry.active && entry.fn) {
+          try { entry.fn(t); } catch (e) { /* never let one scene kill the loop */ }
+        }
+      }
+    }
+    return {
+      register: function(fn, opts) {
+        var entry = { fn: fn, active: !!(opts && opts.startActive) };
+        ticks.push(entry);
+        if (!running) { running = true; requestAnimationFrame(loop); }
+        return {
+          setActive: function(v) { entry.active = !!v; },
+          isActive:  function()  { return entry.active; },
+          unregister: function() {
+            var idx = ticks.indexOf(entry);
+            if (idx >= 0) ticks.splice(idx, 1);
+          },
+        };
+      },
+      // Public for diagnostics
+      _ticks: function() { return ticks.length; },
+    };
+  })();
+  window._cgRAF = _cgRAF; // expose for ad-hoc debug from devtools
+
   // ─── AUTO LOADER ─────────────────────────────────────────────────────────
   var threeScene = null;
 
@@ -686,15 +731,11 @@
     const nav = document.getElementById('main-nav');
     if (!nav) return;
 
+    // Passive listener so it never blocks the scroll thread
     window.addEventListener('scroll', function() {
-      const currentScroll = window.pageYOffset;
-
-      if (currentScroll > 100) {
-        nav.classList.add('scrolled');
-      } else {
-        nav.classList.remove('scrolled');
-      }
-    });
+      if (window.pageYOffset > 100) nav.classList.add('scrolled');
+      else                          nav.classList.remove('scrolled');
+    }, { passive: true });
   }
 
   // Smooth scrolling
@@ -987,7 +1028,6 @@
     }
 
     var clock = new THREE.Clock();
-    var running = false, rafId;
     var camTgtY = 1.5, camTgtZ = camZ0;
     var fogTgt = 0.018;
     var clearCur = new THREE.Color(0x020810);
@@ -1044,12 +1084,15 @@
       }
     }
 
-    function animLoop() {
-      if (!running) return;
-      rafId = requestAnimationFrame(animLoop);
+    // Tick fn registered with the master rAF coordinator. Reads scroll inside
+    // the frame so we never schedule extra layout work from a scroll listener.
+    function tick() {
       var t = clock.getElapsedTime();
 
-      waves.forEach(function(w, wi) {
+      onDiveScroll();   // cheap getBoundingClientRect + math; runs once per active frame
+
+      for (var wi = 0; wi < waves.length; wi++) {
+        var w = waves[wi];
         for (var vi = 0; vi < w.pos.count; vi++) {
           var lx = w.pos.getX(vi), ly = w.pos.getY(vi);
           var h = waveH(lx, ly, t, w.phase);
@@ -1062,7 +1105,7 @@
         }
         w.pos.needsUpdate = true;
         if (wi === 0) w.colorAttr.needsUpdate = true;
-      });
+      }
 
       camera.position.y += (camTgtY - camera.position.y) * 0.045;
       camera.position.z += (camTgtZ - camera.position.z) * 0.045;
@@ -1072,10 +1115,11 @@
       renderer.setClearColor(clearCur, 1);
       aquaLight.intensity = 1.5 + Math.sin(t * 1.4) * 0.4;
 
-      godRays.forEach(function(r) {
+      for (var ri = 0; ri < godRays.length; ri++) {
+        var r = godRays[ri];
         r.mat.opacity += (r.targetOpacity - r.mat.opacity) * 0.06;
         r.mesh.rotation.y = Math.sin(t * 0.28 + r.phase) * 0.09;
-      });
+      }
 
       if (coinGroup.visible) {
         coinGroup.rotation.y = t * 0.35;
@@ -1085,14 +1129,13 @@
       renderer.render(scene, camera);
     }
 
-    window.addEventListener('scroll', onDiveScroll, { passive: true });
-
+    var handle = _cgRAF.register(tick);
     var io = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        running = e.isIntersecting;
-        if (running) { clock.start(); animLoop(); }
-        else cancelAnimationFrame(rafId);
-      });
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        if (e.isIntersecting && !handle.isActive()) clock.start();
+        handle.setActive(e.isIntersecting);
+      }
     }, { threshold: 0 });
     io.observe(section);
 
@@ -1208,10 +1251,13 @@
     reflLogo.scale.y = -1;
     scene.add(reflLogo);
 
-    // Wireframe wave plane — denser lines than the loading screen for that "more detailed" look
+    // Wireframe wave planes — SAME palette + formula as the loading screen.
+    // Denser segment count (140 desktop / 80 mobile vs the loader's 60) for the
+    // "more detailed lines" the user wanted, but the colours, opacities and
+    // wave maths are identical to createCosmicBackground above.
     var wRes = isMobile ? 80 : 140;
     function makeWave(col, opacity, posY, posZ, phase) {
-      var g = new THREE.PlaneGeometry(80, 80, wRes, wRes);
+      var g = new THREE.PlaneGeometry(100, 100, wRes, wRes);
       var m = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
       var mesh = new THREE.Mesh(g, m);
       mesh.rotation.x = -Math.PI / 2;
@@ -1219,82 +1265,77 @@
       scene.add(mesh);
       return { pos: g.attributes.position, phase: phase, mat: m };
     }
-    var wave1 = makeWave(0x4ea8d8, 0.55,  0.0,  -1, 0.0);
-    var wave2 = makeWave(0x1c5a8c, 0.35, -0.4, -10, 1.6);
-    var wave3 = isMobile ? null : makeWave(0x0a3866, 0.20, -0.9, -22, 3.0);
+    // colours + opacities lifted directly from createCosmicBackground():
+    //   wave1 = makeWavePlane(0x0b2d6e, 0.55, ...)
+    //   wave2 = makeWavePlane(0x061840, 0.38, ...)
+    var wave1 = makeWave(0x0b2d6e, 0.55, -2.5, -10, 0.0);
+    var wave2 = makeWave(0x061840, 0.38, -4.5, -20, 1.8);
+    var wave3 = isMobile ? null : makeWave(0x040e28, 0.22, -6.5, -30, 3.2);
+    var waves = [wave1, wave2]; if (wave3) waves.push(wave3);
 
-    // Multi-frequency wave height — same family as loading screen
+    // Wave height — exact same 5-term sin function as the loading screen.
     function waveH(lx, ly, t, phase) {
-      return Math.sin(lx * 0.18 - t * 1.2 + phase)        * 0.20 +
-             Math.sin(ly * 0.22 + t * 1.0 + phase * 0.6)  * 0.16 +
-             Math.sin(lx * 0.42 + ly * 0.12 - t * 1.85)   * 0.08 +
-             Math.sin(lx * 0.65 + ly * 0.40 + t * 2.40)   * 0.04;
+      return (
+        Math.sin(lx * 0.15 - t * 1.3 + phase)          * 1.10 +
+        Math.sin(ly * 0.20 + t * 1.0 + phase * 0.6)    * 0.85 +
+        Math.sin(lx * 0.38 + ly * 0.12 - t * 1.85)     * 0.45 +
+        Math.sin(lx * 0.08 - ly * 0.32 + t * 0.7)      * 0.30 +
+        Math.sin(lx * 0.60 + ly * 0.42 + t * 2.4)      * 0.14
+      );
     }
 
     // Scroll-driven dive: camY goes from above-water → underwater
-    var clock   = new THREE.Clock();
-    var running = false, rafId;
-    var camTgtY = 2.4;
+    var clock    = new THREE.Clock();
+    var camTgtY  = 2.4;
     var lookTgtY = 0;
     var clearCur = new THREE.Color(0x000306);
     var clearTgt = new THREE.Color(0x000306);
+    // re-used colour scratch so we don't allocate every frame
+    var _topCol  = new THREE.Color(0x011526);
+    var _botCol  = new THREE.Color(0x000306);
 
     function onHeroScroll() {
       var rect = section.getBoundingClientRect();
       var h    = section.offsetHeight - H;
       var p    = Math.max(0, Math.min(1, -rect.top / h));
 
-      // Camera dives from y=2.4 (above) → y=-3.5 (below water)
-      camTgtY  = 2.4 - p * 5.9;
-      // Look target follows roughly: above water look at logo, below look slightly upward at it
+      camTgtY  = 2.4 - p * 5.9;                // y=2.4 (above) → y=-3.5 (below)
       lookTgtY = (p < 0.5) ? 0 : -0.4 + (p - 0.5) * 0.4;
-
-      // Background slightly bluer up top, deeper black going down
-      var top = new THREE.Color(0x011526);   // surface — moonlit deep blue
-      var bot = new THREE.Color(0x000306);   // abyss
-      clearTgt.copy(top).lerp(bot, p);
+      clearTgt.copy(_topCol).lerp(_botCol, p);
       scene.fog.density = 0.04 + p * 0.035;
     }
-    window.addEventListener('scroll', onHeroScroll, { passive: true });
 
-    function animLoop() {
-      if (!running) return;
-      rafId = requestAnimationFrame(animLoop);
+    function tick() {
       var t = clock.getElapsedTime();
+      onHeroScroll();
 
-      // Animate wave Z heights
-      [wave1, wave2, wave3].forEach(function(w) {
-        if (!w) return;
+      for (var wi = 0; wi < waves.length; wi++) {
+        var w = waves[wi];
         for (var i = 0; i < w.pos.count; i++) {
           var lx = w.pos.getX(i), ly = w.pos.getY(i);
           w.pos.setZ(i, waveH(lx, ly, t, w.phase));
         }
         w.pos.needsUpdate = true;
-      });
+      }
 
-      // Update reflection shader time
       reflMat.uniforms.uTime.value = t;
 
-      // Camera ease
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
       camera.lookAt(0, lookTgtY, 0);
-
-      // Background ease
       clearCur.lerp(clearTgt, 0.04);
       renderer.setClearColor(clearCur, 1);
-
-      // Aqua light pulse
       aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;
 
       renderer.render(scene, camera);
     }
 
+    var handle = _cgRAF.register(tick);
     var io = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        running = e.isIntersecting;
-        if (running) { clock.start(); animLoop(); }
-        else cancelAnimationFrame(rafId);
-      });
+      for (var i = 0; i < entries.length; i++) {
+        var e = entries[i];
+        if (e.isIntersecting && !handle.isActive()) clock.start();
+        handle.setActive(e.isIntersecting);
+      }
     }, { threshold: 0 });
     io.observe(section);
 

@@ -1,0 +1,21 @@
+# Gitleaks config — used by .github/workflows/security.yml
+
+title = "Captain Guido — Gitleaks config"
+
+[extend]
+# Inherit the maintained default ruleset
+useDefault = true
+
+# Allowlist obvious safe paths so we don't drown in false positives
+[[allowlists]]
+description = "skip vendored docs, lockfiles, examples"
+paths = [
+  '''(.*?)\.lock$''',
+  '''(.*?)package-lock\.json$''',
+  '''^server/\.env\.example$''',
+]
+
+# These patterns appear in our code as variable names / placeholders
+[[allowlists.regexes]]
+description = "documented placeholder strings"
+regex = '''YOUR_(TOKEN|SECRET|API_KEY)_HERE'''

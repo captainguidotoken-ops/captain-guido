@@ -1,8 +1,11 @@
 require('dotenv').config();
-const express = require('express');
-const fetch   = require('node-fetch');
-const fs      = require('fs');
-const path    = require('path');
+const express     = require('express');
+const helmet      = require('helmet');
+const rateLimit   = require('express-rate-limit');
+const fetch       = require('node-fetch');
+const fs          = require('fs');
+const path        = require('path');
+const crypto      = require('crypto');
 
 const app    = express();
 const PORT   = process.env.PORT   || 3000;
@@ -15,23 +18,77 @@ const REPO_OWNER = 'captainguidotoken-ops';
 const REPO_NAME  = 'captain-guido';
 const GH_BASE    = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/`;
 
-app.use(express.json({ limit: '2mb' }));
+const PUBLIC_ORIGIN = 'https://captainguidotoken-ops.github.io';
 
-// ── Auth middleware ────────────────────────────────────────────────────────────
+// ── Trust proxy (Render terminates TLS upstream so X-Forwarded-* are real) ────
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+// ── Helmet — strict default headers; CSP set per-route below ──────────────────
+app.use(helmet({
+  contentSecurityPolicy: false,         // we set CSP manually for the admin page
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  referrerPolicy: { policy: 'no-referrer' },
+}));
+
+// ── JSON body parser with hard cap ────────────────────────────────────────────
+app.use(express.json({ limit: '256kb' }));
+
+// ── Rate limits ──────────────────────────────────────────────────────────────
+// Auth-protected admin routes: tighter (per-IP) so bruteforcing the secret is slow.
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,                              // 60 req/min per IP
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
+// Public beacon: very generous but still bounded.
+const beaconLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 240,                             // 240 beacons/min per IP — visit + duration
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'Too many requests' },
+});
+
+// ── Constant-time secret check (defeats timing attacks) ──────────────────────
+function timingSafeEq(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return crypto.timingSafeEqual(ab, bb);
+}
+
 function requireSecret(req, res, next) {
   if (!SECRET) return res.status(500).json({ error: 'SERVER_SECRET not configured' });
-  if (req.headers['x-secret'] !== SECRET) return res.status(401).json({ error: 'Unauthorized' });
+  if (!timingSafeEq(req.headers['x-secret'] || '', SECRET)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   next();
 }
 
 // ── Serve admin page — inject server URL + secret so it auto-connects ─────────
 app.get('/', (req, res) => {
   const htmlPath = path.join(__dirname, '..', 'admin.html');
-  let html = fs.readFileSync(htmlPath, 'utf8');
+  let html;
+  try {
+    html = fs.readFileSync(htmlPath, 'utf8');
+  } catch (e) {
+    return res.status(500).send('admin.html not found');
+  }
+
+  // HTML-encode the secret so any odd characters don't break the script tag
+  const safeSecret = String(SECRET || '').replace(/[<>&'"]/g, (c) => ({
+    '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&#39;', '"': '&quot;',
+  })[c]);
+  const safeUrl = String(SERVER_URL || '');
 
   const inject = `<script>
-  localStorage.setItem('cgc_ai_url',    '${SERVER_URL}/gh');
-  localStorage.setItem('cgc_ai_secret', '${SECRET}');
+  localStorage.setItem('cgc_ai_url',    ${JSON.stringify(safeUrl + '/gh')});
+  localStorage.setItem('cgc_ai_secret', ${JSON.stringify(safeSecret)});
 </script>`;
   html = html.replace('</head>', inject + '\n</head>');
 
@@ -49,13 +106,28 @@ app.get('/', (req, res) => {
 
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
   res.send(html);
 });
 
+// ── Path-traversal guard for GitHub Contents API proxy ────────────────────────
+function safeRepoPath(input) {
+  const p = String(input || '').replace(/^\/+/, '');
+  // Allow slashes for directories, but block ../, backslashes, null bytes, scheme prefixes.
+  if (!p) return null;
+  if (p.includes('..')) return null;
+  if (p.includes('\\')) return null;
+  if (p.includes('\0')) return null;
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(p)) return null;       // no scheme
+  if (!/^[A-Za-z0-9._\-/]+$/.test(p)) return null;           // safe charset only
+  return p;
+}
+
 // ── GitHub proxy ───────────────────────────────────────────────────────────────
-app.get('/gh', requireSecret, async (req, res) => {
+app.get('/gh', authLimiter, requireSecret, async (req, res) => {
   if (!TOKEN) return res.status(500).json({ error: 'GITHUB_TOKEN not set on server' });
-  const filePath = req.query.path || '';
+  const filePath = safeRepoPath(req.query.path);
+  if (filePath === null) return res.status(400).json({ error: 'Invalid path' });
   try {
     const r = await fetch(GH_BASE + filePath + '?v=' + Date.now(), {
       headers: {
@@ -66,13 +138,14 @@ app.get('/gh', requireSecret, async (req, res) => {
     });
     res.status(r.status).json(await r.json());
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(502).json({ error: 'GitHub fetch failed' });
   }
 });
 
-app.put('/gh', requireSecret, async (req, res) => {
+app.put('/gh', authLimiter, requireSecret, async (req, res) => {
   if (!TOKEN) return res.status(500).json({ error: 'GITHUB_TOKEN not set on server' });
-  const filePath = req.query.path || '';
+  const filePath = safeRepoPath(req.query.path);
+  if (filePath === null) return res.status(400).json({ error: 'Invalid path' });
   try {
     const r = await fetch(GH_BASE + filePath, {
       method: 'PUT',
@@ -86,12 +159,12 @@ app.put('/gh', requireSecret, async (req, res) => {
     });
     res.status(r.status).json(await r.json());
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(502).json({ error: 'GitHub fetch failed' });
   }
 });
 
 // ── Anthropic AI proxy ─────────────────────────────────────────────────────────
-app.post('/', requireSecret, async (req, res) => {
+app.post('/', authLimiter, requireSecret, async (req, res) => {
   if (!AI_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set on server' });
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -105,7 +178,7 @@ app.post('/', requireSecret, async (req, res) => {
     });
     res.status(r.status).json(await r.json());
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(502).json({ error: 'Anthropic fetch failed' });
   }
 });
 
@@ -160,26 +233,52 @@ function scheduleFlush() {
   _flushTimer = setTimeout(flushVisits, 5 * 60 * 1000);
 }
 
-app.options('/beacon', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://captainguidotoken-ops.github.io');
+function setBeaconCors(res) {
+  res.setHeader('Access-Control-Allow-Origin',  PUBLIC_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Max-Age',       '86400');
+  res.setHeader('Vary', 'Origin');
+}
+
+app.options('/beacon', (req, res) => {
+  setBeaconCors(res);
   res.sendStatus(204);
 });
 
-app.post('/beacon', (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://captainguidotoken-ops.github.io');
+app.post('/beacon', beaconLimiter, (req, res) => {
+  setBeaconCors(res);
+
+  // Origin check — only the public site may post beacons
+  const origin = req.headers.origin;
+  if (origin && origin !== PUBLIC_ORIGIN) {
+    return res.sendStatus(204);          // silently drop, don't leak diagnostics
+  }
   res.sendStatus(204);
   if (!TOKEN) return;
+
+  const b = req.body || {};
   _visitBuffer.push({
-    ts:  Number(req.body.ts)  || Date.now(),
-    dur: Number(req.body.dur) || 0,
-    uid: String(req.body.uid || '').slice(0, 32),
-    ref: String(req.body.ref || '').slice(0, 200),
-    dev: req.body.dev === 'mobile' ? 'mobile' : 'desktop',
+    ts:  Number(b.ts)  || Date.now(),
+    dur: Math.max(0, Math.min(86_400_000, Number(b.dur) || 0)),
+    uid: String(b.uid || '').slice(0, 32),
+    ref: String(b.ref || '').slice(0, 200),
+    dev: b.dev === 'mobile' ? 'mobile' : 'desktop',
   });
   if (_visitBuffer.length >= 20) flushVisits();
   else scheduleFlush();
+});
+
+// ── Healthcheck (used by Render) ──────────────────────────────────────────────
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+// ── Catch-all 404 ─────────────────────────────────────────────────────────────
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+
+// ── Error handler — never leak stack traces ──────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
