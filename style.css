@@ -3503,86 +3503,19 @@ html {
   display: block;
 }
 
-/* Mobile CSS fallback */
-#dive-canvas { display: block; }
-
-.dive-section.dive-fallback {
-  height: 100vh;
+/* Mobile: shorter scroll so the dive lands in ~1.5–2 screen-flicks on a phone */
+@media (max-width: 768px) {
+  .dive-section { height: 170vh; }
 }
 
+/* Reduced-motion fallback — static gradient, canvas hidden */
+.dive-section.dive-fallback { height: 60vh; }
 .dive-section.dive-fallback .dive-sticky {
   position: relative;
-  height: 100vh;
-  overflow: hidden;
-  background: linear-gradient(180deg, #020c1b 0%, #011428 30%, #000c1f 60%, #000306 100%);
+  height: 60vh;
+  background: linear-gradient(180deg, #020c1b 0%, #011428 50%, #000306 100%);
 }
-
 .dive-section.dive-fallback #dive-canvas { display: none; }
-
-/* Wave layers */
-.dive-section.dive-fallback::before,
-.dive-section.dive-fallback::after,
-.dive-section.dive-fallback .dive-sticky::before,
-.dive-section.dive-fallback .dive-sticky::after {
-  content: '';
-  position: absolute;
-  left: -10%;
-  width: 120%;
-  border-radius: 50% 50% 0 0 / 30px 30px 0 0;
-  opacity: 0.55;
-}
-
-/* Wave 1 — surface bright */
-.dive-section.dive-fallback::before {
-  height: 80px;
-  top: 18%;
-  background: radial-gradient(ellipse 60% 100% at 50% 0%, rgba(0,180,220,0.45) 0%, transparent 70%),
-              linear-gradient(180deg, rgba(0,140,200,0.5) 0%, transparent 100%);
-  animation: mobileWave1 5s ease-in-out infinite alternate;
-}
-
-/* Wave 2 — mid depth */
-.dive-section.dive-fallback::after {
-  height: 70px;
-  top: 38%;
-  background: linear-gradient(180deg, rgba(0,80,140,0.45) 0%, transparent 100%);
-  animation: mobileWave2 6.5s ease-in-out infinite alternate;
-}
-
-/* Wave 3 — deeper */
-.dive-section.dive-fallback .dive-sticky::before {
-  height: 60px;
-  top: 56%;
-  background: linear-gradient(180deg, rgba(0,50,100,0.4) 0%, transparent 100%);
-  animation: mobileWave1 8s ease-in-out infinite alternate-reverse;
-}
-
-/* God ray shimmer */
-.dive-section.dive-fallback .dive-sticky::after {
-  left: 30%;
-  width: 40%;
-  height: 55%;
-  top: 5%;
-  border-radius: 0 0 50% 50%;
-  background: linear-gradient(180deg, rgba(0,160,220,0.06) 0%, transparent 100%);
-  animation: mobileGodRay 4s ease-in-out infinite alternate;
-  opacity: 1;
-}
-
-@keyframes mobileWave1 {
-  0%   { transform: translateX(0) scaleX(1); }
-  100% { transform: translateX(4%) scaleX(1.04); }
-}
-
-@keyframes mobileWave2 {
-  0%   { transform: translateX(0) scaleX(1); }
-  100% { transform: translateX(-5%) scaleX(1.05); }
-}
-
-@keyframes mobileGodRay {
-  0%   { opacity: 0.5; transform: scaleX(1); }
-  100% { opacity: 1;   transform: scaleX(1.15); }
-}
 
 /* Impact section — deep ocean arrival */
 #impact.content-section {

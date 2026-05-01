@@ -853,26 +853,24 @@
     if (!section || !canvas || typeof THREE === 'undefined') return;
 
     var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { section.classList.add('dive-fallback'); return; }
+
     var isMobile = window.innerWidth < 768;
-
-    if (isMobile || prefersReduced) {
-      section.classList.add('dive-fallback');
-      return;
-    }
-
     var W = window.innerWidth;
     var H = window.innerHeight;
 
-    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobile, alpha: false, powerPreference: 'high-performance' });
     renderer.setSize(W, H);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.0 : 1.5));
     renderer.setClearColor(0x020810, 1);
 
     var scene  = new THREE.Scene();
     scene.fog  = new THREE.FogExp2(0x020810, 0.018);
 
-    var camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 300);
-    camera.position.set(0, 1.5, 12);
+    var fov  = isMobile ? 78 : 60;
+    var camZ0 = isMobile ? 13 : 12;
+    var camera = new THREE.PerspectiveCamera(fov, W / H, 0.1, 300);
+    camera.position.set(0, 1.5, camZ0);
     camera.lookAt(0, 0, 0);
 
     // Lighting
@@ -887,7 +885,7 @@
     deepLight.position.set(0, -10, 0);
     scene.add(deepLight);
 
-    var wRes = 72;
+    var wRes = isMobile ? 36 : 72;
 
     function makeWave(colTop, colBot, opacity, posY, posZ, phase) {
       var g = new THREE.PlaneGeometry(140, 80, wRes, wRes);
@@ -916,16 +914,23 @@
       return { pos: g.attributes.position, colorAttr: g.attributes.color, mat: mat, baseOpacity: opacity, phase: phase, c1: c1, c2: c2 };
     }
 
-    var waves = [
+    var waves = isMobile ? [
+      makeWave(0x1a4a8a, 0x0a2244, 0.90,  0.0,   0,  0.0),
+      makeWave(0x0d3060, 0x061830, 0.75, -2.0, -14,  1.8),
+      makeWave(0x040e28, 0x020810, 0.50, -4.5, -28,  3.6),
+    ] : [
       makeWave(0x1a4a8a, 0x0a2244, 0.90,  0.0,   0,  0.0),
       makeWave(0x0d3060, 0x061830, 0.75, -1.8, -12,  1.8),
       makeWave(0x071e40, 0x030e20, 0.60, -3.5, -22,  3.2),
       makeWave(0x040e28, 0x020810, 0.45, -5.0, -32,  4.8),
     ];
 
-    // God rays
+    // God rays — fewer on mobile
     var godRays = [];
-    [[2.5,8,-10,0.08,12],[-2,8,-14,-0.09,10],[0.5,8,-8,0.04,14],[-3.5,8,-12,-0.06,11],[4,8,-16,0.10,13]].forEach(function(p, i) {
+    var rayDefs = isMobile
+      ? [[1.5,8,-10,0.06,12],[-2,8,-14,-0.08,10]]
+      : [[2.5,8,-10,0.08,12],[-2,8,-14,-0.09,10],[0.5,8,-8,0.04,14],[-3.5,8,-12,-0.06,11],[4,8,-16,0.10,13]];
+    rayDefs.forEach(function(p, i) {
       var geo = new THREE.CylinderGeometry(0.08, 2.5, p[4], 4);
       var mat = new THREE.MeshBasicMaterial({ color: 0x0066aa, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
       var mesh = new THREE.Mesh(geo, mat);
@@ -953,8 +958,8 @@
     coinGroup.visible = false;
     scene.add(coinGroup);
 
-    // Ambient ocean sound
-    var sound = (function() {
+    // Ambient ocean sound — desktop only (mobile autoplay restrictions + battery)
+    var sound = isMobile ? null : (function() {
       try {
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return null;
@@ -983,14 +988,19 @@
 
     var clock = new THREE.Clock();
     var running = false, rafId;
-    var camTgtY = 1.5, camTgtZ = 12;
+    var camTgtY = 1.5, camTgtZ = camZ0;
     var fogTgt = 0.018;
     var clearCur = new THREE.Color(0x020810);
     var clearTgt = new THREE.Color(0x020810);
     var diveProgress = 0;
 
-    // Depth palette keyframes
-    var keyframes = [
+    // Depth palette keyframes — slightly pulled back on mobile so wide waves still frame the view
+    var keyframes = isMobile ? [
+      { bg: 0x020810, fog: 0.020, camY: 1.5,  camZ: 13.0 },
+      { bg: 0x010610, fog: 0.030, camY: -0.5, camZ: 10.0 },
+      { bg: 0x010408, fog: 0.045, camY: -2.5, camZ: 8.0  },
+      { bg: 0x000306, fog: 0.070, camY: -5.0, camZ: 6.0  },
+    ] : [
       { bg: 0x020810, fog: 0.018, camY: 1.5,  camZ: 12.0 },
       { bg: 0x010610, fog: 0.026, camY: -0.5, camZ: 9.0  },
       { bg: 0x010408, fog: 0.040, camY: -2.5, camZ: 7.0  },
