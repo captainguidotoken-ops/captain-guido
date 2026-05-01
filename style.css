@@ -3468,13 +3468,16 @@ html {
   transform-origin: left;
 }
 
-/* ── Journey → Ocean blend ──────────────────────────────────────── */
-#journey { position: relative; }
+/* ── Journey → Ocean blend (waves flush against bottom of chapter tiles) ─ */
+#journey {
+  position: relative;
+  padding-bottom: 2rem;
+}
 
 .journey-ocean-blend {
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 220px;
+  height: 80px;
   background: linear-gradient(to bottom, transparent 0%, #01060d 100%);
   pointer-events: none;
   z-index: 5;
@@ -3484,7 +3487,8 @@ html {
 .dive-section {
   height: 220vh;
   position: relative;
-  background: #000306;
+  background: #01060d;
+  margin-top: 0;
 }
 
 .dive-sticky {

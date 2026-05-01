@@ -183,112 +183,84 @@
     var W = window.innerWidth;
     var H = window.innerHeight;
 
-    // Renderer
+    // Renderer — already submerged: deep teal clear, denser fog
     var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x01060d, 1);
+    renderer.setClearColor(0x011e2c, 1);
     var canvas = renderer.domElement;
     canvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;';
     var entryEl = document.getElementById('entry-screen');
     if (!entryEl) { renderer.dispose(); return null; }
     entryEl.insertBefore(canvas, entryEl.firstChild);
 
-    // Scene & Camera
+    // Scene & Camera — sitting just below the water line, looking slightly up toward the surface
     var scene  = new THREE.Scene();
-    scene.fog  = new THREE.FogExp2(0x01060d, 0.025);
-    var camera = new THREE.PerspectiveCamera(55, W / H, 0.1, 500);
-    camera.position.set(0, 3, 18);
-    camera.lookAt(0, 0.5, 0);
+    scene.fog  = new THREE.FogExp2(0x011e2c, 0.055);
+    var camera = new THREE.PerspectiveCamera(62, W / H, 0.1, 500);
+    camera.position.set(0, -0.4, 5);
+    camera.lookAt(0, 1.2, 0);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0x1a2a3a, 2.2));
-    // Soft neutral fill — no warm spotlight flash
-    var keyLight = new THREE.DirectionalLight(0xddeeff, 1.2);
-    keyLight.position.set(2, 5, 14);
-    scene.add(keyLight);
-    var aquaLight = new THREE.PointLight(0x00c8ff, 1.4, 45);
-    aquaLight.position.set(-5, 6, 6);
+    // Underwater lighting — bright surface dome, cool aqua wash, deep fill
+    scene.add(new THREE.AmbientLight(0x0c2a3c, 2.4));
+    var surfaceLight = new THREE.PointLight(0x80c8ff, 2.4, 40);
+    surfaceLight.position.set(0, 12, 2);
+    scene.add(surfaceLight);
+    var aquaLight = new THREE.PointLight(0x00c8ff, 1.4, 30);
+    aquaLight.position.set(-4, 2, 6);
     scene.add(aquaLight);
-    var rimLight = new THREE.PointLight(0x00ffe0, 1.0, 35);
-    rimLight.position.set(7, 1, -6);
-    scene.add(rimLight);
+    var deepFill = new THREE.PointLight(0x0a3a55, 0.8, 30);
+    deepFill.position.set(0, -8, -4);
+    scene.add(deepFill);
 
-    // Stars — full-height 2D canvas overlay with gradient fade at bottom
-    // so stars dissolve seamlessly into the wave horizon, no hard line.
-    var starCanvas = document.createElement('canvas');
-    starCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;';
-    entryEl.insertBefore(starCanvas, entryEl.firstChild);
-
-    function drawStars() {
-      starCanvas.width  = window.innerWidth;
-      starCanvas.height = window.innerHeight;
-      var sc = starCanvas.getContext('2d');
-      sc.clearRect(0, 0, starCanvas.width, starCanvas.height);
-
-      var sw = starCanvas.width;
-      var sh = starCanvas.height;
-
-      // Tier 1 — many tiny background stars, cool blue-white, very dim
-      for (var i = 0; i < 900; i++) {
-        var x = Math.random() * sw;
-        var y = Math.random() * sh;
-        var r = Math.random() * 0.5 + 0.15;
-        var a = Math.random() * 0.35 + 0.15;
-        sc.beginPath();
-        sc.arc(x, y, r, 0, Math.PI * 2);
-        sc.fillStyle = 'rgba(180,210,255,' + a + ')';
-        sc.fill();
-      }
-
-      // Tier 2 — medium stars, slightly brighter
-      for (var j = 0; j < 200; j++) {
-        var x2 = Math.random() * sw;
-        var y2 = Math.random() * sh;
-        var r2 = Math.random() * 0.7 + 0.4;
-        var a2 = Math.random() * 0.3 + 0.45;
-        sc.beginPath();
-        sc.arc(x2, y2, r2, 0, Math.PI * 2);
-        sc.fillStyle = 'rgba(210,230,255,' + a2 + ')';
-        sc.fill();
-      }
-
-      // Tier 3 — a handful of bright stars with a tight pinpoint glow
-      for (var k = 0; k < 35; k++) {
-        var x3 = Math.random() * sw;
-        var y3 = Math.random() * sh;
-        var r3 = Math.random() * 1.0 + 0.8;
-        var glow = sc.createRadialGradient(x3, y3, 0, x3, y3, r3 * 2.2);
-        glow.addColorStop(0,   'rgba(220,240,255,0.6)');
-        glow.addColorStop(0.5, 'rgba(180,215,255,0.12)');
-        glow.addColorStop(1,   'rgba(180,215,255,0)');
-        sc.beginPath();
-        sc.arc(x3, y3, r3 * 2.2, 0, Math.PI * 2);
-        sc.fillStyle = glow;
-        sc.fill();
-        // Bright core
-        sc.beginPath();
-        sc.arc(x3, y3, r3, 0, Math.PI * 2);
-        sc.fillStyle = 'rgba(240,248,255,0.98)';
-        sc.fill();
-      }
-
-      // Gradient mask — dissolve stars into wave horizon, no hard line
-      var mask = sc.createLinearGradient(0, 0, 0, sh);
-      mask.addColorStop(0,    'rgba(0,0,0,0)');
-      mask.addColorStop(0.52, 'rgba(0,0,0,0)');
-      mask.addColorStop(0.75, 'rgba(0,0,0,1)');
-      mask.addColorStop(1,    'rgba(0,0,0,1)');
-      sc.globalCompositeOperation = 'destination-out';
-      sc.fillStyle = mask;
-      sc.fillRect(0, 0, sw, sh);
-      sc.globalCompositeOperation = 'source-over';
+    // Bioluminescent specks + bubble particles — replaces the old star canvas
+    var pCount = 320;
+    var pPos   = new Float32Array(pCount * 3);
+    var pData  = [];
+    for (var pi = 0; pi < pCount; pi++) {
+      var px = (Math.random() - 0.5) * 28;
+      var py = (Math.random() - 0.5) * 16;
+      var pz = -Math.random() * 22 + 4;
+      pPos[pi*3]   = px;
+      pPos[pi*3+1] = py;
+      pPos[pi*3+2] = pz;
+      pData.push({ baseY: py, phase: Math.random() * Math.PI * 2, speed: 0.15 + Math.random() * 0.4, drift: 0.4 + Math.random() * 0.5 });
     }
-    drawStars();
+    var pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+    var pMat = new THREE.PointsMaterial({
+      color: 0x70e0ff,
+      size: 0.07,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    var particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
 
-    window.addEventListener('resize', drawStars);
+    // God rays from the surface — angled cylinders, additive
+    var godRays = [];
+    [[1.5,0,0.05,16],[-2.0,-2,-0.07,14],[3,-3,0.09,15],[-3.5,1,-0.05,13],[0.3,2,0.02,17]].forEach(function(p, i) {
+      var geo = new THREE.CylinderGeometry(0.1, 1.6, p[3], 4);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x66c0ff, transparent: true, opacity: 0.06, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(p[0], 9 - p[3]/2, p[1]);
+      mesh.rotation.z = p[2];
+      scene.add(mesh);
+      godRays.push({ mesh: mesh, mat: mat, phase: i * 1.1 });
+    });
 
-    // Ocean waves — horizontal planes (rotation.x=-PI/2), animate local Z for real height variation
+    // Surface plane viewed from below — translucent shimmer
+    var surfaceGeo = new THREE.PlaneGeometry(80, 80, 30, 30);
+    var surfaceMat = new THREE.MeshBasicMaterial({ color: 0x1a5a85, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+    var surface = new THREE.Mesh(surfaceGeo, surfaceMat);
+    surface.rotation.x = -Math.PI / 2;
+    surface.position.set(0, 9, -4);
+    scene.add(surface);
+    var surfacePos = surface.geometry.attributes.position;
+
+    // Wireframe wave layers BELOW camera — depth illusion as we descend
     var wRes = 60;
     function makeWavePlane(col, opacity, posY, posZ, phase) {
       var g    = new THREE.PlaneGeometry(100, 100, wRes, wRes);
@@ -301,8 +273,8 @@
       var origZ = new Float32Array(pos.count);
       return { pos: pos, origZ: origZ, phase: phase, mat: mat, baseOpacity: opacity };
     }
-    var wave1 = makeWavePlane(0x0b2d6e, 0.55, -2.5, -10,  0);
-    var wave2 = makeWavePlane(0x061840, 0.38, -4.5, -20, 1.8);
+    var wave1 = makeWavePlane(0x0b2d6e, 0.40, -3.0, -8,  0);
+    var wave2 = makeWavePlane(0x061840, 0.28, -5.5, -18, 1.8);
 
     // Resize
     window.addEventListener('resize', function() {
@@ -316,9 +288,10 @@
     var clock      = new THREE.Clock();
     var running    = true;
     var rafId;
-    var camTgtZ    = 18;
-    var camTgtY    = 3;
+    var camTgtZ    = 5;
+    var camTgtY    = -0.4;
     var burstMult  = 1;   // multiplied onto aqua light during burst flash
+    var lookTgtY   = 1.2;
 
     // Multi-frequency wave — primary swell + cross-swell + chop + ripple
     function waveH(lx, ly, t, phase) {
@@ -346,13 +319,38 @@
         w.pos.needsUpdate = true;
       });
 
-      // Light pulse — burstMult spikes to 5× during the burst flash
-      aquaLight.intensity = (2.8 + Math.sin(t * 1.8) * 0.7) * burstMult;
+      // Surface (seen from below) — gentle ripple
+      for (var si = 0; si < surfacePos.count; si++) {
+        var sx = surfacePos.getX(si);
+        var sy = surfacePos.getY(si);
+        surfacePos.setZ(si, Math.sin(sx * 0.4 + t * 1.6) * 0.18 + Math.sin(sy * 0.3 - t * 1.1) * 0.15);
+      }
+      surfacePos.needsUpdate = true;
+
+      // Particles drifting upward — bubble-like
+      var pa = pGeo.attributes.position.array;
+      for (var di = 0; di < pData.length; di++) {
+        var d = pData[di];
+        pa[di*3]     += Math.sin(t * d.drift + d.phase) * 0.004;
+        pa[di*3 + 1] += d.speed * 0.012;
+        if (pa[di*3 + 1] > 8) pa[di*3 + 1] = -8;
+      }
+      pGeo.attributes.position.needsUpdate = true;
+
+      // God ray flicker
+      godRays.forEach(function(r) {
+        r.mat.opacity = 0.05 + Math.abs(Math.sin(t * 0.6 + r.phase)) * 0.06;
+        r.mesh.rotation.y = Math.sin(t * 0.3 + r.phase) * 0.07;
+      });
+
+      // Light pulse — burstMult spikes during the burst flash
+      aquaLight.intensity = (1.4 + Math.sin(t * 1.8) * 0.4) * burstMult;
+      surfaceLight.intensity = 2.4 + Math.sin(t * 0.9) * 0.3;
 
       // Smooth camera ease toward target
       camera.position.z += (camTgtZ - camera.position.z) * 0.05;
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
-      camera.lookAt(0, 0.5, 0);
+      camera.lookAt(0, lookTgtY, 0);
 
       renderer.render(scene, camera);
     }
@@ -361,9 +359,11 @@
 
     return {
       setProgress: function(pct) {
-        // Camera descends throughout loading so it's already in motion at 100%
-        camTgtZ = 18 - (pct / 100) * 14.5;
-        camTgtY = 3  - (pct / 100) * 3.5;
+        // We start submerged near the surface; descend deeper as loading progresses.
+        var p = pct / 100;
+        camTgtZ  = 5   - p * 1.8;     //  5  → 3.2  (gentle pull-in)
+        camTgtY  = -0.4 - p * 1.6;    // -0.4 → -2.0 (sink)
+        lookTgtY = 1.2  - p * 1.2;    //  1.2 → 0.0 (stop looking up at the surface)
       },
       startLanding: function(cb) {
         // ── Ledger typewriter on the loading screen ───────────────────────────
@@ -472,9 +472,10 @@
         if (window._globe) {
           window._globe.pointOfView({ lat: 20, lng: 10, altitude: 2.0 }, 1200);
         }
-        // Gentle forward push on the Three.js camera during the canvas fade
-        camTgtZ = 1;
-        camTgtY = -1.5;
+        // Final dive: camera plunges deeper as loader fades out
+        camTgtZ = 1.5;
+        camTgtY = -3.5;
+        lookTgtY = -0.8;
         if (onComplete) onComplete();
       },
       stop: function() {
