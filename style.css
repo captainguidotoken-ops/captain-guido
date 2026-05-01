@@ -3502,6 +3502,17 @@ html {
     radial-gradient(ellipse at 20% 50%, rgba(0, 50, 100, 0.10) 0%, transparent 50%);
 }
 
+/* Site links — moved-up footer block, sits between impact-hero and #impact */
+.site-links {
+  background: #010810;
+  padding: 4rem 4rem 3rem;
+  border-top: 1px solid rgba(0, 212, 255, 0.07);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+}
+@media (max-width: 768px) {
+  .site-links { padding: 3rem 1.5rem 2.5rem; }
+}
+
 /* ── Impact Hero — circular logo + underwater reflection ────────── */
 .impact-hero {
   height: 220vh;
