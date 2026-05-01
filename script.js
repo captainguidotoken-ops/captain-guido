@@ -1104,6 +1104,208 @@
     });
   }
 
+  // ── Impact Hero — circular logo at the waterline with underwater reflection ─
+  function initImpactHero() {
+    var section = document.getElementById('impact-hero');
+    var canvas  = document.getElementById('impact-hero-canvas');
+    if (!section || !canvas || typeof THREE === 'undefined') return;
+
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) { section.classList.add('hero-fallback'); return; }
+
+    var isMobile = window.innerWidth < 768;
+    var W = window.innerWidth;
+    var H = window.innerHeight;
+
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isMobile, alpha: false, powerPreference: 'high-performance' });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.0 : 1.5));
+    renderer.setClearColor(0x000306, 1);
+
+    var scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000306, 0.045);
+
+    var fov = isMobile ? 78 : 58;
+    var camera = new THREE.PerspectiveCamera(fov, W / H, 0.1, 200);
+    camera.position.set(0, 2.4, isMobile ? 7 : 6);
+    camera.lookAt(0, 0, 0);
+
+    // Lights — moonlit surface above, deep cool below
+    scene.add(new THREE.AmbientLight(0x10283e, 2.6));
+    var moon = new THREE.DirectionalLight(0x80c0ff, 1.0);
+    moon.position.set(0, 14, 6);
+    scene.add(moon);
+    var aqua = new THREE.PointLight(0x00c8ff, 1.6, 30);
+    aqua.position.set(-3, 1, 5);
+    scene.add(aqua);
+    var deep = new THREE.PointLight(0x0a3a5a, 0.7, 30);
+    deep.position.set(0, -8, 0);
+    scene.add(deep);
+
+    // Logo texture (PNG already used elsewhere in the site)
+    var loader = new THREE.TextureLoader();
+    var logoTex = loader.load('captain-guido.png');
+    logoTex.minFilter = THREE.LinearFilter;
+    logoTex.magFilter = THREE.LinearFilter;
+
+    var logoSize = isMobile ? 1.9 : 2.6;
+
+    // Real logo — sits with bottom edge kissing the waterline (y=0)
+    var realMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    var realLogo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), realMat);
+    realLogo.position.set(0, logoSize / 2 + 0.05, 0);
+    scene.add(realLogo);
+
+    // Reflected logo — flipped (scale.y = -1) and shaded with displacement + depth fade.
+    // Vertex shader passes world Y so the fragment can fade with real depth, not UV.
+    // Fragment shader does sin-noise UV displacement (depth-scaled) + blue tint + alpha fall-off.
+    var reflMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTex:      { value: logoTex },
+        uTime:     { value: 0 },
+        uMaxDepth: { value: logoSize * 0.95 },
+      },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'varying float vWorldY;',
+        'void main() {',
+        '  vUv = uv;',
+        '  vec4 worldPos = modelMatrix * vec4(position, 1.0);',
+        '  vWorldY = worldPos.y;',
+        '  gl_Position = projectionMatrix * viewMatrix * worldPos;',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform sampler2D uTex;',
+        'uniform float uTime;',
+        'uniform float uMaxDepth;',
+        'varying vec2 vUv;',
+        'varying float vWorldY;',
+        'void main() {',
+        // depth: 0 at the waterline, uMaxDepth at the bottom of the reflection
+        '  float depth   = clamp(-vWorldY, 0.0, uMaxDepth);',
+        '  float depthN  = depth / uMaxDepth;',
+        // distortion gets stronger the deeper we look
+        '  vec2 uv = vUv;',
+        '  float r = 0.006 + depthN * 0.030;',
+        '  uv.x += sin(uv.y * 28.0 - uTime * 1.6) * r;',
+        '  uv.x += sin(uv.y * 12.0 + uTime * 0.9) * r * 0.6;',
+        '  uv.y += sin(uv.x * 14.0 + uTime * 1.3) * r * 0.4;',
+        '  vec4 col = texture2D(uTex, uv);',
+        // gradient fade with depth (deeper = more transparent)
+        '  col.a *= (1.0 - smoothstep(0.0, 1.0, depthN)) * 0.85;',
+        // blue/green tint deepens with depth
+        '  col.rgb = mix(col.rgb, vec3(0.18, 0.62, 0.85), 0.30 + depthN * 0.45);',
+        '  gl_FragColor = col;',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    var reflLogo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), reflMat);
+    reflLogo.position.set(0, -logoSize / 2 - 0.05, 0);
+    reflLogo.scale.y = -1;
+    scene.add(reflLogo);
+
+    // Wireframe wave plane — denser lines than the loading screen for that "more detailed" look
+    var wRes = isMobile ? 80 : 140;
+    function makeWave(col, opacity, posY, posZ, phase) {
+      var g = new THREE.PlaneGeometry(80, 80, wRes, wRes);
+      var m = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
+      var mesh = new THREE.Mesh(g, m);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.position.set(0, posY, posZ);
+      scene.add(mesh);
+      return { pos: g.attributes.position, phase: phase, mat: m };
+    }
+    var wave1 = makeWave(0x4ea8d8, 0.55,  0.0,  -1, 0.0);
+    var wave2 = makeWave(0x1c5a8c, 0.35, -0.4, -10, 1.6);
+    var wave3 = isMobile ? null : makeWave(0x0a3866, 0.20, -0.9, -22, 3.0);
+
+    // Multi-frequency wave height — same family as loading screen
+    function waveH(lx, ly, t, phase) {
+      return Math.sin(lx * 0.18 - t * 1.2 + phase)        * 0.20 +
+             Math.sin(ly * 0.22 + t * 1.0 + phase * 0.6)  * 0.16 +
+             Math.sin(lx * 0.42 + ly * 0.12 - t * 1.85)   * 0.08 +
+             Math.sin(lx * 0.65 + ly * 0.40 + t * 2.40)   * 0.04;
+    }
+
+    // Scroll-driven dive: camY goes from above-water → underwater
+    var clock   = new THREE.Clock();
+    var running = false, rafId;
+    var camTgtY = 2.4;
+    var lookTgtY = 0;
+    var clearCur = new THREE.Color(0x000306);
+    var clearTgt = new THREE.Color(0x000306);
+
+    function onHeroScroll() {
+      var rect = section.getBoundingClientRect();
+      var h    = section.offsetHeight - H;
+      var p    = Math.max(0, Math.min(1, -rect.top / h));
+
+      // Camera dives from y=2.4 (above) → y=-3.5 (below water)
+      camTgtY  = 2.4 - p * 5.9;
+      // Look target follows roughly: above water look at logo, below look slightly upward at it
+      lookTgtY = (p < 0.5) ? 0 : -0.4 + (p - 0.5) * 0.4;
+
+      // Background slightly bluer up top, deeper black going down
+      var top = new THREE.Color(0x011526);   // surface — moonlit deep blue
+      var bot = new THREE.Color(0x000306);   // abyss
+      clearTgt.copy(top).lerp(bot, p);
+      scene.fog.density = 0.04 + p * 0.035;
+    }
+    window.addEventListener('scroll', onHeroScroll, { passive: true });
+
+    function animLoop() {
+      if (!running) return;
+      rafId = requestAnimationFrame(animLoop);
+      var t = clock.getElapsedTime();
+
+      // Animate wave Z heights
+      [wave1, wave2, wave3].forEach(function(w) {
+        if (!w) return;
+        for (var i = 0; i < w.pos.count; i++) {
+          var lx = w.pos.getX(i), ly = w.pos.getY(i);
+          w.pos.setZ(i, waveH(lx, ly, t, w.phase));
+        }
+        w.pos.needsUpdate = true;
+      });
+
+      // Update reflection shader time
+      reflMat.uniforms.uTime.value = t;
+
+      // Camera ease
+      camera.position.y += (camTgtY - camera.position.y) * 0.05;
+      camera.lookAt(0, lookTgtY, 0);
+
+      // Background ease
+      clearCur.lerp(clearTgt, 0.04);
+      renderer.setClearColor(clearCur, 1);
+
+      // Aqua light pulse
+      aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;
+
+      renderer.render(scene, camera);
+    }
+
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        running = e.isIntersecting;
+        if (running) { clock.start(); animLoop(); }
+        else cancelAnimationFrame(rafId);
+      });
+    }, { threshold: 0 });
+    io.observe(section);
+
+    window.addEventListener('resize', function() {
+      W = window.innerWidth; H = window.innerHeight;
+      camera.aspect = W / H;
+      camera.updateProjectionMatrix();
+      renderer.setSize(W, H);
+    });
+  }
+
   function initChapterCards() {
     var cards = document.querySelectorAll('.chapter-card');
     cards.forEach(function(card) {
@@ -1548,6 +1750,7 @@
     createOceanParticles();
     renderImpact();
     initDiveSection();
+    initImpactHero();
     initChapterCards();
     initPartnerCards();
     initializeMap();

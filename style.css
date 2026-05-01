@@ -3539,3 +3539,33 @@ html {
     radial-gradient(ellipse at 50% 0%, rgba(0, 80, 140, 0.18) 0%, transparent 60%),
     radial-gradient(ellipse at 20% 50%, rgba(0, 50, 100, 0.10) 0%, transparent 50%);
 }
+
+/* ── Impact Hero — circular logo + underwater reflection ────────── */
+.impact-hero {
+  height: 220vh;
+  position: relative;
+  background: #000306;
+}
+.impact-hero-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+#impact-hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.impact-hero.hero-fallback { height: 80vh; }
+.impact-hero.hero-fallback .impact-hero-sticky {
+  position: relative;
+  height: 80vh;
+  background: linear-gradient(180deg, #02152a 0%, #000306 100%);
+}
+.impact-hero.hero-fallback #impact-hero-canvas { display: none; }
+@media (max-width: 768px) {
+  .impact-hero { height: 170vh; }
+}
