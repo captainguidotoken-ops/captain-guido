@@ -3494,44 +3494,6 @@ html {
   z-index: 5;
 }
 
-/* ── Ocean Dive Transition ───────────────────────────────────────── */
-.dive-section {
-  height: 220vh;
-  position: relative;
-  background: #01060d;
-  margin-top: 0;
-}
-
-.dive-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-  background: #01060d;
-}
-
-#dive-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* Mobile: shorter scroll so the dive lands in ~1.5–2 screen-flicks on a phone */
-@media (max-width: 768px) {
-  .dive-section { height: 170vh; }
-}
-
-/* Reduced-motion fallback — static gradient, canvas hidden */
-.dive-section.dive-fallback { height: 60vh; }
-.dive-section.dive-fallback .dive-sticky {
-  position: relative;
-  height: 60vh;
-  background: linear-gradient(180deg, #020c1b 0%, #011428 50%, #000306 100%);
-}
-.dive-section.dive-fallback #dive-canvas { display: none; }
-
 /* Impact section — deep ocean arrival */
 #impact.content-section {
   background: #000306;
