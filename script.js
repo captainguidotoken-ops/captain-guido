@@ -979,69 +979,92 @@
     logo.position.set(0, 0, 0);
     scene.add(logo);
 
-    // Glowing bubbles rising from below — replaces the wireframe waves.
-    // Each particle has a per-bubble base X/Z, a phase, a rise speed, and a
-    // colour (green or orange, randomly mixed). A small custom shader draws
-    // each Point as a soft circular glow with additive blending so they feel
-    // bioluminescent against the dark water.
-    var bubbleCount = isMobile ? 28 : 60;
+    // Dense bioluminescent bubble cloud — green/orange majority with white,
+    // blue and pink sparkles for variety, sized variably so the eye reads
+    // depth (small far ones, occasional big near ones).
+    var bubbleCount = isMobile ? 130 : 320;
     var bubblePos   = new Float32Array(bubbleCount * 3);
     var bubbleCol   = new Float32Array(bubbleCount * 3);
+    var bubbleSize  = new Float32Array(bubbleCount);
     var bubbleData  = [];
-    var greenCol    = new THREE.Color(0x44ff8c);
-    var orangeCol   = new THREE.Color(0xff8a2c);
+    var palette = [
+      new THREE.Color(0x44ff8c),  // green
+      new THREE.Color(0x44ff8c),  // (weight)
+      new THREE.Color(0xff8a2c),  // orange
+      new THREE.Color(0xff8a2c),  // (weight)
+      new THREE.Color(0xffffff),  // white sparkle
+      new THREE.Color(0x80d4ff),  // light blue
+      new THREE.Color(0xff8ad0),  // pink
+      new THREE.Color(0xfff0a0),  // warm yellow
+    ];
 
     for (var bi = 0; bi < bubbleCount; bi++) {
-      var baseX = (Math.random() - 0.5) * 14;          // spread across the scene width
-      var baseZ = -2 - Math.random() * 9;              // some near, some far
+      var baseX = (Math.random() - 0.5) * 16;
+      var baseZ = -1 - Math.random() * 11;
       bubbleData.push({
         baseX: baseX,
         baseZ: baseZ,
         phase: Math.random() * Math.PI * 2,
-        speed: 0.018 + Math.random() * 0.022,
+        speed: 0.012 + Math.random() * 0.030,
         sway:  Math.random() * Math.PI * 2,
       });
       bubblePos[bi * 3]     = baseX;
-      bubblePos[bi * 3 + 1] = -7 + Math.random() * 14; // start at random heights so we don't see them all spawn at once
+      bubblePos[bi * 3 + 1] = -7 + Math.random() * 14;
       bubblePos[bi * 3 + 2] = baseZ;
 
-      var c = Math.random() < 0.5 ? greenCol : orangeCol;
-      var shade = 0.75 + Math.random() * 0.25;
+      var c = palette[Math.floor(Math.random() * palette.length)];
+      var shade = 0.6 + Math.random() * 0.4;
       bubbleCol[bi * 3]     = c.r * shade;
       bubbleCol[bi * 3 + 1] = c.g * shade;
       bubbleCol[bi * 3 + 2] = c.b * shade;
+
+      // 80% small dust motes, 20% bigger bubbles — gives the depth feel of
+      // the reference image where most particles are pinprick-small but a
+      // handful pop forward.
+      bubbleSize[bi] = Math.random() < 0.2
+        ? 1.4 + Math.random() * 1.0     // bigger pop bubbles
+        : 0.30 + Math.random() * 0.50;  // small motes
     }
 
     var bubbleGeo = new THREE.BufferGeometry();
     bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
     bubbleGeo.setAttribute('color',    new THREE.BufferAttribute(bubbleCol, 3));
+    bubbleGeo.setAttribute('aSize',    new THREE.BufferAttribute(bubbleSize, 1));
 
     var bubbleMat = new THREE.ShaderMaterial({
       uniforms: {
-        uPxRatio: { value: renderer.getPixelRatio() }
+        uPxRatio: { value: renderer.getPixelRatio() },
+        uTime:    { value: 0 },
       },
       vertexShader: [
         'attribute vec3 color;',
+        'attribute float aSize;',
         'varying vec3 vColor;',
+        'varying float vSize;',
         'uniform float uPxRatio;',
+        'uniform float uTime;',
         'void main() {',
         '  vColor = color;',
+        '  vSize  = aSize;',
         '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
         '  gl_Position = projectionMatrix * mvPosition;',
-        // size shrinks with distance; 28 base px on desktop, scales with pixel ratio
-        '  gl_PointSize = (28.0 / -mvPosition.z) * uPxRatio * 6.0;',
+        // size attribute scales the base point size; gentle pulse via time
+        '  float pulse = 0.85 + 0.15 * sin(uTime * 2.0 + position.y * 0.3);',
+        '  gl_PointSize = aSize * pulse * (32.0 / -mvPosition.z) * uPxRatio * 6.0;',
         '}'
       ].join('\n'),
       fragmentShader: [
         'varying vec3 vColor;',
+        'varying float vSize;',
         'void main() {',
-        // Circular soft-edge sprite
         '  vec2 c = gl_PointCoord - vec2(0.5);',
         '  float d = length(c);',
         '  if (d > 0.5) discard;',
-        // Strong centre, soft falloff — reads as a glowing orb
-        '  float core = pow(1.0 - d * 2.0, 1.8);',
-        '  gl_FragColor = vec4(vColor, core);',
+        // Bright tight core + soft halo — reads as a glowing orb in water
+        '  float core = pow(1.0 - d * 2.0, 1.6);',
+        '  float halo = pow(1.0 - d * 2.0, 0.6) * 0.35;',
+        '  vec3 col = vColor + halo * 0.4;',
+        '  gl_FragColor = vec4(col, core);',
         '}'
       ].join('\n'),
       transparent: true,
@@ -1051,6 +1074,74 @@
 
     var bubbles = new THREE.Points(bubbleGeo, bubbleMat);
     scene.add(bubbles);
+
+    // ── Jellyfish — translucent dome with 8 swaying tentacles ──────────────
+    // Bell is the upper hemisphere of a sphere with a soft phong material;
+    // tentacles are individual THREE.Line objects whose vertices we re-write
+    // each frame for a sin-wave wobble. Whole jelly drifts vertically a bit
+    // and pulses (bell scale.y) like real ones do.
+    var jellyGroup = new THREE.Group();
+    jellyGroup.position.set(isMobile ? -3.5 : -5.5, -1.0, -2.5);
+    scene.add(jellyGroup);
+
+    var bellGeo = new THREE.SphereGeometry(1.1, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.6);
+    var bellMat = new THREE.MeshPhongMaterial({
+      color:        0x6a8fb5,
+      transparent:  true,
+      opacity:      0.42,
+      side:         THREE.DoubleSide,
+      shininess:    100,
+      specular:     new THREE.Color(0x80c4ff),
+      emissive:     new THREE.Color(0x182a40),
+      depthWrite:   false,
+    });
+    var jellyBell = new THREE.Mesh(bellGeo, bellMat);
+    jellyGroup.add(jellyBell);
+
+    // Inner glow disc inside the bell — gives it that lit-up look
+    var innerGlowGeo = new THREE.CircleGeometry(0.85, 24);
+    var innerGlowMat = new THREE.MeshBasicMaterial({
+      color: 0x8ab8e0,
+      transparent: true,
+      opacity: 0.18,
+      side: THREE.DoubleSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    var innerGlow = new THREE.Mesh(innerGlowGeo, innerGlowMat);
+    innerGlow.rotation.x = Math.PI / 2;
+    innerGlow.position.y = 0.05;
+    jellyGroup.add(innerGlow);
+
+    var jellyTentacles = [];
+    var TENTACLE_COUNT  = 8;
+    var TENTACLE_SEGS   = 24;
+    var TENTACLE_LEN    = 3.4;
+    for (var ti = 0; ti < TENTACLE_COUNT; ti++) {
+      var ang = (ti / TENTACLE_COUNT) * Math.PI * 2;
+      var pts = [];
+      for (var pi = 0; pi <= TENTACLE_SEGS; pi++) {
+        var tt = pi / TENTACLE_SEGS;
+        pts.push(new THREE.Vector3(Math.cos(ang) * 0.95, -tt * TENTACLE_LEN, Math.sin(ang) * 0.95));
+      }
+      var tGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      var tMat = new THREE.LineBasicMaterial({
+        color: 0x80b8e0,
+        transparent: true,
+        opacity: 0.32,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      var line = new THREE.Line(tGeo, tMat);
+      jellyGroup.add(line);
+      jellyTentacles.push({
+        pos:    tGeo.attributes.position,
+        ang:    ang,
+        phase:  ti * 0.7,
+        baseX:  Math.cos(ang) * 0.95,
+        baseZ:  Math.sin(ang) * 0.95,
+      });
+    }
 
     // Scroll-driven dive — camera stays underwater the whole time, just sinks
     // gently from y=0 (eye-level with the logo) to y=-2 (looking up at the logo
@@ -1085,6 +1176,29 @@
         bp[bi * 3 + 2] = b.baseZ + Math.sin(t * 0.7 + b.phase) * 0.20;
       }
       bubbleGeo.attributes.position.needsUpdate = true;
+      bubbleMat.uniforms.uTime.value = t;
+
+      // Jellyfish — bell pulses on Y scale, whole group drifts, tentacles wave
+      var pulse = 0.94 + Math.sin(t * 1.6) * 0.07;
+      jellyBell.scale.set(pulse, pulse * 0.85, pulse);
+      innerGlow.material.opacity = 0.16 + Math.abs(Math.sin(t * 1.6)) * 0.12;
+      jellyGroup.position.y = -1.0 + Math.sin(t * 0.45) * 0.35;
+      jellyGroup.position.x = (isMobile ? -3.5 : -5.5) + Math.sin(t * 0.3) * 0.4;
+      // Tentacle sway: each segment displaces more the further down it is so
+      // the tentacle bends gracefully like it's catching a slow current
+      for (var jt = 0; jt < jellyTentacles.length; jt++) {
+        var tent = jellyTentacles[jt];
+        var tpa  = tent.pos.array;
+        for (var pi = 0; pi <= TENTACLE_SEGS; pi++) {
+          var ii = pi * 3;
+          var tt = pi / TENTACLE_SEGS;
+          var sway = Math.sin(tt * 4.5 + t * 1.4 + tent.phase) * (tt * 0.55);
+          tpa[ii]     = tent.baseX + sway * 0.7;
+          tpa[ii + 1] = -tt * TENTACLE_LEN + Math.sin(t * 1.6 + tent.phase) * 0.04;
+          tpa[ii + 2] = tent.baseZ + sway * 0.5;
+        }
+        tent.pos.needsUpdate = true;
+      }
 
       logoMat.uniforms.uTime.value = t;
 
