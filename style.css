@@ -3497,13 +3497,11 @@ html {
   z-index: 5;
 }
 
-/* Impact section — deep ocean arrival
-   Top padding trimmed so the hero/site-links flow continuously into the body. */
+/* Impact section — same flat #000306 as the hero so the two read as one
+   continuous deep-ocean panel (no overlay gradient making it look different). */
 #impact.content-section {
   background: #000306;
-  background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(0, 80, 140, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse at 20% 50%, rgba(0, 50, 100, 0.10) 0%, transparent 50%);
+  background-image: none;
   padding-top: 2rem;
 }
 

@@ -907,17 +907,20 @@
     var scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x000306, 0.045);
 
+    // Camera starts already submerged at eye-level with the logo, looking
+    // straight at it — the user wanted the coin underwater from frame 1.
     var fov = isMobile ? 78 : 58;
     var camera = new THREE.PerspectiveCamera(fov, W / H, 0.1, 200);
-    camera.position.set(0, 2.4, isMobile ? 7 : 6);
+    camera.position.set(0, 0, isMobile ? 7 : 6);
     camera.lookAt(0, 0, 0);
 
-    // Lights — moonlit surface above, deep cool below
-    scene.add(new THREE.AmbientLight(0x10283e, 2.6));
-    var moon = new THREE.DirectionalLight(0x80c0ff, 1.0);
+    // Underwater lighting — soft cool ambient, surface key from above (light
+    // filtering through water), deep fill from below (silt-darkness).
+    scene.add(new THREE.AmbientLight(0x0a2238, 2.4));
+    var moon = new THREE.DirectionalLight(0x60a8d4, 0.8);
     moon.position.set(0, 14, 6);
     scene.add(moon);
-    var aqua = new THREE.PointLight(0x00c8ff, 1.6, 30);
+    var aqua = new THREE.PointLight(0x00c8ff, 1.4, 30);
     aqua.position.set(-3, 1, 5);
     scene.add(aqua);
     var deep = new THREE.PointLight(0x0a3a5a, 0.7, 30);
@@ -932,10 +935,14 @@
 
     var logoSize = isMobile ? 1.9 : 2.6;
 
-    // Real logo — circular alpha clip in the fragment shader so it renders as
-    // a clean disc no matter what background the texture has.
-    var realMat = new THREE.ShaderMaterial({
-      uniforms: { uTex: { value: logoTex } },
+    // Submerged logo — single plane with circular alpha clip + subtle uniform
+    // underwater shimmer (sin-noise UV displacement, blue tint). Right-side up
+    // because we're below the surface looking AT the coin, not at a reflection.
+    var logoMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTex:  { value: logoTex },
+        uTime: { value: 0 },
+      },
       vertexShader: [
         'varying vec2 vUv;',
         'void main() {',
@@ -945,69 +952,22 @@
       ].join('\n'),
       fragmentShader: [
         'uniform sampler2D uTex;',
-        'varying vec2 vUv;',
-        'void main() {',
-        // Circular clip: discard anything outside radius 0.5 in UV space,
-        // and feather the very edge so it doesn't alias.
-        '  float d = distance(vUv, vec2(0.5));',
-        '  if (d > 0.5) discard;',
-        '  float edge = smoothstep(0.5, 0.485, d);',
-        '  vec4 col = texture2D(uTex, vUv);',
-        '  col.a *= edge;',
-        '  gl_FragColor = col;',
-        '}'
-      ].join('\n'),
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-    });
-    var realLogo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), realMat);
-    realLogo.position.set(0, logoSize / 2 + 0.05, 0);
-    scene.add(realLogo);
-
-    // Reflected logo — circular clip + sin-noise UV displacement + depth fade.
-    // Vertex shader passes world Y so the fragment can fade with real depth, not UV.
-    var reflMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uTex:      { value: logoTex },
-        uTime:     { value: 0 },
-        uMaxDepth: { value: logoSize * 0.95 },
-      },
-      vertexShader: [
-        'varying vec2 vUv;',
-        'varying float vWorldY;',
-        'void main() {',
-        '  vUv = uv;',
-        '  vec4 worldPos = modelMatrix * vec4(position, 1.0);',
-        '  vWorldY = worldPos.y;',
-        '  gl_Position = projectionMatrix * viewMatrix * worldPos;',
-        '}'
-      ].join('\n'),
-      fragmentShader: [
-        'uniform sampler2D uTex;',
         'uniform float uTime;',
-        'uniform float uMaxDepth;',
         'varying vec2 vUv;',
-        'varying float vWorldY;',
         'void main() {',
-        // Circular clip — same as the real logo, keeps the reflection a disc
+        // Circular clip + smoothstep edge feather
         '  float d = distance(vUv, vec2(0.5));',
         '  if (d > 0.5) discard;',
         '  float edge = smoothstep(0.5, 0.485, d);',
-        // depth: 0 at the waterline, uMaxDepth at the bottom of the reflection
-        '  float depth   = clamp(-vWorldY, 0.0, uMaxDepth);',
-        '  float depthN  = depth / uMaxDepth;',
-        // distortion gets stronger the deeper we look
+        // Subtle underwater UV shimmer — uniform, no depth dependence
         '  vec2 uv = vUv;',
-        '  float r = 0.006 + depthN * 0.030;',
-        '  uv.x += sin(uv.y * 28.0 - uTime * 1.6) * r;',
-        '  uv.x += sin(uv.y * 12.0 + uTime * 0.9) * r * 0.6;',
-        '  uv.y += sin(uv.x * 14.0 + uTime * 1.3) * r * 0.4;',
+        '  uv.x += sin(uv.y * 22.0 - uTime * 1.4) * 0.008;',
+        '  uv.x += sin(uv.y * 10.0 + uTime * 0.7) * 0.005;',
+        '  uv.y += sin(uv.x * 18.0 + uTime * 1.1) * 0.005;',
         '  vec4 col = texture2D(uTex, uv);',
-        // gradient fade with depth (deeper = more transparent) + edge feather
-        '  col.a *= (1.0 - smoothstep(0.0, 1.0, depthN)) * 0.85 * edge;',
-        // blue/green tint deepens with depth
-        '  col.rgb = mix(col.rgb, vec3(0.18, 0.62, 0.85), 0.30 + depthN * 0.45);',
+        '  col.a *= edge;',
+        // Cool blue/green underwater tint at constant strength
+        '  col.rgb = mix(col.rgb, vec3(0.18, 0.55, 0.78), 0.22);',
         '  gl_FragColor = col;',
         '}'
       ].join('\n'),
@@ -1015,10 +975,9 @@
       depthWrite: false,
       side: THREE.DoubleSide,
     });
-    var reflLogo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), reflMat);
-    reflLogo.position.set(0, -logoSize / 2 - 0.05, 0);
-    reflLogo.scale.y = -1;
-    scene.add(reflLogo);
+    var logo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), logoMat);
+    logo.position.set(0, 0, 0);
+    scene.add(logo);
 
     // Wireframe wave planes — SAME palette + formula as the loading screen.
     // Denser segment count (140 desktop / 80 mobile vs the loader's 60) for the
@@ -1053,25 +1012,22 @@
       );
     }
 
-    // Scroll-driven dive: camY goes from above-water → underwater
+    // Scroll-driven dive — camera stays underwater the whole time, just sinks
+    // gently from y=0 (eye-level with the logo) to y=-2 (looking up at the logo
+    // from below as you scroll past). The background never lerps to a brighter
+    // surface colour because we never surface.
     var clock    = new THREE.Clock();
-    var camTgtY  = 2.4;
+    var camTgtY  = 0;
     var lookTgtY = 0;
-    var clearCur = new THREE.Color(0x000306);
-    var clearTgt = new THREE.Color(0x000306);
-    // re-used colour scratch so we don't allocate every frame
-    var _topCol  = new THREE.Color(0x011526);
-    var _botCol  = new THREE.Color(0x000306);
 
     function onHeroScroll() {
       var rect = section.getBoundingClientRect();
       var h    = section.offsetHeight - H;
       var p    = Math.max(0, Math.min(1, -rect.top / h));
 
-      camTgtY  = 2.4 - p * 5.9;                // y=2.4 (above) → y=-3.5 (below)
-      lookTgtY = (p < 0.5) ? 0 : -0.4 + (p - 0.5) * 0.4;
-      clearTgt.copy(_topCol).lerp(_botCol, p);
-      scene.fog.density = 0.04 + p * 0.035;
+      camTgtY  = -p * 2.0;             // y=0 (at logo) → y=-2 (below logo, looking up)
+      lookTgtY = -p * 0.4;             // gentle upward angle as we descend
+      scene.fog.density = 0.05 + p * 0.025;
     }
 
     function tick() {
@@ -1087,12 +1043,10 @@
         w.pos.needsUpdate = true;
       }
 
-      reflMat.uniforms.uTime.value = t;
+      logoMat.uniforms.uTime.value = t;
 
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
       camera.lookAt(0, lookTgtY, 0);
-      clearCur.lerp(clearTgt, 0.04);
-      renderer.setClearColor(clearCur, 1);
       aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;
 
       renderer.render(scene, camera);
