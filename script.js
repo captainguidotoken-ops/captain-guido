@@ -979,38 +979,78 @@
     logo.position.set(0, 0, 0);
     scene.add(logo);
 
-    // Wireframe wave planes — SAME palette + formula as the loading screen.
-    // Denser segment count (140 desktop / 80 mobile vs the loader's 60) for the
-    // "more detailed lines" the user wanted, but the colours, opacities and
-    // wave maths are identical to createCosmicBackground above.
-    var wRes = isMobile ? 80 : 140;
-    function makeWave(col, opacity, posY, posZ, phase) {
-      var g = new THREE.PlaneGeometry(100, 100, wRes, wRes);
-      var m = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
-      var mesh = new THREE.Mesh(g, m);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(0, posY, posZ);
-      scene.add(mesh);
-      return { pos: g.attributes.position, phase: phase, mat: m };
-    }
-    // colours + opacities lifted directly from createCosmicBackground():
-    //   wave1 = makeWavePlane(0x0b2d6e, 0.55, ...)
-    //   wave2 = makeWavePlane(0x061840, 0.38, ...)
-    var wave1 = makeWave(0x0b2d6e, 0.55, -2.5, -10, 0.0);
-    var wave2 = makeWave(0x061840, 0.38, -4.5, -20, 1.8);
-    var wave3 = isMobile ? null : makeWave(0x040e28, 0.22, -6.5, -30, 3.2);
-    var waves = [wave1, wave2]; if (wave3) waves.push(wave3);
+    // Glowing bubbles rising from below — replaces the wireframe waves.
+    // Each particle has a per-bubble base X/Z, a phase, a rise speed, and a
+    // colour (green or orange, randomly mixed). A small custom shader draws
+    // each Point as a soft circular glow with additive blending so they feel
+    // bioluminescent against the dark water.
+    var bubbleCount = isMobile ? 28 : 60;
+    var bubblePos   = new Float32Array(bubbleCount * 3);
+    var bubbleCol   = new Float32Array(bubbleCount * 3);
+    var bubbleData  = [];
+    var greenCol    = new THREE.Color(0x44ff8c);
+    var orangeCol   = new THREE.Color(0xff8a2c);
 
-    // Wave height — exact same 5-term sin function as the loading screen.
-    function waveH(lx, ly, t, phase) {
-      return (
-        Math.sin(lx * 0.15 - t * 1.3 + phase)          * 1.10 +
-        Math.sin(ly * 0.20 + t * 1.0 + phase * 0.6)    * 0.85 +
-        Math.sin(lx * 0.38 + ly * 0.12 - t * 1.85)     * 0.45 +
-        Math.sin(lx * 0.08 - ly * 0.32 + t * 0.7)      * 0.30 +
-        Math.sin(lx * 0.60 + ly * 0.42 + t * 2.4)      * 0.14
-      );
+    for (var bi = 0; bi < bubbleCount; bi++) {
+      var baseX = (Math.random() - 0.5) * 14;          // spread across the scene width
+      var baseZ = -2 - Math.random() * 9;              // some near, some far
+      bubbleData.push({
+        baseX: baseX,
+        baseZ: baseZ,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.018 + Math.random() * 0.022,
+        sway:  Math.random() * Math.PI * 2,
+      });
+      bubblePos[bi * 3]     = baseX;
+      bubblePos[bi * 3 + 1] = -7 + Math.random() * 14; // start at random heights so we don't see them all spawn at once
+      bubblePos[bi * 3 + 2] = baseZ;
+
+      var c = Math.random() < 0.5 ? greenCol : orangeCol;
+      var shade = 0.75 + Math.random() * 0.25;
+      bubbleCol[bi * 3]     = c.r * shade;
+      bubbleCol[bi * 3 + 1] = c.g * shade;
+      bubbleCol[bi * 3 + 2] = c.b * shade;
     }
+
+    var bubbleGeo = new THREE.BufferGeometry();
+    bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
+    bubbleGeo.setAttribute('color',    new THREE.BufferAttribute(bubbleCol, 3));
+
+    var bubbleMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uPxRatio: { value: renderer.getPixelRatio() }
+      },
+      vertexShader: [
+        'attribute vec3 color;',
+        'varying vec3 vColor;',
+        'uniform float uPxRatio;',
+        'void main() {',
+        '  vColor = color;',
+        '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
+        '  gl_Position = projectionMatrix * mvPosition;',
+        // size shrinks with distance; 28 base px on desktop, scales with pixel ratio
+        '  gl_PointSize = (28.0 / -mvPosition.z) * uPxRatio * 6.0;',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'varying vec3 vColor;',
+        'void main() {',
+        // Circular soft-edge sprite
+        '  vec2 c = gl_PointCoord - vec2(0.5);',
+        '  float d = length(c);',
+        '  if (d > 0.5) discard;',
+        // Strong centre, soft falloff — reads as a glowing orb
+        '  float core = pow(1.0 - d * 2.0, 1.8);',
+        '  gl_FragColor = vec4(vColor, core);',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+
+    var bubbles = new THREE.Points(bubbleGeo, bubbleMat);
+    scene.add(bubbles);
 
     // Scroll-driven dive — camera stays underwater the whole time, just sinks
     // gently from y=0 (eye-level with the logo) to y=-2 (looking up at the logo
@@ -1034,14 +1074,17 @@
       var t = clock.getElapsedTime();
       onHeroScroll();
 
-      for (var wi = 0; wi < waves.length; wi++) {
-        var w = waves[wi];
-        for (var i = 0; i < w.pos.count; i++) {
-          var lx = w.pos.getX(i), ly = w.pos.getY(i);
-          w.pos.setZ(i, waveH(lx, ly, t, w.phase));
-        }
-        w.pos.needsUpdate = true;
+      // Bubbles: rise straight up at per-particle speed, sway sinusoidally on
+      // X/Z so they don't track in straight lines, wrap from top back to bottom.
+      var bp = bubbleGeo.attributes.position.array;
+      for (var bi = 0; bi < bubbleData.length; bi++) {
+        var b = bubbleData[bi];
+        bp[bi * 3 + 1] += b.speed;
+        if (bp[bi * 3 + 1] > 7) bp[bi * 3 + 1] = -7;
+        bp[bi * 3]     = b.baseX + Math.sin(t * 1.1 + b.sway + bp[bi * 3 + 1] * 0.35) * 0.35;
+        bp[bi * 3 + 2] = b.baseZ + Math.sin(t * 0.7 + b.phase) * 0.20;
       }
+      bubbleGeo.attributes.position.needsUpdate = true;
 
       logoMat.uniforms.uTime.value = t;
 
