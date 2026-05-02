@@ -924,23 +924,49 @@
     deep.position.set(0, -8, 0);
     scene.add(deep);
 
-    // Logo texture (PNG already used elsewhere in the site)
+    // Logo texture — new round captain-character asset
     var loader = new THREE.TextureLoader();
-    var logoTex = loader.load('captain-guido.png');
+    var logoTex = loader.load('captain-character.png');
     logoTex.minFilter = THREE.LinearFilter;
     logoTex.magFilter = THREE.LinearFilter;
 
     var logoSize = isMobile ? 1.9 : 2.6;
 
-    // Real logo — sits with bottom edge kissing the waterline (y=0)
-    var realMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    // Real logo — circular alpha clip in the fragment shader so it renders as
+    // a clean disc no matter what background the texture has.
+    var realMat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: logoTex } },
+      vertexShader: [
+        'varying vec2 vUv;',
+        'void main() {',
+        '  vUv = uv;',
+        '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform sampler2D uTex;',
+        'varying vec2 vUv;',
+        'void main() {',
+        // Circular clip: discard anything outside radius 0.5 in UV space,
+        // and feather the very edge so it doesn't alias.
+        '  float d = distance(vUv, vec2(0.5));',
+        '  if (d > 0.5) discard;',
+        '  float edge = smoothstep(0.5, 0.485, d);',
+        '  vec4 col = texture2D(uTex, vUv);',
+        '  col.a *= edge;',
+        '  gl_FragColor = col;',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
     var realLogo = new THREE.Mesh(new THREE.PlaneGeometry(logoSize, logoSize, 1, 1), realMat);
     realLogo.position.set(0, logoSize / 2 + 0.05, 0);
     scene.add(realLogo);
 
-    // Reflected logo — flipped (scale.y = -1) and shaded with displacement + depth fade.
+    // Reflected logo — circular clip + sin-noise UV displacement + depth fade.
     // Vertex shader passes world Y so the fragment can fade with real depth, not UV.
-    // Fragment shader does sin-noise UV displacement (depth-scaled) + blue tint + alpha fall-off.
     var reflMat = new THREE.ShaderMaterial({
       uniforms: {
         uTex:      { value: logoTex },
@@ -964,6 +990,10 @@
         'varying vec2 vUv;',
         'varying float vWorldY;',
         'void main() {',
+        // Circular clip — same as the real logo, keeps the reflection a disc
+        '  float d = distance(vUv, vec2(0.5));',
+        '  if (d > 0.5) discard;',
+        '  float edge = smoothstep(0.5, 0.485, d);',
         // depth: 0 at the waterline, uMaxDepth at the bottom of the reflection
         '  float depth   = clamp(-vWorldY, 0.0, uMaxDepth);',
         '  float depthN  = depth / uMaxDepth;',
@@ -974,8 +1004,8 @@
         '  uv.x += sin(uv.y * 12.0 + uTime * 0.9) * r * 0.6;',
         '  uv.y += sin(uv.x * 14.0 + uTime * 1.3) * r * 0.4;',
         '  vec4 col = texture2D(uTex, uv);',
-        // gradient fade with depth (deeper = more transparent)
-        '  col.a *= (1.0 - smoothstep(0.0, 1.0, depthN)) * 0.85;',
+        // gradient fade with depth (deeper = more transparent) + edge feather
+        '  col.a *= (1.0 - smoothstep(0.0, 1.0, depthN)) * 0.85 * edge;',
         // blue/green tint deepens with depth
         '  col.rgb = mix(col.rgb, vec3(0.18, 0.62, 0.85), 0.30 + depthN * 0.45);',
         '  gl_FragColor = col;',

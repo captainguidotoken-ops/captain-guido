@@ -3494,23 +3494,25 @@ html {
   z-index: 5;
 }
 
-/* Impact section — deep ocean arrival */
+/* Impact section — deep ocean arrival
+   Top padding trimmed so the hero/site-links flow continuously into the body. */
 #impact.content-section {
   background: #000306;
   background-image:
     radial-gradient(ellipse at 50% 0%, rgba(0, 80, 140, 0.18) 0%, transparent 60%),
     radial-gradient(ellipse at 20% 50%, rgba(0, 50, 100, 0.10) 0%, transparent 50%);
+  padding-top: 2rem;
 }
 
-/* Site links — moved-up footer block, sits between impact-hero and #impact */
+/* Site links — moved-up footer block. Same deep-ocean bg as #impact + the hero
+   so the three sections read as one continuous underwater spread. */
 .site-links {
-  background: #010810;
-  padding: 4rem 4rem 3rem;
-  border-top: 1px solid rgba(0, 212, 255, 0.07);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.07);
+  background: #000306;
+  padding: 3.5rem 4rem 2.5rem;
+  border: none;
 }
 @media (max-width: 768px) {
-  .site-links { padding: 3rem 1.5rem 2.5rem; }
+  .site-links { padding: 2.5rem 1.5rem 2rem; }
 }
 
 /* ── Impact Hero — circular logo + underwater reflection ────────── */
