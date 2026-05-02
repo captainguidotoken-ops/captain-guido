@@ -1020,15 +1020,18 @@ body.entry-active { overflow: hidden; }
   50% { transform: translate(-50%, -58%); }
 }
 
-/* Content Sections */
+/* Content Sections — tighter vertical rhythm so the page doesn't scroll forever */
 .content-section {
   position: relative;
-  min-height: 100vh;
-  padding: 8rem 4rem;
+  min-height: auto;
+  padding: 5rem 4rem;
   background: #020c1b;
   background-image:
     radial-gradient(ellipse at 10% 60%, rgba(8, 145, 178, 0.06) 0%, transparent 55%),
     radial-gradient(ellipse at 90% 20%, rgba(0, 212, 255, 0.03) 0%, transparent 45%);
+}
+@media (max-width: 768px) {
+  .content-section { padding: 3.5rem 1.5rem; }
 }
 
 .content-section.dark {
@@ -1054,7 +1057,7 @@ body.entry-active { overflow: hidden; }
 }
 
 .section-header {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .section-number {
@@ -1085,9 +1088,9 @@ body.entry-active { overflow: hidden; }
 .section-intro {
   font-size: 1.2rem;
   color: var(--text-secondary);
-  margin-bottom: 4rem;
+  margin-bottom: 2.5rem;
   max-width: 700px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 /* About Section */
@@ -3517,7 +3520,7 @@ html {
 
 /* ── Impact Hero — circular logo + underwater reflection ────────── */
 .impact-hero {
-  height: 220vh;
+  height: 160vh;
   position: relative;
   background: #000306;
 }
@@ -3542,5 +3545,5 @@ html {
 }
 .impact-hero.hero-fallback #impact-hero-canvas { display: none; }
 @media (max-width: 768px) {
-  .impact-hero { height: 170vh; }
+  .impact-hero { height: 130vh; }
 }

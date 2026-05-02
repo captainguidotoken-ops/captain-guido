@@ -1298,8 +1298,28 @@
       <div class="panel-header">
         <div>
           <div class="panel-title">Settings</div>
-          <div class="panel-sub">AI assistant configuration.</div>
+          <div class="panel-sub">GitHub access + integrations.</div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">GitHub Token</div>
+        <div id="pat-status" class="token-status" style="margin-bottom:1rem;">
+          <span class="token-dot" id="pat-dot"></span>
+          <span id="pat-status-text">Not connected</span>
+        </div>
+        <div class="field-col">
+          <div class="field-row">
+            <label>Token</label>
+            <input type="password" id="pat-input" placeholder="ghp_…" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="btn-row" style="padding-left:calc(90px + 0.9rem)">
+            <button class="btn-sm" type="button" onclick="clearPat()" style="color:var(--danger);border-color:rgba(239,68,68,0.3)">Disconnect</button>
+          </div>
+        </div>
+        <p style="margin-top:1.1rem;font-size:0.77rem;color:var(--muted);line-height:1.7;">
+          Paste a GitHub Personal Access Token (Classic) with <code>repo: contents</code> write permission. We test it automatically as soon as you paste — green dot means you're in. The token stays in this browser only and never goes to any server.
+        </p>
       </div>
 
       <div class="card">
@@ -1594,39 +1614,84 @@
   const REPO_OWNER = 'captainguidotoken-ops';
   const REPO_NAME  = 'captain-guido';
 
-  // ── GitHub access via server proxy ────────────────────────────────────────
+  // ── GitHub access ─────────────────────────────────────────────────────────
+  // Direct PAT preferred; falls back to the Render worker if no PAT is set.
+  const GH_API_BASE = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/';
+
+  function _ghPat() {
+    var pat = localStorage.getItem('cgc_pat');
+    if (!pat) return null;
+    pat = pat.replace(/[^\x20-\x7E]/g, '');
+    return pat || null;
+  }
   function _ghWorker() {
     var url    = localStorage.getItem('cgc_ai_url');
     var secret = localStorage.getItem('cgc_ai_secret');
     if (!url || !secret) return null;
-    // Sanitize — HTTP headers only allow ISO-8859-1 visible chars
     if (!url.startsWith('http')) url = 'https://' + url;
     url    = url.replace(/\/+$/, '');
     secret = secret.replace(/[^\x20-\x7E]/g, '');
     return { base: url + '/gh', secret };
   }
-  function ghReady() { return !!_ghWorker(); }
+  function ghReady() { return !!(_ghPat() || _ghWorker()); }
 
   async function ghGet(path) {
+    var pat = _ghPat();
+    if (pat) {
+      var res = await fetch(GH_API_BASE + path + '?v=' + Date.now(), {
+        headers: {
+          'Authorization': 'Bearer ' + pat,
+          'Accept': 'application/vnd.github+json',
+        }
+      });
+      return res.json();
+    }
     var w = _ghWorker();
-    if (!w) throw new Error('Not connected to server');
-    var res = await fetch(w.base + '?path=' + encodeURIComponent(path) + '&v=' + Date.now(), {
+    if (!w) throw new Error('Not connected — paste a GitHub token in Settings');
+    var r = await fetch(w.base + '?path=' + encodeURIComponent(path) + '&v=' + Date.now(), {
       headers: { 'X-Secret': w.secret }
     });
-    return res.json();
+    return r.json();
   }
 
   async function ghPut(path, message, content, sha) {
-    var w = _ghWorker();
-    if (!w) throw new Error('Not connected to server');
     var body = { message: message, content: content };
     if (sha) body.sha = sha;
-    var res = await fetch(w.base + '?path=' + encodeURIComponent(path), {
+    var pat = _ghPat();
+    if (pat) {
+      var res = await fetch(GH_API_BASE + path, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + pat,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+    var w = _ghWorker();
+    if (!w) throw new Error('Not connected — paste a GitHub token in Settings');
+    var r = await fetch(w.base + '?path=' + encodeURIComponent(path), {
       method: 'PUT',
       headers: { 'X-Secret': w.secret, 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-    return res.json();
+    return r.json();
+  }
+
+  // Lightweight auth probe — used by the auto-tester on the Settings panel.
+  async function testGhPat(pat) {
+    if (!pat) return false;
+    try {
+      var res = await fetch('https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME, {
+        headers: {
+          'Authorization': 'Bearer ' + pat,
+          'Accept': 'application/vnd.github+json',
+        }
+      });
+      return res.ok;
+    } catch (e) { return false; }
   }
 
   function b64enc(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2)))); }
@@ -1912,6 +1977,9 @@
       document.getElementById('ai-worker-secret').value = '•'.repeat(16);
       setAIStatus(true, 'AI configured');
     }
+    // Auto-test the GitHub PAT immediately on login so the user knows whether
+    // they're connected without clicking anything. Then load config if ready.
+    loadPat();
     if (ghReady()) loadConfig();
     ttRenderHistory();
   }
@@ -2894,6 +2962,57 @@
     } catch(e) {
       setAIStatus(false, 'Could not reach worker — check the URL');
     }
+  }
+
+  // ── GitHub PAT auto-tester (Settings panel) ──────────────────────────────
+  // - Loads stored PAT into the input, auto-tests it on page load
+  // - Auto-tests on every keystroke (debounced 600ms)
+  // - Stores PAT only when it tests OK
+  function setPatStatus(ok, msg) {
+    var dot = document.getElementById('pat-dot');
+    var txt = document.getElementById('pat-status-text');
+    if (!dot || !txt) return;
+    dot.className = 'token-dot' + (ok===true ? ' ok' : ok===false ? ' err' : '');
+    txt.textContent = msg;
+  }
+
+  async function _testAndStorePat(pat) {
+    setPatStatus(null, 'Testing…');
+    var ok = await testGhPat(pat);
+    if (ok) {
+      localStorage.setItem('cgc_pat', pat);
+      setPatStatus(true, 'Connected to ' + REPO_OWNER + '/' + REPO_NAME);
+    } else {
+      // Don't overwrite stored PAT on failure — user might still be typing
+      setPatStatus(false, 'Token invalid or expired');
+    }
+  }
+
+  function clearPat() {
+    localStorage.removeItem('cgc_pat');
+    var input = document.getElementById('pat-input');
+    if (input) input.value = '';
+    setPatStatus(null, 'Not connected');
+  }
+
+  function loadPat() {
+    var input = document.getElementById('pat-input');
+    if (!input) return;
+    var stored = localStorage.getItem('cgc_pat') || '';
+    input.value = stored;
+    if (stored) _testAndStorePat(stored);
+    else        setPatStatus(null, 'Not connected');
+
+    var debounce;
+    input.addEventListener('input', function(e) {
+      clearTimeout(debounce);
+      var v = (e.target.value || '').trim();
+      if (!v) { clearPat(); return; }
+      setPatStatus(null, 'Testing…');
+      debounce = setTimeout(function() { _testAndStorePat(v); }, 600);
+    });
+    // Paste fires before input on some browsers — kick the debounce immediately.
+    input.addEventListener('paste', function() { setPatStatus(null, 'Testing…'); });
   }
 
   // ── AI question handler ───────────────────────────────────────────────────
