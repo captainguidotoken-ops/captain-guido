@@ -886,14 +886,16 @@
     setTimeout(typeLine, 200);
   }
 
-  // ── Impact Hero — circular logo at the waterline with underwater reflection ─
+  // ── Ocean zone — one continuous underwater scene spanning site-links,
+  // the empty hero stage, and the impact body. Canvas is sticky inside
+  // .ocean-stage; scroll progress is measured against .ocean-zone bounds.
   function initImpactHero() {
-    var section = document.getElementById('impact-hero');
-    var canvas  = document.getElementById('impact-hero-canvas');
-    if (!section || !canvas || typeof THREE === 'undefined') return;
+    var zone   = document.querySelector('.ocean-zone');
+    var canvas = document.getElementById('impact-hero-canvas');
+    if (!zone || !canvas || typeof THREE === 'undefined') return;
 
     var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) { section.classList.add('hero-fallback'); return; }
+    if (prefersReduced) { zone.classList.add('no-motion'); return; }
 
     var isMobile = window.innerWidth < 768;
     var W = window.innerWidth;
@@ -940,8 +942,9 @@
     // because we're below the surface looking AT the coin, not at a reflection.
     var logoMat = new THREE.ShaderMaterial({
       uniforms: {
-        uTex:  { value: logoTex },
-        uTime: { value: 0 },
+        uTex:     { value: logoTex },
+        uTime:    { value: 0 },
+        uOpacity: { value: 1.0 },          // driven by scroll-fade in the tick
       },
       vertexShader: [
         'varying vec2 vUv;',
@@ -953,6 +956,7 @@
       fragmentShader: [
         'uniform sampler2D uTex;',
         'uniform float uTime;',
+        'uniform float uOpacity;',
         'varying vec2 vUv;',
         'void main() {',
         // Circular clip + smoothstep edge feather
@@ -965,7 +969,7 @@
         '  uv.x += sin(uv.y * 10.0 + uTime * 0.7) * 0.005;',
         '  uv.y += sin(uv.x * 18.0 + uTime * 1.1) * 0.005;',
         '  vec4 col = texture2D(uTex, uv);',
-        '  col.a *= edge;',
+        '  col.a *= edge * uOpacity;',
         // Cool blue/green underwater tint at constant strength
         '  col.rgb = mix(col.rgb, vec3(0.18, 0.55, 0.78), 0.22);',
         '  gl_FragColor = col;',
@@ -1143,22 +1147,28 @@
       });
     }
 
-    // Scroll-driven dive — camera stays underwater the whole time, just sinks
-    // gently from y=0 (eye-level with the logo) to y=-2 (looking up at the logo
-    // from below as you scroll past). The background never lerps to a brighter
-    // surface colour because we never surface.
+    // Scroll progress is now measured against the WHOLE ocean-zone (site-links
+    // + hero stage + impact body). The coin gets centre-stage during the first
+    // ~55% of the scroll and then sinks + fades so the impact body content
+    // (ON-CHAIN DATA, partners, milestones) reads cleanly without the disc
+    // competing for attention.
     var clock    = new THREE.Clock();
     var camTgtY  = 0;
     var lookTgtY = 0;
+    var coinFade = 1.0;            // smoothed alpha multiplier driven by scroll
 
     function onHeroScroll() {
-      var rect = section.getBoundingClientRect();
-      var h    = section.offsetHeight - H;
-      var p    = Math.max(0, Math.min(1, -rect.top / h));
+      var rect = zone.getBoundingClientRect();
+      var h    = zone.offsetHeight - H;
+      var p    = h > 0 ? Math.max(0, Math.min(1, -rect.top / h)) : 0;
 
-      camTgtY  = -p * 2.0;             // y=0 (at logo) → y=-2 (below logo, looking up)
-      lookTgtY = -p * 0.4;             // gentle upward angle as we descend
+      camTgtY  = -p * 2.5;
+      lookTgtY = -p * 0.5;
       scene.fog.density = 0.05 + p * 0.025;
+
+      // Coin fade — full opacity until p=0.55, gone by p=0.78
+      var target = 1.0 - Math.max(0, Math.min(1, (p - 0.55) / 0.23));
+      coinFade += (target - coinFade) * 0.1;
     }
 
     function tick() {
@@ -1200,13 +1210,16 @@
         tent.pos.needsUpdate = true;
       }
 
-      logoMat.uniforms.uTime.value = t;
+      logoMat.uniforms.uTime.value    = t;
+      logoMat.uniforms.uOpacity.value = coinFade;
 
-      // Coin-floating-underwater feel: slow Y spin, gentle vertical bob, and a
-      // tiny tilt-wobble so the disc reads as a real object suspended in water.
-      logo.rotation.y = Math.sin(t * 0.35) * 0.45;        // ±~26° lazy turn
-      logo.rotation.x = Math.sin(t * 0.5)  * 0.06;        // soft tilt
-      logo.position.y = Math.sin(t * 0.6)  * 0.08;        // ±8cm bob
+      // Coin-floating-underwater feel + scroll-driven sink. The coin spins
+      // lazily, tilts, bobs, and its world-Y descends as coinFade approaches 0
+      // so it disappears into the depth as the user reaches the impact body.
+      logo.rotation.y = Math.sin(t * 0.35) * 0.45;
+      logo.rotation.x = Math.sin(t * 0.5)  * 0.06;
+      logo.position.y = Math.sin(t * 0.6)  * 0.08 - (1.0 - coinFade) * 4.0;
+      logo.visible    = coinFade > 0.01;
 
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
       camera.lookAt(0, lookTgtY, 0);
@@ -1223,7 +1236,7 @@
         handle.setActive(e.isIntersecting);
       }
     }, { threshold: 0 });
-    io.observe(section);
+    io.observe(zone);
 
     window.addEventListener('resize', function() {
       W = window.innerWidth; H = window.innerHeight;

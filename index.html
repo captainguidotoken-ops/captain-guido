@@ -451,6 +451,16 @@
     <div class="journey-ocean-blend" aria-hidden="true"></div>
   </section>
 
+  <!-- ─── Ocean Zone ────────────────────────────────────────────────
+       Wraps site-links + impact-hero + impact body. A single sticky canvas
+       at the top of this zone renders bubbles / jellyfish / coin across the
+       entire scroll, so the underwater scene is one continuous panel from
+       site-links all the way through ON-CHAIN DATA, partners and milestones. -->
+  <section class="ocean-zone" aria-label="Underwater impact zone">
+    <div class="ocean-stage" aria-hidden="true">
+      <canvas id="impact-hero-canvas"></canvas>
+    </div>
+
   <!-- Site links — brand block + nav columns. Sits between Journey and the
        Impact Hero so the wave/animation area falls between site-links and the
        Impact body, exactly where Glenn marked it. -->
@@ -509,13 +519,11 @@
     </div>
   </section>
 
-  <!-- Impact Hero — circular logo already submerged, with underwater reflection.
-       Wireframe waves render above (looking up at the surface). -->
-  <section id="impact-hero" class="impact-hero" aria-label="Captain Guido logo, underwater">
-    <div class="impact-hero-sticky">
-      <canvas id="impact-hero-canvas" aria-hidden="true"></canvas>
-    </div>
-  </section>
+  <!-- Impact Hero — empty scroll "stage" so the user spends a full screen
+       contemplating the coin alone before the impact body content appears.
+       The canvas itself lives in .ocean-stage above; this section just
+       provides scroll height. -->
+  <section id="impact-hero" class="impact-hero" aria-label="Captain Guido coin floating underwater"></section>
 
   <!-- Impact Section -->
   <section id="impact" class="content-section">
@@ -633,6 +641,8 @@
 
     </div>
   </section>
+
+  </section><!-- /.ocean-zone -->
 
   <!-- Footer -->
   <footer role="contentinfo">

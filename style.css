@@ -3518,32 +3518,52 @@ html {
   .site-links { padding: 2.5rem 1.5rem 2rem; }
 }
 
-/* ── Impact Hero — circular logo + underwater reflection ────────── */
-.impact-hero {
-  height: 160vh;
+/* ── Ocean Zone — one continuous underwater panel ─────────────────
+   The canvas (with bubbles + jellyfish + coin) sits inside .ocean-stage,
+   which is absolutely positioned to the size of .ocean-zone. The canvas
+   itself is `position: sticky; top: 0; height: 100vh` so it pins to the
+   viewport while you scroll through site-links, the empty hero stage,
+   and the impact body — all three layered on top via z-index. */
+.ocean-zone {
   position: relative;
   background: #000306;
+  isolation: isolate;
 }
-.impact-hero-sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
+.ocean-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   overflow: hidden;
 }
 #impact-hero-canvas {
-  position: absolute;
-  inset: 0;
+  position: sticky;
+  top: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: block;
 }
-.impact-hero.hero-fallback { height: 80vh; }
-.impact-hero.hero-fallback .impact-hero-sticky {
+.ocean-zone > section {
   position: relative;
-  height: 80vh;
-  background: linear-gradient(180deg, #02152a 0%, #000306 100%);
+  z-index: 1;
+  background: transparent;
 }
-.impact-hero.hero-fallback #impact-hero-canvas { display: none; }
+.ocean-zone #impact.content-section {
+  background: transparent;
+  background-image: none;
+}
+.ocean-zone .site-links {
+  background: transparent;
+}
+
+/* Empty scroll-stage so the coin gets a full-screen moment alone */
+.impact-hero {
+  height: 100vh;
+  background: transparent;
+}
 @media (max-width: 768px) {
-  .impact-hero { height: 130vh; }
+  .impact-hero { height: 80vh; }
 }
+
+/* Reduced-motion: hide the canvas entirely (no glow), let the dark bg show */
+.ocean-zone.no-motion #impact-hero-canvas { display: none; }
