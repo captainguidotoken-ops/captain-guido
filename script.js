@@ -1045,6 +1045,12 @@
 
       logoMat.uniforms.uTime.value = t;
 
+      // Coin-floating-underwater feel: slow Y spin, gentle vertical bob, and a
+      // tiny tilt-wobble so the disc reads as a real object suspended in water.
+      logo.rotation.y = Math.sin(t * 0.35) * 0.45;        // ±~26° lazy turn
+      logo.rotation.x = Math.sin(t * 0.5)  * 0.06;        // soft tilt
+      logo.position.y = Math.sin(t * 0.6)  * 0.08;        // ±8cm bob
+
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
       camera.lookAt(0, lookTgtY, 0);
       aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;

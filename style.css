@@ -3492,7 +3492,9 @@ html {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 80px;
-  background: linear-gradient(to bottom, transparent 0%, #01060d 100%);
+  /* fades to the exact same #000306 as site-links / hero / impact, so the join
+     between Journey and the underwater stretch is invisible */
+  background: linear-gradient(to bottom, transparent 0%, #000306 100%);
   pointer-events: none;
   z-index: 5;
 }
