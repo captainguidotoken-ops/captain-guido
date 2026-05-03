@@ -983,23 +983,16 @@
     logo.position.set(0, 0, 0);
     scene.add(logo);
 
-    // Dense bioluminescent bubble cloud — green/orange majority with white,
-    // blue and pink sparkles for variety, sized variably so the eye reads
-    // depth (small far ones, occasional big near ones).
-    var bubbleCount = isMobile ? 130 : 320;
+    // Bubble field — sparser and just two brand colours (blue + orange)
+    // so the underwater feel is calm and on-brand rather than carnival.
+    var bubbleCount = isMobile ? 40 : 80;
     var bubblePos   = new Float32Array(bubbleCount * 3);
     var bubbleCol   = new Float32Array(bubbleCount * 3);
     var bubbleSize  = new Float32Array(bubbleCount);
     var bubbleData  = [];
     var palette = [
-      new THREE.Color(0x44ff8c),  // green
-      new THREE.Color(0x44ff8c),  // (weight)
-      new THREE.Color(0xff8a2c),  // orange
-      new THREE.Color(0xff8a2c),  // (weight)
-      new THREE.Color(0xffffff),  // white sparkle
-      new THREE.Color(0x80d4ff),  // light blue
-      new THREE.Color(0xff8ad0),  // pink
-      new THREE.Color(0xfff0a0),  // warm yellow
+      new THREE.Color(0x5cb8ff),  // brand blue
+      new THREE.Color(0xff8a2c),  // brand orange
     ];
 
     for (var bi = 0; bi < bubbleCount; bi++) {
@@ -1153,7 +1146,9 @@
     // (ON-CHAIN DATA, partners, milestones) reads cleanly without the disc
     // competing for attention.
     var clock    = new THREE.Clock();
+    var camStartZ = isMobile ? 7 : 6;
     var camTgtY  = 0;
+    var camTgtZ  = camStartZ;
     var lookTgtY = 0;
     var coinFade = 1.0;            // smoothed alpha multiplier driven by scroll
 
@@ -1162,9 +1157,12 @@
       var h    = zone.offsetHeight - H;
       var p    = h > 0 ? Math.max(0, Math.min(1, -rect.top / h)) : 0;
 
+      // Camera dolly forward + sink — gives the cinematic "pulled under" feel.
+      // Z dollies from start (6/7) toward 2.5 over the scroll. Y also sinks.
       camTgtY  = -p * 2.5;
+      camTgtZ  = camStartZ - p * 3.5;
       lookTgtY = -p * 0.5;
-      scene.fog.density = 0.05 + p * 0.025;
+      scene.fog.density = 0.05 + p * 0.045;     // murk thickens as we go deeper
 
       // Coin fade — full opacity until p=0.55, gone by p=0.78
       var target = 1.0 - Math.max(0, Math.min(1, (p - 0.55) / 0.23));
@@ -1222,6 +1220,7 @@
       logo.visible    = coinFade > 0.01;
 
       camera.position.y += (camTgtY - camera.position.y) * 0.05;
+      camera.position.z += (camTgtZ - camera.position.z) * 0.05;
       camera.lookAt(0, lookTgtY, 0);
       aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;
 
@@ -1229,9 +1228,13 @@
     }
 
     var handle = _cgRAF.register(tick);
+    // Toggle the canvas + vignette opacity AND the rAF tick on/off based on
+    // whether the ocean-zone is in viewport. CSS handles the fade.
     var io = new IntersectionObserver(function(entries) {
       for (var i = 0; i < entries.length; i++) {
         var e = entries[i];
+        if (e.isIntersecting) zone.classList.add('ocean-active');
+        else                  zone.classList.remove('ocean-active');
         if (e.isIntersecting && !handle.isActive()) clock.start();
         handle.setActive(e.isIntersecting);
       }
