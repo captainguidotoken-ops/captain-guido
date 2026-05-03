@@ -3574,6 +3574,15 @@ html {
   background: transparent;
 }
 
+/* Strip the box-style borders + panel backgrounds inside the ocean-zone so
+   the impact body blends into the underwater scene above instead of reading
+   as a separate stack of cards. */
+.ocean-zone .section-lines        { display: none; }
+.ocean-zone .impact-prelaunched   { background: transparent; border: none; padding: 1.5rem 0; }
+.ocean-zone .blockchain-verified  { background: transparent; border: none; padding: 1rem 0; }
+.ocean-zone .mission-status       { background: transparent; border: none; padding: 0.4rem 0; margin-bottom: 1.5rem; }
+.ocean-zone .partners-section     { border-top: none; padding-top: 2rem; margin-top: 2rem; }
+
 /* Empty scroll-stage so the coin gets a full-screen moment alone */
 .impact-hero {
   height: 100vh;
