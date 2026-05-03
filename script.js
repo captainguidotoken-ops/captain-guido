@@ -1032,36 +1032,34 @@
       uniforms: {
         uPxRatio: { value: renderer.getPixelRatio() },
         uTime:    { value: 0 },
+        uOpacity: { value: 1.0 },     // driven by scroll-fade in tick
       },
       vertexShader: [
         'attribute vec3 color;',
         'attribute float aSize;',
         'varying vec3 vColor;',
-        'varying float vSize;',
         'uniform float uPxRatio;',
         'uniform float uTime;',
         'void main() {',
         '  vColor = color;',
-        '  vSize  = aSize;',
         '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
         '  gl_Position = projectionMatrix * mvPosition;',
-        // size attribute scales the base point size; gentle pulse via time
         '  float pulse = 0.85 + 0.15 * sin(uTime * 2.0 + position.y * 0.3);',
         '  gl_PointSize = aSize * pulse * (32.0 / -mvPosition.z) * uPxRatio * 6.0;',
         '}'
       ].join('\n'),
       fragmentShader: [
         'varying vec3 vColor;',
-        'varying float vSize;',
+        'uniform float uOpacity;',
         'void main() {',
         '  vec2 c = gl_PointCoord - vec2(0.5);',
         '  float d = length(c);',
         '  if (d > 0.5) discard;',
-        // Bright tight core + soft halo — reads as a glowing orb in water
-        '  float core = pow(1.0 - d * 2.0, 1.6);',
-        '  float halo = pow(1.0 - d * 2.0, 0.6) * 0.35;',
-        '  vec3 col = vColor + halo * 0.4;',
-        '  gl_FragColor = vec4(col, core);',
+        // Soft round particle — gentle linear-ish falloff, NO bright pinprick
+        // core, capped at 50% opacity so they read as drifting bubbles, not
+        // sparkling stars. Scroll-driven uOpacity dissipates them in the body.
+        '  float a = pow(1.0 - d * 2.0, 1.2) * 0.50 * uOpacity;',
+        '  gl_FragColor = vec4(vColor, a);',
         '}'
       ].join('\n'),
       transparent: true,
@@ -1145,12 +1143,32 @@
     // ~55% of the scroll and then sinks + fades so the impact body content
     // (ON-CHAIN DATA, partners, milestones) reads cleanly without the disc
     // competing for attention.
-    var clock    = new THREE.Clock();
+    var clock     = new THREE.Clock();
     var camStartZ = isMobile ? 7 : 6;
-    var camTgtY  = 0;
-    var camTgtZ  = camStartZ;
-    var lookTgtY = 0;
-    var coinFade = 1.0;            // smoothed alpha multiplier driven by scroll
+    var camTgtY   = 0;
+    var camTgtZ   = camStartZ;
+    var lookTgtY  = 0;
+    var coinFade  = 0;                  // smoothed coin alpha
+    var bubbleFade = 1;                 // smoothed bubble alpha
+
+    // Coin appearance window — invisible at the top of the zone (over the
+    // site-links nav so it doesn't overlap NAVIGATE / COMMUNITY / RESOURCES),
+    // fades in just before the empty hero stage, full strength through the
+    // stage, then fades out before the impact body content starts.
+    function _coinTarget(p) {
+      if (p < 0.18) return 0;
+      if (p < 0.26) return (p - 0.18) / 0.08;
+      if (p < 0.50) return 1;
+      if (p < 0.66) return 1 - (p - 0.50) / 0.16;
+      return 0;
+    }
+    // Bubbles dissipate as you reach the impact body so the data text reads
+    // cleanly. They keep going a bit longer than the coin.
+    function _bubbleTarget(p) {
+      if (p < 0.55) return 1;
+      if (p < 0.82) return 1 - (p - 0.55) / 0.27;
+      return 0;
+    }
 
     function onHeroScroll() {
       var rect = zone.getBoundingClientRect();
@@ -1158,15 +1176,13 @@
       var p    = h > 0 ? Math.max(0, Math.min(1, -rect.top / h)) : 0;
 
       // Camera dolly forward + sink — gives the cinematic "pulled under" feel.
-      // Z dollies from start (6/7) toward 2.5 over the scroll. Y also sinks.
       camTgtY  = -p * 2.5;
       camTgtZ  = camStartZ - p * 3.5;
       lookTgtY = -p * 0.5;
-      scene.fog.density = 0.05 + p * 0.045;     // murk thickens as we go deeper
+      scene.fog.density = 0.05 + p * 0.045;
 
-      // Coin fade — full opacity until p=0.55, gone by p=0.78
-      var target = 1.0 - Math.max(0, Math.min(1, (p - 0.55) / 0.23));
-      coinFade += (target - coinFade) * 0.1;
+      coinFade   += (_coinTarget(p)   - coinFade)   * 0.1;
+      bubbleFade += (_bubbleTarget(p) - bubbleFade) * 0.1;
     }
 
     function tick() {
@@ -1184,7 +1200,8 @@
         bp[bi * 3 + 2] = b.baseZ + Math.sin(t * 0.7 + b.phase) * 0.20;
       }
       bubbleGeo.attributes.position.needsUpdate = true;
-      bubbleMat.uniforms.uTime.value = t;
+      bubbleMat.uniforms.uTime.value    = t;
+      bubbleMat.uniforms.uOpacity.value = bubbleFade;
 
       // Jellyfish — bell pulses on Y scale, whole group drifts, tentacles wave
       var pulse = 0.94 + Math.sin(t * 1.6) * 0.07;
