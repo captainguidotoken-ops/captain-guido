@@ -935,7 +935,7 @@
     logoTex.minFilter = THREE.LinearFilter;
     logoTex.magFilter = THREE.LinearFilter;
 
-    var logoSize = isMobile ? 1.9 : 2.6;
+    var logoSize = isMobile ? 2.7 : 3.6;
 
     // Submerged logo — single plane with circular alpha clip + subtle uniform
     // underwater shimmer (sin-noise UV displacement, blue tint). Right-side up
@@ -1002,7 +1002,7 @@
         baseX: baseX,
         baseZ: baseZ,
         phase: Math.random() * Math.PI * 2,
-        speed: 0.012 + Math.random() * 0.030,
+        speed: 0.008 + Math.random() * 0.018,
         sway:  Math.random() * Math.PI * 2,
       });
       bubblePos[bi * 3]     = baseX;
@@ -1010,17 +1010,14 @@
       bubblePos[bi * 3 + 2] = baseZ;
 
       var c = palette[Math.floor(Math.random() * palette.length)];
-      var shade = 0.6 + Math.random() * 0.4;
+      var shade = 0.65 + Math.random() * 0.35;
       bubbleCol[bi * 3]     = c.r * shade;
       bubbleCol[bi * 3 + 1] = c.g * shade;
       bubbleCol[bi * 3 + 2] = c.b * shade;
 
-      // 80% small dust motes, 20% bigger bubbles — gives the depth feel of
-      // the reference image where most particles are pinprick-small but a
-      // handful pop forward.
-      bubbleSize[bi] = Math.random() < 0.2
-        ? 1.4 + Math.random() * 1.0     // bigger pop bubbles
-        : 0.30 + Math.random() * 0.50;  // small motes
+      bubbleSize[bi] = Math.random() < 0.18
+        ? 1.1 + Math.random() * 0.7
+        : 0.32 + Math.random() * 0.40;
     }
 
     var bubbleGeo = new THREE.BufferGeometry();
@@ -1044,8 +1041,8 @@
         '  vColor = color;',
         '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
         '  gl_Position = projectionMatrix * mvPosition;',
-        '  float pulse = 0.85 + 0.15 * sin(uTime * 2.0 + position.y * 0.3);',
-        '  gl_PointSize = aSize * pulse * (32.0 / -mvPosition.z) * uPxRatio * 6.0;',
+        '  float pulse = 0.95 + 0.05 * sin(uTime * 1.4 + position.y * 0.3);',
+        '  gl_PointSize = aSize * pulse * (32.0 / -mvPosition.z) * uPxRatio * 4.5;',
         '}'
       ].join('\n'),
       fragmentShader: [
@@ -1069,74 +1066,6 @@
 
     var bubbles = new THREE.Points(bubbleGeo, bubbleMat);
     scene.add(bubbles);
-
-    // ── Jellyfish — translucent dome with 8 swaying tentacles ──────────────
-    // Bell is the upper hemisphere of a sphere with a soft phong material;
-    // tentacles are individual THREE.Line objects whose vertices we re-write
-    // each frame for a sin-wave wobble. Whole jelly drifts vertically a bit
-    // and pulses (bell scale.y) like real ones do.
-    var jellyGroup = new THREE.Group();
-    jellyGroup.position.set(isMobile ? -3.5 : -5.5, -1.0, -2.5);
-    scene.add(jellyGroup);
-
-    var bellGeo = new THREE.SphereGeometry(1.1, 28, 18, 0, Math.PI * 2, 0, Math.PI * 0.6);
-    var bellMat = new THREE.MeshPhongMaterial({
-      color:        0x6a8fb5,
-      transparent:  true,
-      opacity:      0.42,
-      side:         THREE.DoubleSide,
-      shininess:    100,
-      specular:     new THREE.Color(0x80c4ff),
-      emissive:     new THREE.Color(0x182a40),
-      depthWrite:   false,
-    });
-    var jellyBell = new THREE.Mesh(bellGeo, bellMat);
-    jellyGroup.add(jellyBell);
-
-    // Inner glow disc inside the bell — gives it that lit-up look
-    var innerGlowGeo = new THREE.CircleGeometry(0.85, 24);
-    var innerGlowMat = new THREE.MeshBasicMaterial({
-      color: 0x8ab8e0,
-      transparent: true,
-      opacity: 0.18,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    var innerGlow = new THREE.Mesh(innerGlowGeo, innerGlowMat);
-    innerGlow.rotation.x = Math.PI / 2;
-    innerGlow.position.y = 0.05;
-    jellyGroup.add(innerGlow);
-
-    var jellyTentacles = [];
-    var TENTACLE_COUNT  = 8;
-    var TENTACLE_SEGS   = 24;
-    var TENTACLE_LEN    = 3.4;
-    for (var ti = 0; ti < TENTACLE_COUNT; ti++) {
-      var ang = (ti / TENTACLE_COUNT) * Math.PI * 2;
-      var pts = [];
-      for (var pi = 0; pi <= TENTACLE_SEGS; pi++) {
-        var tt = pi / TENTACLE_SEGS;
-        pts.push(new THREE.Vector3(Math.cos(ang) * 0.95, -tt * TENTACLE_LEN, Math.sin(ang) * 0.95));
-      }
-      var tGeo = new THREE.BufferGeometry().setFromPoints(pts);
-      var tMat = new THREE.LineBasicMaterial({
-        color: 0x80b8e0,
-        transparent: true,
-        opacity: 0.32,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      });
-      var line = new THREE.Line(tGeo, tMat);
-      jellyGroup.add(line);
-      jellyTentacles.push({
-        pos:    tGeo.attributes.position,
-        ang:    ang,
-        phase:  ti * 0.7,
-        baseX:  Math.cos(ang) * 0.95,
-        baseZ:  Math.sin(ang) * 0.95,
-      });
-    }
 
     // Scroll progress is now measured against the WHOLE ocean-zone (site-links
     // + hero stage + impact body). The coin gets centre-stage during the first
@@ -1166,28 +1095,34 @@
     // cleanly. They keep going a bit longer than the coin.
     function _bubbleTarget(p) {
       if (p < 0.55) return 1;
-      if (p < 0.82) return 1 - (p - 0.55) / 0.27;
+      if (p < 0.70) return 1 - (p - 0.55) / 0.15;
       return 0;
     }
 
-    function onHeroScroll() {
+    function onHeroScroll(k) {
       var rect = zone.getBoundingClientRect();
       var h    = zone.offsetHeight - H;
       var p    = h > 0 ? Math.max(0, Math.min(1, -rect.top / h)) : 0;
 
-      // Camera dolly forward + sink — gives the cinematic "pulled under" feel.
       camTgtY  = -p * 2.5;
       camTgtZ  = camStartZ - p * 3.5;
       lookTgtY = -p * 0.5;
       scene.fog.density = 0.05 + p * 0.045;
 
-      coinFade   += (_coinTarget(p)   - coinFade)   * 0.1;
-      bubbleFade += (_bubbleTarget(p) - bubbleFade) * 0.1;
+      var kk = k || 0.1;
+      coinFade   += (_coinTarget(p)   - coinFade)   * kk;
+      bubbleFade += (_bubbleTarget(p) - bubbleFade) * kk;
     }
 
+    var _lastT = 0;
     function tick() {
-      var t = clock.getElapsedTime();
-      onHeroScroll();
+      var t  = clock.getElapsedTime();
+      var dt = Math.min(0.066, t - _lastT); _lastT = t;
+      // frame-rate independent damping: k≈10/s → ~0.1 per 16ms frame, but
+      // correct on 120Hz and slow frames so motion stays silky on all displays
+      var kSlow = 1 - Math.exp(-10 * dt);
+      var kFast = 1 - Math.exp(-6  * dt);
+      onHeroScroll(kSlow);
 
       // Bubbles: rise straight up at per-particle speed, sway sinusoidally on
       // X/Z so they don't track in straight lines, wrap from top back to bottom.
@@ -1203,28 +1138,6 @@
       bubbleMat.uniforms.uTime.value    = t;
       bubbleMat.uniforms.uOpacity.value = bubbleFade;
 
-      // Jellyfish — bell pulses on Y scale, whole group drifts, tentacles wave
-      var pulse = 0.94 + Math.sin(t * 1.6) * 0.07;
-      jellyBell.scale.set(pulse, pulse * 0.85, pulse);
-      innerGlow.material.opacity = 0.16 + Math.abs(Math.sin(t * 1.6)) * 0.12;
-      jellyGroup.position.y = -1.0 + Math.sin(t * 0.45) * 0.35;
-      jellyGroup.position.x = (isMobile ? -3.5 : -5.5) + Math.sin(t * 0.3) * 0.4;
-      // Tentacle sway: each segment displaces more the further down it is so
-      // the tentacle bends gracefully like it's catching a slow current
-      for (var jt = 0; jt < jellyTentacles.length; jt++) {
-        var tent = jellyTentacles[jt];
-        var tpa  = tent.pos.array;
-        for (var pi = 0; pi <= TENTACLE_SEGS; pi++) {
-          var ii = pi * 3;
-          var tt = pi / TENTACLE_SEGS;
-          var sway = Math.sin(tt * 4.5 + t * 1.4 + tent.phase) * (tt * 0.55);
-          tpa[ii]     = tent.baseX + sway * 0.7;
-          tpa[ii + 1] = -tt * TENTACLE_LEN + Math.sin(t * 1.6 + tent.phase) * 0.04;
-          tpa[ii + 2] = tent.baseZ + sway * 0.5;
-        }
-        tent.pos.needsUpdate = true;
-      }
-
       logoMat.uniforms.uTime.value    = t;
       logoMat.uniforms.uOpacity.value = coinFade;
 
@@ -1236,8 +1149,8 @@
       logo.position.y = Math.sin(t * 0.6)  * 0.08 - (1.0 - coinFade) * 4.0;
       logo.visible    = coinFade > 0.01;
 
-      camera.position.y += (camTgtY - camera.position.y) * 0.05;
-      camera.position.z += (camTgtZ - camera.position.z) * 0.05;
+      camera.position.y += (camTgtY - camera.position.y) * kFast;
+      camera.position.z += (camTgtZ - camera.position.z) * kFast;
       camera.lookAt(0, lookTgtY, 0);
       aqua.intensity = 1.4 + Math.sin(t * 1.4) * 0.4;
 
@@ -1255,7 +1168,7 @@
         if (e.isIntersecting && !handle.isActive()) clock.start();
         handle.setActive(e.isIntersecting);
       }
-    }, { threshold: 0 });
+    }, { threshold: 0.05, rootMargin: '20% 0px' });
     io.observe(zone);
 
     window.addEventListener('resize', function() {
@@ -1264,6 +1177,39 @@
       camera.updateProjectionMatrix();
       renderer.setSize(W, H);
     });
+  }
+
+  // Lenis inertial scroll + section reveal — kills the PDF-page feel by
+  // smoothing wheel/trackpad input and easing each major block into view.
+  function initSilkScroll() {
+    var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reduced && typeof Lenis !== 'undefined') {
+      var lenis = new Lenis({
+        duration: 1.1,
+        easing: function(x) { return 1 - Math.pow(1 - x, 3); },
+        smoothWheel: true,
+        smoothTouch: false,
+      });
+      window.__lenis = lenis;
+      function lenisRaf(t) { lenis.raf(t); requestAnimationFrame(lenisRaf); }
+      requestAnimationFrame(lenisRaf);
+    }
+
+    if (!('IntersectionObserver' in window)) return;
+    var targets = document.querySelectorAll(
+      '.content-section, .section-header, .section-content, .chapter-card, .partner-card, .impact-stat, .footer-main'
+    );
+    targets.forEach(function(el) { el.classList.add('silk-reveal'); });
+    var revealIO = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('silk-in');
+          revealIO.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    targets.forEach(function(el) { revealIO.observe(el); });
   }
 
   function initChapterCards() {
@@ -1709,6 +1655,7 @@
     }
     createOceanParticles();
     renderImpact();
+    initSilkScroll();
     initImpactHero();
     initChapterCards();
     initPartnerCards();

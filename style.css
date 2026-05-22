@@ -3593,3 +3593,25 @@ html {
 /* Reduced-motion: hide the canvas + vignette entirely */
 .ocean-zone.no-motion .ocean-canvas,
 .ocean-zone.no-motion .ocean-vignette { display: none; }
+
+/* Silky scroll polish — Lenis adds .lenis-smooth to <html>; reveal classes
+   are added by initSilkScroll for major content blocks. */
+html.lenis-smooth { scroll-behavior: auto; }
+html.lenis-smooth body { overflow-x: hidden; }
+.ocean-canvas { will-change: opacity, transform; }
+
+.silk-reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.silk-reveal.silk-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .silk-reveal { opacity: 1; transform: none; transition: none; }
+}
