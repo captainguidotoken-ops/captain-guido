@@ -3472,7 +3472,7 @@ html {
 /* ── Journey → Ocean blend (waves flush against bottom of chapter tiles) ─ */
 #journey {
   position: relative;
-  padding-bottom: 2rem;
+  padding-bottom: 0;
 }
 
 /* Cartoon bubbles drifting up through the chapter section so the underwater
@@ -3510,7 +3510,7 @@ html {
 }
 
 .journey-tagline {
-  margin: 3rem auto 0;
+  margin: 1.25rem auto 0.5rem;
   text-align: center;
   font-family: 'Cinzel', serif;
   font-size: clamp(1.1rem, 2.4vw, 1.6rem);
@@ -3522,8 +3522,8 @@ html {
 
 .journey-ocean-blend {
   position: absolute;
-  bottom: -120px; left: 0; right: 0;
-  height: 320px;
+  bottom: -40px; left: 0; right: 0;
+  height: 140px;
   /* Three-stop gradient: holds journey colour at top, fades through a dim
      blue mid-tone, lands on the exact #000306 of the ocean zone. Bottom 120px
      overlaps INTO the ocean section so the join is gradient, not seam. */
@@ -3578,11 +3578,11 @@ html {
    so the three sections read as one continuous underwater spread. */
 .site-links {
   background: #000306;
-  padding: 3.5rem 4rem 2.5rem;
+  padding: 0.75rem 4rem 2rem;
   border: none;
 }
 @media (max-width: 768px) {
-  .site-links { padding: 2.5rem 1.5rem 2rem; }
+  .site-links { padding: 0.5rem 1.5rem 1.5rem; }
 }
 
 /* ── Ocean Zone — one continuous underwater panel ─────────────────
@@ -3601,7 +3601,7 @@ html {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 140px;
+  height: 60px;
   background: linear-gradient(to bottom, rgba(1,6,16,0.55) 0%, transparent 100%);
   pointer-events: none;
   z-index: 4;
