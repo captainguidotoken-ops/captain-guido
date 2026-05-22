@@ -1020,9 +1020,9 @@
       bubblePos[bi * 3 + 2] = baseZ;
 
       // Real bubbles vary in size more than dust motes; bias toward visible.
-      bubbleSize[bi] = Math.random() < 0.25
-        ? 1.6 + Math.random() * 1.2
-        : 0.55 + Math.random() * 0.60;
+      bubbleSize[bi] = Math.random() < 0.22
+        ? 1.0 + Math.random() * 0.7
+        : 0.35 + Math.random() * 0.35;
     }
 
     var bubbleGeo = new THREE.BufferGeometry();
@@ -1041,7 +1041,7 @@
         'void main() {',
         '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
         '  gl_Position = projectionMatrix * mvPosition;',
-        '  gl_PointSize = aSize * (32.0 / -mvPosition.z) * uPxRatio * 5.0;',
+        '  gl_PointSize = aSize * (32.0 / -mvPosition.z) * uPxRatio * 3.6;',
         '}'
       ].join('\n'),
       fragmentShader: [
