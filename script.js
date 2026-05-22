@@ -1050,15 +1050,23 @@
         '  vec2 c = gl_PointCoord - vec2(0.5);',
         '  float d = length(c);',
         '  if (d > 0.5) discard;',
-        // Hollow ring (rim of the bubble): bright thin band near d≈0.44
-        '  float rim = smoothstep(0.50, 0.44, d) - smoothstep(0.44, 0.34, d);',
-        // Small specular highlight near the top-left of each bubble
-        '  vec2 hl = c - vec2(-0.16, -0.16);',
-        '  float spec = smoothstep(0.11, 0.02, length(hl));',
-        // Very faint inner fill so the bubble has a hint of body
-        '  float fill = smoothstep(0.44, 0.30, d) * 0.10;',
-        '  float a = (rim * 0.65 + spec * 0.85 + fill) * uOpacity;',
-        '  gl_FragColor = vec4(vec3(0.92, 0.97, 1.00), a);',
+        // Bold cartoon outline (navy stroke) at the rim — matches the logo's
+        // flat-vector illustration style.
+        '  float outline = smoothstep(0.50, 0.47, d) - smoothstep(0.47, 0.42, d);',
+        // Cream/off-white fill inside the outline, slightly translucent so
+        // bubbles stack without going opaque.
+        '  float fill    = smoothstep(0.47, 0.43, d);',
+        // Bright highlight dot in the top-left, comic-style.
+        '  vec2 hl = c - vec2(-0.18, -0.18);',
+        '  float spec    = smoothstep(0.09, 0.02, length(hl));',
+        // Compose: outline regions render navy, interior renders cream,
+        // highlight pushes toward pure white.
+        '  vec3 cream    = vec3(0.96, 0.94, 0.86);',     // matches logo paper
+        '  vec3 navy     = vec3(0.05, 0.11, 0.20);',     // matches logo line
+        '  vec3 col      = mix(cream, navy, smoothstep(0.0, 0.6, outline));',
+        '  col          += vec3(1.0, 0.98, 0.92) * spec * 0.9;',
+        '  float a       = max(outline * 0.95, fill * 0.55) + spec * 0.4;',
+        '  gl_FragColor  = vec4(col, a * uOpacity);',
         '}'
       ].join('\n'),
       transparent: true,
