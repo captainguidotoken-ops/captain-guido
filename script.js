@@ -1219,7 +1219,7 @@
     setRise();
     window.addEventListener('resize', setRise);
 
-    var COUNT = window.innerWidth < 768 ? 14 : 22;
+    var COUNT = window.innerWidth < 768 ? 7 : 11;
     for (var i = 0; i < COUNT; i++) {
       var b = document.createElement('span');
       b.className = 'jbubble';
