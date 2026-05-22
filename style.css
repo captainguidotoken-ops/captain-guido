@@ -3475,6 +3475,40 @@ html {
   padding-bottom: 2rem;
 }
 
+/* Cartoon bubbles drifting up through the chapter section so the underwater
+   feel bleeds into the chapters and chapters→ocean reads as one continuous
+   panel. Same palette as the Three.js bubbles (navy outline + cream fill +
+   warm highlight). Container clips bubbles to itself so they don't escape. */
+.journey-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;                /* below chapter content (which is in flow) */
+  overflow: hidden;          /* clip rising bubbles inside the section */
+}
+.jbubble {
+  position: absolute;
+  bottom: -40px;
+  border: 1.5px solid #0d1c33;
+  background: rgba(246, 240, 220, 0.45);
+  border-radius: 50%;
+  box-shadow: inset 2px 2px 0 rgba(255, 250, 235, 0.85);
+  opacity: 0;
+  animation-name: jbubbleRise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+@keyframes jbubbleRise {
+  0%   { transform: translate3d(0, 0, 0);                                   opacity: 0; }
+  6%   { opacity: 0.85; }
+  94%  { opacity: 0.85; }
+  100% { transform: translate3d(var(--drift, 0px), calc(-1 * var(--rise, 110vh)), 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .journey-bubbles { display: none; }
+}
+
 .journey-tagline {
   margin: 3rem auto 0;
   text-align: center;

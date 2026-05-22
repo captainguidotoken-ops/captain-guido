@@ -1197,6 +1197,43 @@
     });
   }
 
+  // CSS bubble field for the chapter section — same cartoon style as the
+  // Three.js bubbles in the ocean zone, so the underwater feel bleeds up
+  // through the chapter cards and the two sections read as one.
+  function initJourneyBubbles() {
+    var journey = document.getElementById('journey');
+    if (!journey) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var container = document.createElement('div');
+    container.className = 'journey-bubbles';
+    container.setAttribute('aria-hidden', 'true');
+    journey.insertBefore(container, journey.firstChild);
+
+    // Bubbles travel the full section height plus the bubble's launch padding,
+    // so even tall journey sections (multi-viewport) have bubbles reaching the
+    // top edge rather than only filling the bottom 110vh.
+    function setRise() {
+      container.style.setProperty('--rise', (journey.offsetHeight + 80) + 'px');
+    }
+    setRise();
+    window.addEventListener('resize', setRise);
+
+    var COUNT = window.innerWidth < 768 ? 14 : 22;
+    for (var i = 0; i < COUNT; i++) {
+      var b = document.createElement('span');
+      b.className = 'jbubble';
+      var size = 5 + Math.random() * 11;
+      b.style.left  = (Math.random() * 100) + '%';
+      b.style.width = size + 'px';
+      b.style.height = size + 'px';
+      b.style.setProperty('--drift', ((Math.random() - 0.5) * 80) + 'px');
+      b.style.animationDuration = (14 + Math.random() * 16) + 's';
+      b.style.animationDelay    = (-Math.random() * 20) + 's';
+      container.appendChild(b);
+    }
+  }
+
   // Lenis inertial scroll + section reveal — kills the PDF-page feel by
   // smoothing wheel/trackpad input and easing each major block into view.
   function initSilkScroll() {
@@ -1674,6 +1711,7 @@
     createOceanParticles();
     renderImpact();
     initSilkScroll();
+    initJourneyBubbles();
     initImpactHero();
     initChapterCards();
     initPartnerCards();
