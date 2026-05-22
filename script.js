@@ -965,13 +965,18 @@
         '  float edge = smoothstep(0.5, 0.485, d);',
         // Subtle underwater UV shimmer — uniform, no depth dependence
         '  vec2 uv = vUv;',
-        '  uv.x += sin(uv.y * 22.0 - uTime * 1.4) * 0.008;',
-        '  uv.x += sin(uv.y * 10.0 + uTime * 0.7) * 0.005;',
-        '  uv.y += sin(uv.x * 18.0 + uTime * 1.1) * 0.005;',
+        '  uv.x += sin(uv.y * 22.0 - uTime * 1.6) * 0.016;',
+        '  uv.x += sin(uv.y * 10.0 + uTime * 0.8) * 0.010;',
+        '  uv.y += sin(uv.x * 18.0 + uTime * 1.2) * 0.010;',
+        '  uv.y += sin(uv.x * 6.0  - uTime * 0.5) * 0.006;',
         '  vec4 col = texture2D(uTex, uv);',
         '  col.a *= edge * uOpacity;',
         // Cool blue/green underwater tint at constant strength
         '  col.rgb = mix(col.rgb, vec3(0.18, 0.55, 0.78), 0.22);',
+        // Caustic-like shimmer highlights — slow moving bright bands
+        '  float caustic = sin((vUv.x + vUv.y) * 14.0 + uTime * 1.8) * 0.5 + 0.5;',
+        '  caustic *= sin((vUv.x - vUv.y) * 9.0  - uTime * 1.1) * 0.5 + 0.5;',
+        '  col.rgb += vec3(0.12, 0.22, 0.30) * caustic * 0.35;',
         '  gl_FragColor = col;',
         '}'
       ].join('\n'),
@@ -995,15 +1000,24 @@
       new THREE.Color(0xff8a2c),  // brand orange
     ];
 
+    // First ~40% of bubbles cluster in a column around the coin so they read
+    // as bubbles coming off the logo rather than ambient drift across the scene.
+    var clusterCount = Math.floor(bubbleCount * 0.4);
     for (var bi = 0; bi < bubbleCount; bi++) {
-      var baseX = (Math.random() - 0.5) * 16;
-      var baseZ = -1 - Math.random() * 11;
+      var clustered = bi < clusterCount;
+      var baseX = clustered
+        ? (Math.random() - 0.5) * 2.4
+        : (Math.random() - 0.5) * 16;
+      var baseZ = clustered
+        ? -0.5 - Math.random() * 2.0
+        : -1   - Math.random() * 11;
       bubbleData.push({
-        baseX: baseX,
-        baseZ: baseZ,
-        phase: Math.random() * Math.PI * 2,
-        speed: 0.008 + Math.random() * 0.018,
-        sway:  Math.random() * Math.PI * 2,
+        baseX:    baseX,
+        baseZ:    baseZ,
+        phase:    Math.random() * Math.PI * 2,
+        speed:    (clustered ? 0.014 : 0.008) + Math.random() * 0.018,
+        sway:     Math.random() * Math.PI * 2,
+        clustered: clustered,
       });
       bubblePos[bi * 3]     = baseX;
       bubblePos[bi * 3 + 1] = -7 + Math.random() * 14;
@@ -1079,6 +1093,7 @@
     var lookTgtY  = 0;
     var coinFade  = 0;                  // smoothed coin alpha
     var bubbleFade = 1;                 // smoothed bubble alpha
+    var scrollP   = 0;                  // last scroll progress (0..1)
 
     // Coin appearance window — invisible at the top of the zone (over the
     // site-links nav so it doesn't overlap NAVIGATE / COMMUNITY / RESOURCES),
@@ -1112,6 +1127,7 @@
       var kk = k || 0.1;
       coinFade   += (_coinTarget(p)   - coinFade)   * kk;
       bubbleFade += (_bubbleTarget(p) - bubbleFade) * kk;
+      scrollP = p;
     }
 
     var _lastT = 0;
@@ -1131,7 +1147,8 @@
         var b = bubbleData[bi];
         bp[bi * 3 + 1] += b.speed;
         if (bp[bi * 3 + 1] > 7) bp[bi * 3 + 1] = -7;
-        bp[bi * 3]     = b.baseX + Math.sin(t * 1.1 + b.sway + bp[bi * 3 + 1] * 0.35) * 0.35;
+        var swayAmp = b.clustered ? 0.18 : 0.35;
+        bp[bi * 3]     = b.baseX + Math.sin(t * 1.1 + b.sway + bp[bi * 3 + 1] * 0.35) * swayAmp;
         bp[bi * 3 + 2] = b.baseZ + Math.sin(t * 0.7 + b.phase) * 0.20;
       }
       bubbleGeo.attributes.position.needsUpdate = true;
@@ -1141,12 +1158,17 @@
       logoMat.uniforms.uTime.value    = t;
       logoMat.uniforms.uOpacity.value = coinFade;
 
-      // Coin-floating-underwater feel + scroll-driven sink. The coin spins
-      // lazily, tilts, bobs, and its world-Y descends as coinFade approaches 0
-      // so it disappears into the depth as the user reaches the impact body.
+      // Coin rises through the frame from the depths as the user scrolls the
+      // hero stage. floatP maps the visible window (0.18→0.66) to a Y travel
+      // of roughly -3.2 (deep) → +3.2 (out the top), so it appears to drift
+      // up past the camera. Bob + sway layered on top for organic underwater
+      // motion; lazy spin + tilt keep the face mostly forward.
+      var floatP = (scrollP - 0.18) / 0.48;
+      var riseY  = -3.2 + Math.max(-0.4, Math.min(1.25, floatP)) * 6.4;
       logo.rotation.y = Math.sin(t * 0.35) * 0.45;
       logo.rotation.x = Math.sin(t * 0.5)  * 0.06;
-      logo.position.y = Math.sin(t * 0.6)  * 0.08 - (1.0 - coinFade) * 4.0;
+      logo.position.x = Math.sin(t * 0.4)  * 0.18;
+      logo.position.y = riseY + Math.sin(t * 0.6) * 0.14;
       logo.visible    = coinFade > 0.01;
 
       camera.position.y += (camTgtY - camera.position.y) * kFast;
