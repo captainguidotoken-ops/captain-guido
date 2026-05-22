@@ -1110,9 +1110,15 @@
       return 0;
     }
 
+    // Cache zone height — only changes on resize. getBoundingClientRect().top
+    // does change per-frame so we still read it, but offsetHeight forces a
+    // layout flush and is constant between resizes.
+    var _zoneH = zone.offsetHeight;
+    window.addEventListener('resize', function() { _zoneH = zone.offsetHeight; }, { passive: true });
+
     function onHeroScroll(k) {
       var rect = zone.getBoundingClientRect();
-      var h    = zone.offsetHeight - H;
+      var h    = _zoneH - H;
       var p    = h > 0 ? Math.max(0, Math.min(1, -rect.top / h)) : 0;
 
       camTgtY  = -p * 2.5;
@@ -1267,41 +1273,70 @@
     targets.forEach(function(el) { revealIO.observe(el); });
   }
 
+  // One shared rect-cache invalidator for all hover-tilt cards so we don't add
+  // 18+ window scroll/resize listeners (one per card).
+  var _cardRectCaches = [];
+  window.addEventListener('scroll', function() {
+    for (var i = 0; i < _cardRectCaches.length; i++) _cardRectCaches[i].rect = null;
+  }, { passive: true });
+  window.addEventListener('resize', function() {
+    for (var i = 0; i < _cardRectCaches.length; i++) _cardRectCaches[i].rect = null;
+  }, { passive: true });
+
+  function _tiltCard(card, opts) {
+    var cache = { rect: null };
+    _cardRectCaches.push(cache);
+    var pending = false;
+    var lastX = 0, lastY = 0;
+
+    card.addEventListener('mousemove', function(e) {
+      lastX = e.clientX; lastY = e.clientY;
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function() {
+        pending = false;
+        if (!cache.rect) cache.rect = card.getBoundingClientRect();
+        var r = cache.rect;
+        var x = (lastX - r.left) / r.width  - 0.5;
+        var y = (lastY - r.top)  / r.height - 0.5;
+        card.style.transform = opts.transform(x, y);
+        if (opts.spotlight) {
+          card.style.setProperty('--mx', ((lastX - r.left) / r.width  * 100).toFixed(1) + '%');
+          card.style.setProperty('--my', ((lastY - r.top)  / r.height * 100).toFixed(1) + '%');
+        }
+      });
+    });
+
+    card.addEventListener('mouseleave', function() {
+      card.style.transform = opts.resetTransform || '';
+      if (opts.spotlight) {
+        card.style.removeProperty('--mx');
+        card.style.removeProperty('--my');
+      }
+    });
+  }
+
   function initChapterCards() {
-    var cards = document.querySelectorAll('.chapter-card');
-    cards.forEach(function(card) {
+    document.querySelectorAll('.chapter-card').forEach(function(card) {
       var spotlight = document.createElement('div');
       spotlight.className = 'chapter-card-spotlight';
       card.appendChild(spotlight);
-
-      card.addEventListener('mousemove', function(e) {
-        var rect = card.getBoundingClientRect();
-        var x = (e.clientX - rect.left) / rect.width - 0.5;
-        var y = (e.clientY - rect.top)  / rect.height - 0.5;
-        card.style.transform = 'perspective(900px) rotateY(' + (x * 8) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-10px) scale3d(1.02,1.02,1.02)';
-        card.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%');
-        card.style.setProperty('--my', ((e.clientY - rect.top)  / rect.height * 100).toFixed(1) + '%');
-      });
-
-      card.addEventListener('mouseleave', function() {
-        card.style.transform = '';
-        card.style.removeProperty('--mx');
-        card.style.removeProperty('--my');
+      _tiltCard(card, {
+        spotlight: true,
+        transform: function(x, y) {
+          return 'perspective(900px) rotateY(' + (x * 8) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-10px) scale3d(1.02,1.02,1.02)';
+        },
       });
     });
   }
 
   function initPartnerCards() {
-    var cards = document.querySelectorAll('.partner-card:not(.partner-pending)');
-    cards.forEach(function(card) {
-      card.addEventListener('mousemove', function(e) {
-        var rect = card.getBoundingClientRect();
-        var x = (e.clientX - rect.left) / rect.width  - 0.5;
-        var y = (e.clientY - rect.top)  / rect.height - 0.5;
-        card.style.transform = 'perspective(800px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 10) + 'deg) scale3d(1.03,1.03,1.03)';
-      });
-      card.addEventListener('mouseleave', function() {
-        card.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+    document.querySelectorAll('.partner-card:not(.partner-pending)').forEach(function(card) {
+      _tiltCard(card, {
+        transform: function(x, y) {
+          return 'perspective(800px) rotateY(' + (x * 14) + 'deg) rotateX(' + (-y * 10) + 'deg) scale3d(1.03,1.03,1.03)';
+        },
+        resetTransform: 'perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)',
       });
     });
   }

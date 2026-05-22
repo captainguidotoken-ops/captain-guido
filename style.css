@@ -292,9 +292,9 @@ body.entry-active { overflow: hidden; }
   padding: 1.5rem 0;
   z-index: 9998;
   transition: all 0.4s ease;
-  background: rgba(1, 7, 15, 0.55);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  background: rgba(1, 7, 15, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: none;
   box-shadow: none;
 }
@@ -1245,12 +1245,10 @@ body.entry-active { overflow: hidden; }
 }
 
 .chapter-card {
-  background: rgba(2, 12, 28, 0.45);
+  background: rgba(2, 12, 28, 0.78);
   border: 1px solid rgba(0, 212, 255, 0.08);
   padding: 2.5rem;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease, border-color 0.4s ease;
   position: relative;
   overflow: hidden;
 }
@@ -3473,8 +3471,9 @@ html {
   position: absolute;
   left: -20%; right: -20%;
   height: 220px;
-  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(120,200,255,0.10) 0%, transparent 70%);
-  filter: blur(28px);
+  /* Pre-feathered via wide radial stops (no filter:blur) — cheap on the GPU
+     and visually equivalent on a translucent gradient like this. */
+  background: radial-gradient(ellipse 80% 120% at 50% 50%, rgba(120,200,255,0.10) 0%, rgba(120,200,255,0.04) 40%, transparent 75%);
   mix-blend-mode: screen;
   pointer-events: none;
 }
