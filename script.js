@@ -1178,7 +1178,7 @@
         if (e.isIntersecting && !handle.isActive()) clock.start();
         handle.setActive(e.isIntersecting);
       }
-    }, { threshold: 0.05, rootMargin: '20% 0px' });
+    }, { threshold: 0.05, rootMargin: '35% 0px 20% 0px' });
     io.observe(zone);
 
     window.addEventListener('resize', function() {

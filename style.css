@@ -3488,13 +3488,48 @@ html {
 
 .journey-ocean-blend {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 80px;
-  /* fades to the exact same #000306 as site-links / hero / impact, so the join
-     between Journey and the underwater stretch is invisible */
-  background: linear-gradient(to bottom, transparent 0%, #000306 100%);
+  bottom: -120px; left: 0; right: 0;
+  height: 320px;
+  /* Three-stop gradient: holds journey colour at top, fades through a dim
+     blue mid-tone, lands on the exact #000306 of the ocean zone. Bottom 120px
+     overlaps INTO the ocean section so the join is gradient, not seam. */
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0,140,200,0.10) 0%, transparent 70%),
+    linear-gradient(to bottom, rgba(1,8,16,0) 0%, rgba(1,8,16,0.55) 30%, #010610 65%, #000306 100%);
   pointer-events: none;
   z-index: 5;
+}
+
+/* Drifting caustic-light bands across the boundary — slow horizontal sweep so
+   the join between journey and ocean feels like sun-light through water rather
+   than a hard cut. Pure CSS, GPU-cheap (single translateX animation). */
+.journey-ocean-blend::before,
+.journey-ocean-blend::after {
+  content: '';
+  position: absolute;
+  left: -20%; right: -20%;
+  height: 220px;
+  background: radial-gradient(ellipse 60% 100% at 50% 50%, rgba(120,200,255,0.10) 0%, transparent 70%);
+  filter: blur(28px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.journey-ocean-blend::before {
+  top: 30px;
+  animation: blendDrift 18s ease-in-out infinite;
+}
+.journey-ocean-blend::after {
+  top: 90px;
+  opacity: 0.7;
+  animation: blendDrift 22s ease-in-out infinite reverse;
+}
+@keyframes blendDrift {
+  0%, 100% { transform: translateX(-6%); }
+  50%      { transform: translateX(6%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .journey-ocean-blend::before,
+  .journey-ocean-blend::after { animation: none; }
 }
 
 /* Impact section — same flat #000306 as the hero so the two read as one
@@ -3525,6 +3560,18 @@ html {
   position: relative;
   background: #000306;
 }
+/* Soft top edge on the ocean zone so the journey-ocean-blend (which extends
+   120px down into this section) reads as a single continuous fade rather than
+   stacking against a hard #000306 cap. */
+.ocean-zone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(1,6,16,0.55) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 4;
+}
 .ocean-canvas {
   position: fixed;
   top: 0;
@@ -3535,7 +3582,7 @@ html {
   pointer-events: none;
   z-index: 0;
   opacity: 0;
-  transition: opacity 0.45s ease;
+  transition: opacity 0.9s ease;
 }
 .ocean-zone.ocean-active .ocean-canvas { opacity: 1; }
 
