@@ -988,34 +988,30 @@
     logo.position.set(0, 0, 0);
     scene.add(logo);
 
-    // Bubble field — sparser and just two brand colours (blue + orange)
-    // so the underwater feel is calm and on-brand rather than carnival.
-    var bubbleCount = isMobile ? 40 : 80;
+    // Bubble field — translucent ringed bubbles (rim + small specular highlight),
+    // no colour palette, no additive glow. Reads as real air bubbles rising
+    // through water rather than as coloured dots.
+    var bubbleCount = isMobile ? 50 : 100;
     var bubblePos   = new Float32Array(bubbleCount * 3);
-    var bubbleCol   = new Float32Array(bubbleCount * 3);
     var bubbleSize  = new Float32Array(bubbleCount);
     var bubbleData  = [];
-    var palette = [
-      new THREE.Color(0x5cb8ff),  // brand blue
-      new THREE.Color(0xff8a2c),  // brand orange
-    ];
 
-    // First ~40% of bubbles cluster in a column around the coin so they read
-    // as bubbles coming off the logo rather than ambient drift across the scene.
-    var clusterCount = Math.floor(bubbleCount * 0.4);
+    // First ~45% of bubbles cluster in a column around the coin so a steady
+    // stream rises past it, the rest are ambient drift across the scene.
+    var clusterCount = Math.floor(bubbleCount * 0.45);
     for (var bi = 0; bi < bubbleCount; bi++) {
       var clustered = bi < clusterCount;
       var baseX = clustered
-        ? (Math.random() - 0.5) * 2.4
+        ? (Math.random() - 0.5) * 2.6
         : (Math.random() - 0.5) * 16;
       var baseZ = clustered
-        ? -0.5 - Math.random() * 2.0
+        ? -0.4 - Math.random() * 2.2
         : -1   - Math.random() * 11;
       bubbleData.push({
         baseX:    baseX,
         baseZ:    baseZ,
         phase:    Math.random() * Math.PI * 2,
-        speed:    (clustered ? 0.014 : 0.008) + Math.random() * 0.018,
+        speed:    (clustered ? 0.016 : 0.009) + Math.random() * 0.020,
         sway:     Math.random() * Math.PI * 2,
         clustered: clustered,
       });
@@ -1023,59 +1019,51 @@
       bubblePos[bi * 3 + 1] = -7 + Math.random() * 14;
       bubblePos[bi * 3 + 2] = baseZ;
 
-      var c = palette[Math.floor(Math.random() * palette.length)];
-      var shade = 0.65 + Math.random() * 0.35;
-      bubbleCol[bi * 3]     = c.r * shade;
-      bubbleCol[bi * 3 + 1] = c.g * shade;
-      bubbleCol[bi * 3 + 2] = c.b * shade;
-
-      bubbleSize[bi] = Math.random() < 0.18
-        ? 1.1 + Math.random() * 0.7
-        : 0.32 + Math.random() * 0.40;
+      // Real bubbles vary in size more than dust motes; bias toward visible.
+      bubbleSize[bi] = Math.random() < 0.25
+        ? 1.6 + Math.random() * 1.2
+        : 0.55 + Math.random() * 0.60;
     }
 
     var bubbleGeo = new THREE.BufferGeometry();
     bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
-    bubbleGeo.setAttribute('color',    new THREE.BufferAttribute(bubbleCol, 3));
     bubbleGeo.setAttribute('aSize',    new THREE.BufferAttribute(bubbleSize, 1));
 
     var bubbleMat = new THREE.ShaderMaterial({
       uniforms: {
         uPxRatio: { value: renderer.getPixelRatio() },
         uTime:    { value: 0 },
-        uOpacity: { value: 1.0 },     // driven by scroll-fade in tick
+        uOpacity: { value: 1.0 },
       },
       vertexShader: [
-        'attribute vec3 color;',
         'attribute float aSize;',
-        'varying vec3 vColor;',
         'uniform float uPxRatio;',
-        'uniform float uTime;',
         'void main() {',
-        '  vColor = color;',
         '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
         '  gl_Position = projectionMatrix * mvPosition;',
-        '  float pulse = 0.95 + 0.05 * sin(uTime * 1.4 + position.y * 0.3);',
-        '  gl_PointSize = aSize * pulse * (32.0 / -mvPosition.z) * uPxRatio * 4.5;',
+        '  gl_PointSize = aSize * (32.0 / -mvPosition.z) * uPxRatio * 5.0;',
         '}'
       ].join('\n'),
       fragmentShader: [
-        'varying vec3 vColor;',
         'uniform float uOpacity;',
         'void main() {',
         '  vec2 c = gl_PointCoord - vec2(0.5);',
         '  float d = length(c);',
         '  if (d > 0.5) discard;',
-        // Soft round particle — gentle linear-ish falloff, NO bright pinprick
-        // core, capped at 50% opacity so they read as drifting bubbles, not
-        // sparkling stars. Scroll-driven uOpacity dissipates them in the body.
-        '  float a = pow(1.0 - d * 2.0, 1.2) * 0.50 * uOpacity;',
-        '  gl_FragColor = vec4(vColor, a);',
+        // Hollow ring (rim of the bubble): bright thin band near d≈0.44
+        '  float rim = smoothstep(0.50, 0.44, d) - smoothstep(0.44, 0.34, d);',
+        // Small specular highlight near the top-left of each bubble
+        '  vec2 hl = c - vec2(-0.16, -0.16);',
+        '  float spec = smoothstep(0.11, 0.02, length(hl));',
+        // Very faint inner fill so the bubble has a hint of body
+        '  float fill = smoothstep(0.44, 0.30, d) * 0.10;',
+        '  float a = (rim * 0.65 + spec * 0.85 + fill) * uOpacity;',
+        '  gl_FragColor = vec4(vec3(0.92, 0.97, 1.00), a);',
         '}'
       ].join('\n'),
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
     });
 
     var bubbles = new THREE.Points(bubbleGeo, bubbleMat);
