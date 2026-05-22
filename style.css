@@ -2991,64 +2991,6 @@ body.custom-cursor-active * {
   100% { transform: translateY(0px) rotate(var(--coin-rotate, 0deg)) rotateY(0deg); }
 }
 
-/* ── Marquee bands ───────────────────────────────────────────────── */
-.marquee-band {
-  overflow: hidden;
-  padding: 1.2rem 0;
-  background: rgba(0, 0, 0, 0.25);
-  border-top: 1px solid rgba(0, 212, 255, 0.08);
-  border-bottom: 1px solid rgba(0, 212, 255, 0.08);
-  position: relative;
-  z-index: 5;
-  mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
-}
-
-.marquee-band--reverse .marquee-track {
-  animation-direction: reverse;
-}
-
-.marquee-track {
-  display: flex;
-  align-items: center;
-  width: max-content;
-  animation: marqueeScroll 28s linear infinite;
-  will-change: transform;
-}
-
-.marquee-item {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  padding: 0 2rem;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 4px;
-  white-space: nowrap;
-  color: rgba(238, 246, 255, 0.35);
-}
-
-.marquee-item span.m-accent {
-  background: linear-gradient(90deg, var(--aqua), var(--gold-accent));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.marquee-item .m-dot {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--gold-accent);
-  opacity: 0.5;
-  display: inline-block;
-}
-
-@keyframes marqueeScroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 /* ── Clip-path section wipe ──────────────────────────────────────── */
 [data-clip-reveal] {
   clip-path: inset(8% 0 0 0);
@@ -3271,7 +3213,6 @@ html {
 @media (prefers-reduced-motion: reduce) {
   #cursor-dot, #cursor-ring { display: none; }
   .floating-coin { animation: none; }
-  .marquee-track { animation: none; }
   [data-clip-reveal] { clip-path: none; opacity: 1; }
   [data-text-reveal] .word-inner { transform: none; }
   [data-parallax] { transform: none !important; transition: none; }
@@ -3507,17 +3448,6 @@ html {
 }
 @media (prefers-reduced-motion: reduce) {
   .journey-bubbles { display: none; }
-}
-
-.journey-tagline {
-  margin: 1.25rem auto 0.5rem;
-  text-align: center;
-  font-family: 'Cinzel', serif;
-  font-size: clamp(1.1rem, 2.4vw, 1.6rem);
-  letter-spacing: 0.2em;
-  color: rgba(0, 212, 255, 0.7);
-  text-transform: uppercase;
-  text-shadow: 0 0 18px rgba(0, 212, 255, 0.18);
 }
 
 .journey-ocean-blend {

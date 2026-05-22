@@ -126,14 +126,6 @@
     initParallax();
   }
 
-  // ─── 6. MARQUEE BAND ──────────────────────────────────────────────────────
-  function initMarquee() {
-    document.querySelectorAll('.marquee-track:not([data-duped])').forEach(function (track) {
-      track.innerHTML += track.innerHTML;
-      track.setAttribute('data-duped', '1');
-    });
-  }
-
   // ─── 7. CLIP-PATH SECTION WIPE ────────────────────────────────────────────
   function initClipReveal() {
     if (prefersReducedMotion) return;
@@ -151,52 +143,6 @@
     document.querySelectorAll('[data-clip-reveal]').forEach(function (el) {
       obs.observe(el);
     });
-  }
-
-  // ─── 8. SMOOTH MOMENTUM SCROLL ────────────────────────────────────────────
-  function initSmoothScroll() {
-    if (prefersReducedMotion || 'ontouchstart' in window) return;
-
-    var current = 0;
-    var target  = 0;
-    var ease    = 0.085;
-    var rafId   = null;
-    var body    = document.body;
-    var html    = document.documentElement;
-
-    function getMaxScroll() {
-      return Math.max(
-        body.scrollHeight, body.offsetHeight,
-        html.clientHeight, html.scrollHeight, html.offsetHeight
-      ) - window.innerHeight;
-    }
-
-    var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-    if (isFirefox) return; // Firefox has native smooth scroll
-
-    window.addEventListener('wheel', function (e) {
-      e.preventDefault();
-      var delta = e.deltaMode === 1 ? e.deltaY * 16
-                : e.deltaMode === 2 ? e.deltaY * window.innerHeight
-                : e.deltaY;
-      target += delta * 0.9;
-      target  = Math.max(0, Math.min(target, getMaxScroll()));
-      if (!rafId) tick();
-    }, { passive: false });
-
-    function tick() {
-      current += (target - current) * ease;
-
-      if (Math.abs(target - current) < 0.5) {
-        current = target;
-        window.scrollTo(0, current);
-        rafId = null;
-        return;
-      }
-
-      window.scrollTo(0, current);
-      rafId = requestAnimationFrame(tick);
-    }
   }
 
   // ─── 10. NUMBER TICKER (enhanced) ─────────────────────────────────────────
@@ -263,9 +209,7 @@
     initMagnetic();
     initTextReveal();
     initFloatingCoins();
-    initMarquee();
     initClipReveal();
-    initSmoothScroll();
     initScrollProgress();
     initTickers();
   });
