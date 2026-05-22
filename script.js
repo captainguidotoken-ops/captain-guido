@@ -337,7 +337,7 @@
     var wRes = 60;
     function makeWavePlane(col, opacity, posY, posZ, phase) {
       var g    = new THREE.PlaneGeometry(100, 100, wRes, wRes);
-      var mat  = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: opacity });
+      var mat  = new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: false, opacity: 1.0 });
       var mesh = new THREE.Mesh(g, mat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(0, posY, posZ);
